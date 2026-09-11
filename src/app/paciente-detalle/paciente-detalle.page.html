@@ -1,0 +1,84 @@
+<ion-content>
+  <div class="pagina-ficha">
+    <header class="encabezado">
+      <div class="marca">
+        <span class="marca-simbolo" aria-hidden="true">Ψ</span>
+        <div>
+          <p class="marca-nombre">PSIQUE</p>
+          <p class="marca-descripcion">Seguimiento psicoterapéutico</p>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- El destino de respaldo permite volver al listado al abrir la ficha directamente. -->
+      <nav class="navegacion" aria-label="Volver al listado de pacientes">
+        <ion-back-button
+          defaultHref="/pacientes"
+          text="Pacientes"
+          [icon]="iconoVolver"
+          aria-label="Volver a Pacientes"
+        ></ion-back-button>
+      </nav>
+
+      @if (paciente$ | async; as paciente) {
+        <section class="presentacion" aria-labelledby="codigo-paciente">
+          <p class="etiqueta">Ficha del paciente</p>
+          <div class="titulo-ficha">
+            <h1 id="codigo-paciente">{{ paciente.codigo }}</h1>
+            <span class="estado" [attr.aria-label]="'Estado del tratamiento: ' + paciente.estado">
+              {{ paciente.estado }}
+            </span>
+          </div>
+        </section>
+
+        <section class="datos-tratamiento" aria-labelledby="titulo-tratamiento">
+          <h2 id="titulo-tratamiento">Datos del tratamiento</h2>
+          <dl class="datos">
+            <div>
+              <dt>Modalidad</dt>
+              <dd>{{ paciente.modalidad }}</dd>
+            </div>
+            <div>
+              <dt>Frecuencia</dt>
+              <dd>{{ paciente.frecuencia }}</dd>
+            </div>
+            <div>
+              <dt>Día habitual</dt>
+              <dd>{{ paciente.diaHabitual ?? 'Sin definir' }}</dd>
+            </div>
+            <div>
+              <dt>Horario habitual</dt>
+              <dd>{{ paciente.horarioHabitual ?? 'Sin definir' }}</dd>
+            </div>
+            <div class="fecha-inicio">
+              <dt>Inicio del tratamiento</dt>
+              <dd><time [attr.datetime]="paciente.fechaInicioTratamiento">{{ paciente.fechaInicioTratamiento | date: 'dd/MM/yyyy' }}</time></dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="motivo-consulta" aria-labelledby="titulo-motivo">
+          <h2 id="titulo-motivo">Motivo de consulta</h2>
+          <p>{{ paciente.motivoConsulta }}</p>
+        </section>
+
+        <!-- El Post-it se destaca para localizar rápidamente la nota de la próxima sesión. -->
+        <section class="post-it" aria-labelledby="titulo-post-it">
+          <div class="post-it-encabezado">
+            <h2 id="titulo-post-it">Post-it de próxima sesión</h2>
+            <ion-icon [icon]="iconoPostIt" aria-hidden="true"></ion-icon>
+          </div>
+          <p>{{ paciente.postIt }}</p>
+        </section>
+      } @else {
+        <!-- Una URL con un código inexistente mantiene disponible el regreso al listado. -->
+        <section class="no-encontrado">
+          <p class="etiqueta">Ficha del paciente</p>
+          <h1>Paciente no encontrado</h1>
+          <p>No hay un paciente registrado con ese código.</p>
+        </section>
+      }
+    </main>
+  </div>
+</ion-content>

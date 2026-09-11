@@ -1,0 +1,279 @@
+:host {
+  --verde-oscuro: #284b41;
+  --texto-secundario: #626b62;
+}
+
+ion-content {
+  --background: #f7f6f0;
+  --color: var(--verde-oscuro);
+}
+
+// Conservamos el ancho y los espacios de Inicio para que ambas pantallas se correspondan.
+.pagina-pacientes {
+  width: min(100%, 1040px);
+  margin: 0 auto;
+  padding: 40px 40px 36px;
+}
+
+.encabezado {
+  padding-bottom: 30px;
+  border-bottom: 1px solid #dce1d7;
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.marca-simbolo {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border: 1px solid #cbd6c8;
+  border-radius: 17px;
+  background: #e9eee4;
+  font-family: Georgia, serif;
+  font-size: 36px;
+}
+
+.marca-nombre {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+
+.marca-descripcion {
+  margin: 5px 0 0;
+  color: var(--texto-secundario);
+  font-size: 13px;
+}
+
+.navegacion {
+  display: flex;
+  margin: 24px 0 18px;
+}
+
+ion-back-button {
+  min-height: 44px;
+  --color: var(--verde-oscuro);
+  --padding-start: 0;
+  --padding-end: 12px;
+  --border-radius: 10px;
+  font-size: 16px;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+ion-back-button::part(native):focus-visible {
+  outline: 3px solid #945f46;
+  outline-offset: 4px;
+}
+
+.presentacion {
+  padding-bottom: 34px;
+}
+
+.etiqueta {
+  margin: 0 0 14px;
+  color: var(--texto-secundario);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(42px, 6vw, 56px);
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 1.1;
+}
+
+.introduccion {
+  margin: 18px 0 0;
+  color: var(--texto-secundario);
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.lista-pacientes {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.paciente {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 18px 28px;
+  padding: 26px 28px;
+  border: 1px solid #d8dfd2;
+  border-radius: 22px;
+  background: #fdfdf8;
+  color: inherit;
+  text-decoration: none;
+}
+
+.paciente:hover {
+  border-color: #98ac96;
+}
+
+.paciente:focus-visible {
+  outline: 3px solid #945f46;
+  outline-offset: 4px;
+}
+
+.identificacion {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.paciente-icono {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border: 1px solid #cbd7c7;
+  border-radius: 15px;
+  background: #e9eee4;
+  font-size: 24px;
+}
+
+h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.datos-paciente {
+  grid-column: 2;
+  grid-row: 2;
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 28px;
+  margin: 0;
+}
+
+// La cuadrícula reserva la esquina superior derecha para la próxima sesión.
+.proxima-sesion {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  margin: 0;
+  color: #945f46;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.fecha-creacion {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  justify-self: end;
+  margin: 0;
+  color: var(--texto-secundario);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+// El lector de pantalla recibe el contexto del horario sin agregar texto visible.
+.texto-accesible {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+dt {
+  margin-bottom: 8px;
+  color: var(--texto-secundario);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+dd {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.estado {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 20px;
+  background: #e9eee4;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+// En un ancho móvil los datos pasan debajo del código y conservan su orden de lectura.
+@media (max-width: 640px) {
+  .pagina-pacientes {
+    padding: 28px 22px;
+  }
+
+  .encabezado {
+    padding-bottom: 24px;
+  }
+
+  .navegacion {
+    margin: 16px 0;
+  }
+
+  .presentacion {
+    padding-bottom: 28px;
+  }
+
+  .introduccion {
+    font-size: 17px;
+  }
+
+  .paciente {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 22px 12px;
+    padding: 22px;
+  }
+
+  .identificacion {
+    grid-row: 1;
+    gap: 10px;
+  }
+
+  .paciente-icono {
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+  }
+
+  h2 {
+    font-size: 20px;
+  }
+
+  .proxima-sesion {
+    font-size: 12px;
+    letter-spacing: normal;
+  }
+
+  .datos-paciente {
+    grid-column: 1 / -1;
+    gap: 16px;
+  }
+}

@@ -1,0 +1,216 @@
+:host {
+  --verde-oscuro: #284b41;
+  --texto-secundario: #626b62;
+}
+
+ion-content {
+  --background: #f7f6f0;
+  --color: var(--verde-oscuro);
+}
+
+// Repetimos las medidas de las pantallas actuales para conservar su identidad visual.
+.pagina-ficha {
+  width: min(100%, 1040px);
+  margin: 0 auto;
+  padding: 40px 40px 36px;
+}
+
+.encabezado {
+  padding-bottom: 30px;
+  border-bottom: 1px solid #dce1d7;
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.marca-simbolo {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border: 1px solid #cbd6c8;
+  border-radius: 17px;
+  background: #e9eee4;
+  font-family: Georgia, serif;
+  font-size: 36px;
+}
+
+.marca-nombre {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+
+.marca-descripcion {
+  margin: 5px 0 0;
+  color: var(--texto-secundario);
+  font-size: 13px;
+}
+
+.navegacion {
+  display: flex;
+  margin: 24px 0 18px;
+}
+
+ion-back-button {
+  min-height: 44px;
+  --color: var(--verde-oscuro);
+  --padding-start: 0;
+  --padding-end: 12px;
+  --border-radius: 10px;
+  font-size: 16px;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+ion-back-button::part(native):focus-visible {
+  outline: 3px solid #945f46;
+  outline-offset: 4px;
+}
+
+.presentacion {
+  padding-bottom: 34px;
+}
+
+.etiqueta {
+  margin: 0 0 14px;
+  color: var(--texto-secundario);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.titulo-ficha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(42px, 6vw, 56px);
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 1.1;
+}
+
+.estado {
+  padding: 5px 14px;
+  border-radius: 20px;
+  background: #e9eee4;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.datos-tratamiento,
+.motivo-consulta,
+.post-it {
+  margin-bottom: 20px;
+  padding: 28px;
+  border: 1px solid #d8dfd2;
+  border-radius: 22px;
+  background: #fdfdf8;
+}
+
+h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.datos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px 28px;
+  margin: 24px 0 0;
+}
+
+.fecha-inicio {
+  grid-column: 1 / -1;
+}
+
+dt {
+  margin-bottom: 8px;
+  color: var(--texto-secundario);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+dd {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.motivo-consulta p,
+.post-it p,
+.no-encontrado > p:last-child {
+  margin: 16px 0 0;
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+// El fondo terracota ya existe en Inicio; aquí permite reconocer la nota breve.
+.post-it {
+  border-color: #e4d6cb;
+  background: #f3eae2;
+}
+
+.post-it-encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.post-it-encabezado ion-icon {
+  flex-shrink: 0;
+  color: #945f46;
+  font-size: 24px;
+}
+
+@media (max-width: 640px) {
+  .pagina-ficha {
+    padding: 28px 22px;
+  }
+
+  .encabezado {
+    padding-bottom: 24px;
+  }
+
+  .navegacion {
+    margin: 16px 0;
+  }
+
+  .presentacion {
+    padding-bottom: 28px;
+  }
+
+  .datos-tratamiento,
+  .motivo-consulta,
+  .post-it {
+    padding: 22px;
+    margin-bottom: 16px;
+  }
+
+  .datos {
+    gap: 22px 16px;
+  }
+
+  h2 {
+    font-size: 18px;
+  }
+
+  .motivo-consulta p,
+  .post-it p {
+    font-size: 16px;
+  }
+}

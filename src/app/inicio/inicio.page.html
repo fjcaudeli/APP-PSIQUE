@@ -1,0 +1,70 @@
+<ion-content>
+  <div class="pagina-inicio">
+    <header class="encabezado">
+      <div class="marca">
+        <span class="marca-simbolo" aria-hidden="true">Ψ</span>
+        <div>
+          <p class="marca-nombre">PSIQUE</p>
+          <p class="marca-descripcion">Seguimiento psicoterapéutico</p>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="bienvenida" aria-labelledby="titulo-inicio">
+        <p class="etiqueta">Tu espacio profesional</p>
+        <h1 id="titulo-inicio">Inicio</h1>
+        <p class="introduccion">Tu consultorio, de un vistazo.</p>
+      </section>
+
+      <!-- Las cuatro tarjetas comparten el resumen recibido mediante AsyncPipe. -->
+      @if (resumen$ | async; as resumen) {
+        <section class="indicadores" aria-label="Resumen del consultorio">
+          <article class="indicador indicador-pacientes" aria-labelledby="titulo-pacientes">
+            <div class="indicador-encabezado">
+              <h2 id="titulo-pacientes">Pacientes activos</h2>
+              <span class="indicador-icono">
+                <ion-icon [icon]="iconoPacientes" aria-hidden="true"></ion-icon>
+              </span>
+            </div>
+            <p class="indicador-valor">{{ resumen.pacientesActivos }}</p>
+            <p class="indicador-descripcion">Tratamientos en curso</p>
+          </article>
+
+          <article class="indicador indicador-sesiones" aria-labelledby="titulo-sesiones">
+            <div class="indicador-encabezado">
+              <h2 id="titulo-sesiones">Sesiones de la semana</h2>
+              <span class="indicador-icono">
+                <ion-icon [icon]="iconoSesiones" aria-hidden="true"></ion-icon>
+              </span>
+            </div>
+            <p class="indicador-valor">{{ resumen.sesionesSemana }}</p>
+            <p class="indicador-descripcion">Actividad semanal del consultorio</p>
+          </article>
+
+          <article class="indicador indicador-cobros" aria-labelledby="titulo-cobros">
+            <div class="indicador-encabezado">
+              <h2 id="titulo-cobros">Pendientes de cobro</h2>
+              <span class="indicador-icono">
+                <ion-icon [icon]="iconoCobros" aria-hidden="true"></ion-icon>
+              </span>
+            </div>
+            <p class="indicador-valor">{{ resumen.pendientesCobro }}</p>
+            <p class="indicador-descripcion">Sesiones pendientes de pago</p>
+          </article>
+
+          <article class="indicador indicador-horarios" aria-labelledby="titulo-horarios">
+            <div class="indicador-encabezado">
+              <h2 id="titulo-horarios">Horarios disponibles</h2>
+              <span class="indicador-icono">
+                <ion-icon [icon]="iconoHorarios" aria-hidden="true"></ion-icon>
+              </span>
+            </div>
+            <p class="indicador-valor">{{ resumen.horariosDisponibles }}</p>
+            <p class="indicador-descripcion">Disponibles esta semana</p>
+          </article>
+        </section>
+      }
+    </main>
+  </div>
+</ion-content>

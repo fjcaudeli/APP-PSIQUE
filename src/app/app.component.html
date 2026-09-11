@@ -1,0 +1,42 @@
+<ion-app>
+  <!-- El contenido ocupa el espacio disponible; la barra tiene su propia altura. -->
+  <div class="area-pantallas">
+    <ion-router-outlet></ion-router-outlet>
+  </div>
+
+  <ion-footer class="barra-inferior ion-no-border">
+    <!-- routerDirection="root" abre la sección principal.
+         RouterLinkActive marca la sección de la URL actual, incluso tras una recarga. -->
+    <nav class="navegacion-principal" aria-label="Secciones principales">
+      <a
+        routerLink="/inicio"
+        routerDirection="root"
+        routerLinkActive="activo"
+        [routerLinkActiveOptions]="{ exact: true }"
+        ariaCurrentWhenActive="page"
+      >
+        <ion-icon [icon]="iconoInicio" aria-hidden="true"></ion-icon>
+        <span>Inicio</span>
+      </a>
+      <!-- El enlace Pacientes también queda activo cuando se consulta una ficha. -->
+      <a
+        routerLink="/pacientes"
+        routerDirection="root"
+        routerLinkActive="activo"
+        ariaCurrentWhenActive="page"
+      >
+        <ion-icon [icon]="iconoPacientes" aria-hidden="true"></ion-icon>
+        <span>Pacientes</span>
+      </a>
+      <a
+        routerLink="/agenda"
+        routerDirection="root"
+        routerLinkActive="activo"
+        ariaCurrentWhenActive="page"
+      >
+        <ion-icon [icon]="iconoAgenda" aria-hidden="true"></ion-icon>
+        <span>Agenda</span>
+      </a>
+    </nav>
+  </ion-footer>
+</ion-app>

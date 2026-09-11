@@ -1,0 +1,80 @@
+<ion-content>
+  <div class="pagina-pacientes">
+    <header class="encabezado">
+      <div class="marca">
+        <span class="marca-simbolo" aria-hidden="true">Ψ</span>
+        <div>
+          <p class="marca-nombre">PSIQUE</p>
+          <p class="marca-descripcion">Seguimiento psicoterapéutico</p>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- Si se abre /pacientes directamente, defaultHref permite volver a Inicio
+           aunque todavía no exista una pantalla anterior en la navegación de Ionic. -->
+      <nav class="navegacion" aria-label="Volver al inicio">
+        <ion-back-button
+          defaultHref="/inicio"
+          text="Inicio"
+          [icon]="iconoVolver"
+          aria-label="Volver a Inicio"
+        ></ion-back-button>
+      </nav>
+
+      <section class="presentacion" aria-labelledby="titulo-pacientes">
+        <p class="etiqueta">Tu espacio profesional</p>
+        <h1 id="titulo-pacientes">Pacientes</h1>
+        <p class="introduccion">Tus pacientes, en un solo lugar.</p>
+      </section>
+
+      <!-- @for crea una fila por paciente; track usa su código para identificarla. -->
+      <ul class="lista-pacientes" aria-label="Listado de pacientes">
+        @for (paciente of pacientes$ | async; track paciente.codigo) {
+          <li>
+            <!-- Cada tarjeta es un enlace accesible; el código viaja como parte de la URL. -->
+            <a
+              class="paciente"
+              [routerLink]="['/pacientes', paciente.codigo]"
+              routerDirection="forward"
+              [attr.aria-label]="'Ver ficha de ' + paciente.codigo"
+            >
+              <div class="identificacion">
+                <span class="paciente-icono">
+                  <ion-icon [icon]="iconoPaciente" aria-hidden="true"></ion-icon>
+                </span>
+                <h2>{{ paciente.codigo }}</h2>
+              </div>
+
+              <!-- El horario es independiente del estado del tratamiento.
+                   Si no está definido, no mostramos ninguna etiqueta en ese lugar. -->
+              @if (paciente.proximaSesion) {
+                <p class="proxima-sesion">
+                  <span class="texto-accesible">Próxima sesión: </span>
+                  {{ paciente.proximaSesion }}
+                </p>
+              }
+
+              <dl class="datos-paciente">
+                <div>
+                  <dt>Modalidad</dt>
+                  <dd>{{ paciente.modalidad }}</dd>
+                </div>
+                <div>
+                  <dt>Estado del tratamiento</dt>
+                  <dd><span class="estado">{{ paciente.estado }}</span></dd>
+                </div>
+              </dl>
+
+              <!-- La fecha se conserva en formato ISO y DatePipe cambia solo su presentación. -->
+              <p class="fecha-creacion">
+                Creado el
+                <time [attr.datetime]="paciente.fechaCreacion">{{ paciente.fechaCreacion | date: 'dd/MM/yyyy' }}</time>
+              </p>
+            </a>
+          </li>
+        }
+      </ul>
+    </main>
+  </div>
+</ion-content>

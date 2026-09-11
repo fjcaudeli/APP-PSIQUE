@@ -1,0 +1,83 @@
+<ion-content>
+  <div class="pagina-agenda">
+    <header class="encabezado">
+      <div class="marca">
+        <span class="marca-simbolo" aria-hidden="true">Ψ</span>
+        <div>
+          <p class="marca-nombre">PSIQUE</p>
+          <p class="marca-descripcion">Seguimiento psicoterapéutico</p>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="presentacion" aria-labelledby="titulo-agenda">
+        <p class="etiqueta">Tu espacio profesional</p>
+        <h1 id="titulo-agenda">Agenda</h1>
+        <p class="introduccion">Tus sesiones y horarios disponibles.</p>
+      </section>
+
+      @if (semana$ | async; as semana) {
+        <section class="semana" aria-labelledby="titulo-semana">
+          <h2 id="titulo-semana">{{ semana.titulo }}</h2>
+
+          <!-- Cada botón conserva su posición en el arreglo para seleccionar el día. -->
+          <div class="selector-dias" role="group" aria-label="Días de la semana">
+            @for (dia of semana.dias; track dia.fecha; let indice = $index) {
+              <button
+                type="button"
+                class="dia"
+                [class.seleccionado]="indiceDiaSeleccionado === indice"
+                [attr.aria-pressed]="indiceDiaSeleccionado === indice"
+                [attr.aria-label]="dia.nombre + ' ' + (dia.fecha | date: 'dd/MM/yyyy')"
+                [attr.data-fecha]="dia.fecha"
+                aria-controls="turnos-del-dia"
+                (click)="seleccionarDia(indice)"
+              >
+                <span class="dia-nombre">{{ dia.nombre.slice(0, 3) }}</span>
+                <time [attr.datetime]="dia.fecha">{{ dia.fecha | date: 'dd' }}</time>
+              </button>
+            }
+          </div>
+        </section>
+
+        <!-- La lista usa el día elegido dentro de la misma semana recibida del servicio. -->
+        <section id="turnos-del-dia" class="turnos-dia" aria-live="polite" aria-labelledby="titulo-dia">
+          @if (semana.dias[indiceDiaSeleccionado]; as diaSeleccionado) {
+            <div class="encabezado-dia">
+              <h2 id="titulo-dia">{{ diaSeleccionado.nombre }}</h2>
+              <time [attr.datetime]="diaSeleccionado.fecha">{{ diaSeleccionado.fecha | date: 'dd/MM/yyyy' }}</time>
+            </div>
+
+            <ul class="lista-turnos" [attr.aria-label]="'Horarios del ' + diaSeleccionado.nombre">
+              @for (turno of diaSeleccionado.turnos; track turno.horario) {
+                <li class="turno" [class.turno-liberado]="turno.estado === 'Liberado'">
+                  <time class="horario" [attr.datetime]="turno.horario">{{ turno.horario }}</time>
+
+                  <div class="datos-turno">
+                    @if (turno.estado === 'Programado') {
+                      <h3>{{ turno.codigoPaciente }}</h3>
+                      <p>{{ turno.modalidad }}</p>
+                    } @else {
+                      <h3 class="disponible">Disponible</h3>
+                    }
+                  </div>
+
+                  @if (turno.estado === 'Programado') {
+                    <span class="estado">Programado</span>
+                  } @else if (turno.estado === 'Liberado') {
+                    <!-- Esta etiqueta representa el concepto; no ejecuta una cancelación. -->
+                    <span class="estado estado-liberado">Horario liberado</span>
+                  }
+                </li>
+              } @empty {
+                <!-- Un día sin registros también tiene una presentación comprensible. -->
+                <li class="sin-horarios">Sin horarios cargados para este día.</li>
+              }
+            </ul>
+          }
+        </section>
+      }
+    </main>
+  </div>
+</ion-content>

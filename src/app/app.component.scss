@@ -1,0 +1,67 @@
+ion-app {
+  display: flex;
+  flex-direction: column;
+}
+
+// El outlet de Ionic se posiciona dentro de este contenedor, por encima de la barra.
+// Así cada pantalla conserva su propio scroll sin ocultar el último contenido.
+.area-pantallas {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.barra-inferior {
+  flex-shrink: 0;
+  border-top: 1px solid #dce1d7;
+  background: #f7f6f0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.navegacion-principal {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  width: min(100%, 1040px);
+  margin: 0 auto;
+  padding: 8px 40px;
+}
+
+.navegacion-principal a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 52px;
+  padding: 5px 8px;
+  border-radius: 14px;
+  color: #626b62;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-decoration: none;
+}
+
+.navegacion-principal ion-icon {
+  font-size: 22px;
+}
+
+.navegacion-principal a:hover,
+.navegacion-principal a.activo {
+  background: #e9eee4;
+  color: #284b41;
+}
+
+.navegacion-principal a:focus-visible {
+  outline: 3px solid #945f46;
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .navegacion-principal {
+    gap: 8px;
+    padding: 8px 22px;
+  }
+}

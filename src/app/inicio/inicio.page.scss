@@ -1,0 +1,267 @@
+:host {
+  --verde-oscuro: #284b41;
+  --texto-secundario: #626b62;
+}
+
+ion-content {
+  --background: #f7f6f0;
+  --color: var(--verde-oscuro);
+}
+
+// Limitamos el ancho para que la pantalla siga siendo legible al proyectarla.
+.pagina-inicio {
+  width: min(100%, 1040px);
+  margin: 0 auto;
+  padding: 40px 40px 28px;
+}
+
+.encabezado {
+  padding-bottom: 30px;
+  border-bottom: 1px solid #dce1d7;
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.marca-simbolo {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border: 1px solid #cbd6c8;
+  border-radius: 17px;
+  background: #e9eee4;
+  font-family: Georgia, serif;
+  font-size: 36px;
+}
+
+.marca-nombre {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+
+.marca-descripcion {
+  margin: 5px 0 0;
+  color: var(--texto-secundario);
+  font-size: 13px;
+}
+
+.bienvenida {
+  padding: 52px 0 34px;
+}
+
+.etiqueta {
+  margin: 0 0 14px;
+  color: var(--texto-secundario);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(42px, 6vw, 56px);
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 1.1;
+}
+
+.introduccion {
+  margin: 18px 0 0;
+  color: var(--texto-secundario);
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+// La grilla forma un 2 x 2 en PC y conserva la misma altura para las cuatro tarjetas.
+.indicadores {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+  gap: 20px;
+}
+
+.indicador {
+  padding: 28px;
+  border: 1px solid #cdd8c9;
+  border-radius: 24px;
+}
+
+.indicador-pacientes {
+  background: #e9eee4;
+}
+
+.indicador-sesiones {
+  border-color: #e4d6cb;
+  background: #f3eae2;
+}
+
+.indicador-cobros {
+  border-color: #e1dbc9;
+  background: #f1eddf;
+}
+
+.indicador-horarios {
+  border-color: #cfdad5;
+  background: #e9efeb;
+}
+
+.indicador-encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.indicador-icono {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: 1px solid #cbd7c7;
+  border-radius: 14px;
+  background: #f5f7f0;
+  font-size: 24px;
+}
+
+.indicador-sesiones .indicador-icono {
+  border-color: #e4cfc0;
+  background: #fff8f1;
+  color: #945f46;
+}
+
+.indicador-cobros .indicador-icono {
+  border-color: #ded5bd;
+  background: #faf7ed;
+  color: #786649;
+}
+
+.indicador-horarios .indicador-icono {
+  border-color: #cbd8d0;
+  background: #f4f8f5;
+  color: #4f6b60;
+}
+
+.indicador-valor {
+  margin: 30px 0 10px;
+  font-size: 76px;
+  font-weight: 500;
+  letter-spacing: -0.065em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.indicador-descripcion {
+  margin: 0;
+  color: #55624f;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.indicador-sesiones .indicador-descripcion {
+  color: #77604f;
+}
+
+.indicador-cobros .indicador-descripcion {
+  color: #70634f;
+}
+
+.indicador-horarios .indicador-descripcion {
+  color: #55685e;
+}
+
+.accesos {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 28px;
+}
+
+.acceso-pacientes {
+  min-height: 50px;
+  margin: 0;
+  --border-radius: 14px;
+  --box-shadow: none;
+  --padding-start: 24px;
+  --padding-end: 24px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.acceso-pacientes::part(native):focus-visible {
+  outline: 3px solid #945f46;
+  outline-offset: 4px;
+}
+
+.pie {
+  padding-top: 28px;
+}
+
+.pie p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--texto-secundario);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.punto-prototipo {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a8785b;
+}
+
+@media (max-width: 640px) {
+  .pagina-inicio {
+    padding: 28px 22px;
+  }
+
+  .encabezado {
+    padding-bottom: 24px;
+  }
+
+  .bienvenida {
+    padding: 36px 0 28px;
+  }
+
+  .indicadores {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .indicador {
+    padding: 23px;
+  }
+
+  .indicador-valor {
+    margin-top: 24px;
+    font-size: 64px;
+  }
+
+  .introduccion {
+    font-size: 17px;
+  }
+
+  .acceso-pacientes {
+    width: 100%;
+  }
+}

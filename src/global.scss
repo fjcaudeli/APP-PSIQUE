@@ -1,0 +1,22 @@
+/* Estilos base necesarios para que los componentes de Ionic se distribuyan bien. */
+@import '@ionic/angular/css/core.css';
+@import '@ionic/angular/css/normalize.css';
+@import '@ionic/angular/css/structure.css';
+@import '@ionic/angular/css/typography.css';
+
+/* La tipografía del sistema permite presentar la app sin descargar fuentes externas. */
+:root {
+  color-scheme: light;
+  --ion-font-family: 'Segoe UI', system-ui, sans-serif;
+  --ion-background-color: #f5f3ec;
+  --ion-text-color: #294c43;
+  --ion-color-primary: #355b4e;
+  --ion-color-primary-rgb: 53, 91, 78;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-shade: #2f5045;
+  --ion-color-primary-tint: #496b60;
+}
+
+body {
+  margin: 0;
+}

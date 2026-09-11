@@ -1,0 +1,282 @@
+:host {
+  --verde-oscuro: #284b41;
+  --texto-secundario: #626b62;
+}
+
+ion-content {
+  --background: #f7f6f0;
+  --color: var(--verde-oscuro);
+}
+
+// Conservamos el ancho, la marca y los espacios de las pantallas existentes.
+.pagina-agenda {
+  width: min(100%, 1040px);
+  margin: 0 auto;
+  padding: 40px 40px 36px;
+}
+
+.encabezado {
+  padding-bottom: 30px;
+  border-bottom: 1px solid #dce1d7;
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.marca-simbolo {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border: 1px solid #cbd6c8;
+  border-radius: 17px;
+  background: #e9eee4;
+  font-family: Georgia, serif;
+  font-size: 36px;
+}
+
+.marca-nombre {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+
+.marca-descripcion {
+  margin: 5px 0 0;
+  color: var(--texto-secundario);
+  font-size: 13px;
+}
+
+.presentacion {
+  padding: 52px 0 34px;
+}
+
+.etiqueta {
+  margin: 0 0 14px;
+  color: var(--texto-secundario);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(42px, 6vw, 56px);
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 1.1;
+}
+
+.introduccion {
+  margin: 18px 0 0;
+  color: var(--texto-secundario);
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.selector-dias {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.dia {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 82px;
+  padding: 14px 4px;
+  border: 1px solid #d8dfd2;
+  border-radius: 16px;
+  background: #fdfdf8;
+  color: var(--verde-oscuro);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.dia:hover {
+  border-color: #98ac96;
+}
+
+.dia:focus-visible {
+  outline: 3px solid #945f46;
+  outline-offset: 3px;
+}
+
+.dia.seleccionado {
+  border-color: var(--verde-oscuro);
+  background: var(--verde-oscuro);
+  color: #fdfdf8;
+}
+
+.dia-nombre {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.dia time {
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.turnos-dia {
+  margin-top: 32px;
+}
+
+.encabezado-dia {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.encabezado-dia time {
+  color: var(--texto-secundario);
+  font-size: 14px;
+}
+
+.lista-turnos {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.turno {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  min-height: 94px;
+  padding: 20px 26px;
+  border: 1px solid #d8dfd2;
+  border-radius: 22px;
+  background: #fdfdf8;
+}
+
+.horario {
+  font-size: 19px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.datos-turno p {
+  margin: 5px 0 0;
+  color: var(--texto-secundario);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.disponible {
+  color: var(--texto-secundario);
+  font-size: 18px;
+  font-weight: 400;
+}
+
+.estado {
+  justify-self: start;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: #e9eee4;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+// El terracota destaca el horario liberado sin convertir la fila en una acción.
+.turno-liberado {
+  border-color: #e4d6cb;
+  background: #fff8f1;
+}
+
+.estado-liberado {
+  background: #f3eae2;
+  color: #945f46;
+}
+
+.sin-horarios {
+  padding: 26px;
+  border: 1px solid #d8dfd2;
+  border-radius: 22px;
+  background: #fdfdf8;
+  color: var(--texto-secundario);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+// Los siete días siguen visibles en móvil; las etiquetas pasan debajo del detalle.
+@media (max-width: 640px) {
+  .pagina-agenda {
+    padding: 28px 22px;
+  }
+
+  .encabezado {
+    padding-bottom: 24px;
+  }
+
+  .presentacion {
+    padding: 36px 0 28px;
+  }
+
+  .introduccion {
+    font-size: 17px;
+  }
+
+  .semana h2 {
+    font-size: 17px;
+  }
+
+  .selector-dias {
+    gap: 4px;
+  }
+
+  .dia {
+    min-height: 68px;
+    padding: 12px 2px;
+    border-radius: 12px;
+  }
+
+  .dia-nombre {
+    font-size: 10px;
+  }
+
+  .dia time {
+    font-size: 19px;
+  }
+
+  .turno {
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 12px;
+    padding: 20px 18px;
+  }
+
+  .estado {
+    grid-column: 2;
+  }
+}
