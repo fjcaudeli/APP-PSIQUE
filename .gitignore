@@ -3,6 +3,16 @@
 /www/
 /dist/
 /out-tsc/
+/backend/node_modules/
+/backend/dist/
+/backend/data/
+.env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
 *.log
 .DS_Store
 Thumbs.db

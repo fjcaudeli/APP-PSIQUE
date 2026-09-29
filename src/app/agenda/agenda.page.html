@@ -17,7 +17,12 @@
         <p class="introduccion">Tus sesiones y horarios disponibles.</p>
       </section>
 
-      @if (semana$ | async; as semana) {
+      @let semana = semana$ | async;
+      @if (cargando) {
+        <p class="introduccion" role="status">Cargando agenda...</p>
+      } @else if (errorCarga) {
+        <p class="introduccion" role="alert">No se pudo cargar la agenda. Recargá la página para volver a intentar.</p>
+      } @else if (semana) {
         <section class="semana" aria-labelledby="titulo-semana">
           <h2 id="titulo-semana">{{ semana.titulo }}</h2>
 

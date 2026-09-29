@@ -1,14 +1,16 @@
-import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { RESUMEN_DASHBOARD_MOCK } from '../data/dashboard.mock';
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { API_BASE_URL } from '../api.config';
 import { ResumenDashboard } from '../models/dashboard';
 
-// Inicio solicita el resumen al servicio sin conocer su origen.
-// Aquí se podrá reemplazar el mock por una consulta a la API en una etapa futura.
+// Inicio mantiene su contrato: recibe los cuatro indicadores como Observable.
+// La API los lee de SQLite; todavía no se calculan a partir de otros registros.
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
+  private readonly http = inject(HttpClient);
+
   obtenerResumen(): Observable<ResumenDashboard> {
-    // of entrega los cuatro números de ejemplo y finaliza; no hace una llamada HTTP.
-    return of(RESUMEN_DASHBOARD_MOCK);
+    return this.http.get<ResumenDashboard>(`${API_BASE_URL}/dashboard`);
   }
 }

@@ -1,223 +1,196 @@
 # PSIQUE
 
-Prototipo de PSIQUE con pantallas **Inicio**, **Pacientes**, **Ficha del paciente**
-y **Agenda**, desarrolladas con Ionic y Angular para mostrar en el navegador de la
-PC, con un diseño adaptable a pantallas pequeñas. El ajuste actual amplía Inicio
-a cuatro indicadores y separa sus datos en un servicio sencillo. La agenda semanal
-de ejemplo y la navegación inferior común siguen
-disponibles. Los datos del Dashboard, de pacientes y de agenda se consultan mediante
-servicios separados de las pantallas.
+Aplicación de seguimiento psicoterapéutico y administración de consultorio, con
+frontend Ionic y Angular, API REST en Node.js, Express y TypeScript, y persistencia
+local en SQLite.
 
-## Cómo abrirlo
+Esta etapa cambia el origen de los datos. Se conservan las pantallas **Inicio**,
+**Pacientes**, **Ficha del paciente** y **Agenda**, su diseño y los recorridos de
+consulta. Los datos de ejemplo ahora se inicializan en el backend y se consultan
+por HTTP. No se incorporan nuevas funciones de administración.
 
-En una terminal de PowerShell, dentro de esta carpeta:
+## Arquitectura actual
+
+```text
+Pantalla de Angular
+        ↓
+PacientesService / AgendaService / DashboardService
+        ↓
+HttpClient → GET http://127.0.0.1:3000/api/...
+        ↓
+Express → consulta SQL → archivo SQLite
+        ↓
+Respuesta JSON → Observable → AsyncPipe → pantalla
+```
+
+El frontend se ejecuta en el navegador. El backend es un proceso separado que
+recibe solicitudes y consulta SQLite. La base es un archivo local del backend:
+sus registros permanecen al cerrar el navegador o reiniciar los procesos.
+
+Los datos siguen siendo **ficticios**, pero las solicitudes HTTP y la persistencia
+son reales. Esta versión no está preparada para almacenar información clínica real.
+
+## CÓMO EJECUTAR FRONTEND Y BACKEND
+
+Se necesitan dos terminales de PowerShell. Los ejemplos parten de la carpeta
+`APP-PSIQUE`; si abrís el proyecto desde otro lugar, ubicá primero cada terminal
+en la ruta indicada.
+
+El entorno utilizado es **Node.js 24.14.1, npm 11.11.0, Windows x64**. El backend
+utiliza Express 5 y `better-sqlite3` 13.0.3 para acceder a SQLite. No hace falta
+instalar un servidor SQLite por separado, Angular CLI o Ionic de forma global.
+
+Se eligió `better-sqlite3` por su API directa y porque incluye un binario para
+Windows x64, instalado y probado en este entorno sin herramientas de compilación
+nativa adicionales. Las [notas oficiales de la versión 13](https://github.com/WiseLibs/better-sqlite3/releases/tag/v13.0.0)
+documentan esos binarios. El módulo integrado `node:sqlite` todavía figura como
+experimental en la [documentación de Node 24.14.1](https://raw.githubusercontent.com/nodejs/node/v24.14.1/doc/api/sqlite.md),
+por lo que no se utiliza en este backend.
+El backend declara Node 24.x desde la versión 24.14.1; este requisito se debe
+respetar aunque el frontend admita también otras versiones de Node.
+
+### Terminal 1: backend
+
+Desde la raíz del proyecto:
+
+```powershell
+Set-Location .\backend
+npm.cmd install
+npm.cmd run dev
+```
+
+El servidor escucha en **http://127.0.0.1:3000**. Al iniciar, crea la carpeta y
+el archivo `backend/data/psique.sqlite` si faltan, prepara las tablas y carga los
+datos iniciales únicamente cuando la base está vacía. No hay que ejecutar un
+comando de seed adicional.
+
+`npm.cmd run dev` utiliza Node con `--watch`: ejecuta el TypeScript compatible
+con Node y reinicia el proceso al cambiar sus archivos. Este modo no reemplaza
+la comprobación de tipos; para eso se ejecuta la compilación.
+
+### Terminal 2: frontend
+
+Desde la raíz del proyecto, sin entrar en `backend`:
 
 ```powershell
 npm.cmd install
 npm.cmd start
 ```
 
-La instalación solo es necesaria la primera vez o cuando cambien las dependencias.
-Abrí **http://127.0.0.1:4200** en el navegador. Para detener el servidor, presioná
-`Ctrl+C` en la terminal. Usamos `npm.cmd` para evitar restricciones de scripts de
-PowerShell; no hace falta instalar Angular ni Ionic de forma global.
+Abrí **http://127.0.0.1:4200**. Mantené ambas terminales abiertas: Angular sirve
+la interfaz y Express proporciona los datos. Para detener cada proceso,
+presioná `Ctrl+C` en su terminal.
 
-## Qué incluye este paso
+Las instalaciones son necesarias la primera vez o cuando cambian las dependencias.
+La raíz y `backend` tienen sus propios `package.json`, archivos de bloqueo y
+carpetas `node_modules`. Usamos `npm.cmd` para evitar restricciones de scripts
+de PowerShell.
 
-- La ruta `/inicio`, que también se abre al ingresar a la dirección principal.
-- La marca PSIQUE y cuatro indicadores: 3 pacientes activos, 8 sesiones de la
-  semana, 2 pendientes de cobro y 4 horarios disponibles.
-- Cuatro tarjetas de igual altura, en una grilla de 2 × 2 en escritorio y apiladas
-  en una columna en pantallas pequeñas, con iconos de personas, calendario, tarjeta
-  y reloj de Ionicons.
-- El acceso **Ver pacientes**, que lleva a `/pacientes`.
-- Un listado de tres pacientes identificados por código, con modalidad y estado
-  del tratamiento.
-- En cada tarjeta, el horario de la próxima sesión en el sector superior derecho
-  cuando está disponible, y la fecha de creación en tamaño pequeño abajo a la derecha.
-- El botón **Inicio** para regresar desde Pacientes.
-- Tarjetas seleccionables que abren la ficha del paciente, por ejemplo en
-  `/pacientes/P-001`.
-- Una ficha con código, estado, modalidad, frecuencia, día y horario habitual,
-  fecha de inicio del tratamiento, motivo de consulta y Post-it de próxima sesión.
-  El Post-it se distingue visualmente con el color terracota de PSIQUE.
-- El botón **Pacientes** para regresar desde la ficha y un mensaje
-  **Paciente no encontrado** cuando el código de la dirección no existe.
-- La ruta `/agenda`, con una semana de ejemplo, selección de día y una lista
-  cronológica de sus horarios. Incluye turnos programados, disponibles y un
-  ejemplo visual de **Horario liberado**.
-- Una barra inferior con **Inicio**, **Pacientes** y **Agenda**, disponible también
-  en las fichas, que indica cuál es la sección actual.
+### Compilar, ejecutar el backend compilado y probar
 
-Los cuatro indicadores de Inicio son valores fijos de `RESUMEN_DASHBOARD_MOCK`, en
-`src/app/data/dashboard.mock.ts`. No se calculan a partir de `PacientesService` ni
-de `AgendaService`. El valor de 8 sesiones no representa un cálculo de la semana
-de Agenda, que contiene 2 turnos programados. Los 2 pendientes de cobro y los 4
-horarios disponibles tampoco provienen de pagos o de un cálculo de disponibilidad.
-Los pacientes también son ejemplos, guardados en `PACIENTES_MOCK`, dentro de
-`src/app/data/pacientes.mock.ts`:
+Dentro de `backend`:
 
-| Código | Modalidad | Estado | Próxima sesión | Fecha de creación |
-| --- | --- | --- | --- | --- |
-| P-001 | Presencial | Activo | LUN 15 HS | 01/09/2026 |
-| P-002 | Virtual | Activo | MIÉ 10:30 HS | 02/09/2026 |
-| P-003 | Presencial | Activo | Sin horario (`null`; no se muestra) | 05/09/2026 |
+```powershell
+npm.cmd run build
+npm.cmd start
+```
 
-Los horarios son textos de ejemplo, sin cálculo de fechas ni recurrencia. Las
-fechas de creación también son fijas; todavía no hay un formulario que cree
-pacientes. La falta de horario no cambia el estado del tratamiento: P-003 sigue
-activo aunque no tenga una próxima sesión asignada en este ejemplo.
+`build` comprueba los tipos y genera JavaScript en `backend/dist`. `start` ejecuta
+`dist/server.js`; requiere una compilación previa. Usá `dev` o `start`, uno por
+vez para el mismo puerto. Ninguno borra ni restaura los datos existentes.
 
-El archivo de mocks también contiene los datos de la ficha. P-001 tiene frecuencia
-semanal, los lunes a las 15:00; P-002, semanal, los miércoles a las 10:30; y P-003,
-quincenal, con día y horario habitual en `null`. La ficha presenta estos últimos
-como **Sin definir**. Cada paciente tiene su fecha de inicio de tratamiento, motivo
-de consulta y Post-it de ejemplo.
+Para las pruebas del backend, desde `backend`:
 
-Esta versión permite consultar el listado, las fichas y la agenda semanal. Todos
-los datos siguen siendo simulados: no hay llamadas HTTP, API, backend, base de datos
-ni persistencia. No se incluyen creación, edición, eliminación, historial,
-objetivos, pagos o formularios.
+```powershell
+npm.cmd test
+```
 
-## Cómo está organizado
+Este comando compila y ejecuta las pruebas de `test/api.test.mjs` con el ejecutor
+de pruebas de Node. Las pruebas utilizan bases temporales y no necesitan reemplazar
+el archivo de datos de desarrollo.
 
-| Archivo | Responsabilidad |
-| --- | --- |
-| `src/main.ts` | Inicia Angular. |
-| `src/app/app.config.ts` | Configura Ionic y el enrutador. |
-| `src/app/app.component.ts` | Contenedor de la aplicación: importa los elementos de navegación y define los iconos de la barra inferior. |
-| `src/app/app.component.html` | Organiza el área de pantallas y la barra inferior común con enlaces a Inicio, Pacientes y Agenda. |
-| `src/app/app.component.scss` | Distribuye el espacio entre pantalla y barra, y define sus estilos y la indicación de sección activa. |
-| `src/app/app.routes.ts` | Relaciona `/inicio`, `/pacientes`, `/pacientes/:codigo` y `/agenda` con sus pantallas; redirige la dirección principal a Inicio. |
-| `src/app/models/dashboard.ts` | Nuevo: declara `ResumenDashboard`, el contrato con los cuatro indicadores numéricos. |
-| `src/app/data/dashboard.mock.ts` | Nuevo: contiene `RESUMEN_DASHBOARD_MOCK`, con los valores fijos 3, 8, 2 y 4. |
-| `src/app/services/dashboard.service.ts` | Nuevo: entrega el resumen de ejemplo mediante `obtenerResumen()`. |
-| `src/app/inicio/inicio.page.ts` | Obtiene `DashboardService` mediante `inject`, expone `resumen$` y define los iconos. Los valores ya no están escritos dentro del componente. |
-| `src/app/inicio/inicio.page.html` | Recibe el resumen con `AsyncPipe` y muestra los cuatro indicadores, sus textos y los accesos existentes. |
-| `src/app/inicio/inicio.page.scss` | Conserva la identidad visual de Inicio y distribuye las cuatro tarjetas en una grilla adaptable de igual altura. |
-| `src/app/models/paciente.ts` | Declara la interfaz reutilizable `Paciente`, compartida por los mocks, el servicio y las pantallas. |
-| `src/app/data/pacientes.mock.ts` | Contiene `PACIENTES_MOCK`, el arreglo de tres pacientes con los datos de ejemplo solicitados. |
-| `src/app/services/pacientes.service.ts` | Ofrece consultas de todos los pacientes o de uno por código, usando los mocks. |
-| `src/app/pacientes/pacientes.page.ts` | Obtiene el servicio mediante `inject` y expone `pacientes$` para mostrar sus resultados. Ya no contiene el arreglo ni una interfaz local. |
-| `src/app/pacientes/pacientes.page.html` | Recibe los datos con `AsyncPipe`, muestra el listado y enlaza cada tarjeta con su ficha. Conserva el regreso a Inicio. |
-| `src/app/pacientes/pacientes.page.scss` | Mantiene el estilo visual de PSIQUE y adapta el listado al ancho disponible. |
-| `src/app/paciente-detalle/paciente-detalle.page.ts` | Lee el código desde la ruta y consulta el servicio para obtener ese paciente. |
-| `src/app/paciente-detalle/paciente-detalle.page.html` | Muestra los datos, el Post-it y el regreso a Pacientes; contempla un código inexistente. |
-| `src/app/paciente-detalle/paciente-detalle.page.scss` | Da estilo a la ficha y destaca el Post-it manteniendo colores, tipografía y adaptación de PSIQUE. |
-| `src/app/models/turno.ts` | Declara `Turno`, `DiaAgenda` y `SemanaAgenda`, las estructuras de datos de la agenda. |
-| `src/app/data/agenda.mock.ts` | Contiene `SEMANA_AGENDA_MOCK`, con los siete días de ejemplo y sus horarios ordenados. |
-| `src/app/services/agenda.service.ts` | Entrega la semana de ejemplo mediante `obtenerSemana()`. |
-| `src/app/agenda/agenda.page.ts` | Consulta el servicio y conserva el índice del día seleccionado. |
-| `src/app/agenda/agenda.page.html` | Muestra la semana, permite seleccionar un día y presenta sus turnos o la ausencia de horarios. |
-| `src/app/agenda/agenda.page.scss` | Da estilo a los días y turnos, diferencia sus estados y adapta la pantalla al ancho disponible. |
-| `src/global.scss` | Carga los estilos base de Ionic y la tipografía general. |
+Para compilar el frontend, desde la raíz:
 
-En este ajuste se agregaron tres archivos: modelo, mock y servicio del Dashboard.
-Se modificaron `inicio.page.ts`, `inicio.page.html`, `inicio.page.scss` y esta
-documentación. Se conservaron Pacientes, la ficha individual, Agenda y la
-navegación inferior. Los iconos utilizan Ionicons, que ya formaba parte del proyecto;
-no se agregaron dependencias.
+```powershell
+npm.cmd run build
+```
 
-## Cómo obtiene Inicio los indicadores
+La salida web queda en `www/browser`. Compilar el frontend no inicia Express
+ni incluye la base SQLite dentro de esa carpeta.
 
-Se mantienen **Pacientes activos** y **Sesiones de la semana**, y se agregan
-**Pendientes de cobro** y **Horarios disponibles**. Los cuatro tienen estos valores
-y textos secundarios:
+### Configuración local
 
-| Indicador | Valor mock | Texto secundario |
+El backend funciona con valores predeterminados. Si necesitás cambiarlos, creá
+`backend/.env` copiando `backend/.env.example` una vez, desde `backend`:
+
+```powershell
+Copy-Item -LiteralPath .env.example -Destination .env
+```
+
+No repitas la copia sobre un `.env` que ya personalizaste. Node carga ese archivo
+opcional con `--env-file-if-exists=.env` en los comandos `dev` y `start`.
+
+| Variable del backend | Valor predeterminado | Para qué sirve |
+| --- | --- | --- |
+| `PORT` | `3000` | Puerto de Express. |
+| `DB_PATH` | `data/psique.sqlite` | Archivo SQLite; una ruta relativa se resuelve desde `backend`. También admite una ruta absoluta. |
+| `FRONTEND_ORIGIN` | `http://127.0.0.1:4200` | Origen del navegador permitido por CORS. |
+
+El servidor se limita a `127.0.0.1` para esta etapa local. La URL de la API está
+centralizada en **`src/app/api.config.ts`**:
+
+```typescript
+export const API_BASE_URL = 'http://127.0.0.1:3000/api';
+```
+
+Si cambiás `PORT`, actualizá también esa URL. Si cambiás la dirección desde la que
+abrís Angular, ajustá `FRONTEND_ORIGIN`. `localhost` y `127.0.0.1` son orígenes
+distintos para el navegador; con la configuración inicial usá las direcciones
+`127.0.0.1` indicadas arriba.
+
+La base local, sus archivos auxiliares, `.env`, dependencias y compilaciones
+del backend no se versionan. El archivo de ejemplo de configuración sí se
+incluye y no contiene secretos. La instalación inicial requiere descargar
+dependencias; después, frontend, backend y SQLite funcionan localmente.
+
+## Pantallas y datos conservados
+
+Inicio mantiene cuatro tarjetas con igual altura, grilla de 2 × 2 en escritorio
+y una columna en pantallas pequeñas. Conserva colores, bordes, tipografía e
+iconos de personas, calendario, tarjeta y reloj de Ionicons.
+
+| Indicador | Valor almacenado | Texto secundario |
 | --- | --- | --- |
 | Pacientes activos | 3 | Tratamientos en curso |
 | Sesiones de la semana | 8 | Actividad semanal del consultorio |
 | Pendientes de cobro | 2 | Sesiones pendientes de pago |
 | Horarios disponibles | 4 | Disponibles esta semana |
 
-Las tarjetas son indicadores visuales de consulta, sin acciones al seleccionarlas.
-Conservan la paleta, los bordes redondeados, la tipografía y el espaciado de Inicio.
-En escritorio forman dos filas de dos tarjetas; en pantallas pequeñas se apilan.
+Estos cuatro números se almacenan en la tabla `dashboard`. **No se calculan**
+a partir de pacientes o turnos: Agenda contiene dos turnos programados y eso no
+modifica el valor 8. Tampoco hay lógica de pagos o cálculo real de disponibilidad.
 
-La interfaz `ResumenDashboard` describe cuatro propiedades de tipo `number`:
-`pacientesActivos`, `sesionesSemana`, `pendientesCobro` y `horariosDisponibles`.
-Los valores están en un objeto de ejemplo separado del componente. El flujo es:
+Pacientes conserva las tarjetas seleccionables, el horario de próxima sesión
+arriba a la derecha y la fecha de creación abajo a la derecha:
 
-```text
-Inicio → DashboardService.obtenerResumen() → RESUMEN_DASHBOARD_MOCK
-```
+| Código | Modalidad | Estado | Próxima sesión | Fecha de creación |
+| --- | --- | --- | --- | --- |
+| P-001 | Presencial | Activo | LUN 15 HS | 01/09/2026 |
+| P-002 | Virtual | Activo | MIÉ 10:30 HS | 02/09/2026 |
+| P-003 | Presencial | Activo | `null`; no se muestra | 05/09/2026 |
 
-`DashboardService` ofrece un único método, `obtenerResumen()`, que devuelve
-`Observable<ResumenDashboard>` mediante `of`. Emite el objeto de ejemplo y termina;
-no calcula métricas ni hace llamadas HTTP. Inicio obtiene el servicio con `inject`
-y expone su resultado en `resumen$`.
+Cada ficha mantiene código, estado, modalidad, frecuencia, día y horario habitual,
+fecha de inicio del tratamiento, motivo de consulta y Post-it destacado en terracota.
+P-001 tiene frecuencia semanal, lunes a las 15:00; P-002, semanal, miércoles a las
+10:30; P-003, quincenal, con día y horario en `null`, mostrados como **Sin definir**.
+Los textos y fechas iniciales son los mismos del prototipo anterior.
 
-En el HTML, `@if (resumen$ | async; as resumen)` recibe el objeto mediante
-`AsyncPipe` y lo deja disponible como `resumen` dentro del bloque. Cada tarjeta
-muestra su campo con interpolación, por ejemplo `{{ resumen.pendientesCobro }}`.
-Las etiquetas y los textos secundarios permanecen en la plantilla, mientras que
-los cuatro valores llegan a través del servicio.
+### Agenda
 
-Esta separación mantiene a Inicio concentrado en presentar el resumen. Más
-adelante, `DashboardService` podrá reemplazar el mock por una consulta a la API
-que entregue esos indicadores, conservando los campos de `ResumenDashboard` y
-el uso de Observables en la pantalla. La conexión HTTP, los cálculos reales y el
-manejo de carga y errores quedan para esa futura integración.
+La semana sigue siendo del **7 al 13 de septiembre de 2026**. No se convierte
+automáticamente en la semana actual.
 
-Los tres servicios tienen mocks independientes. El Dashboard no consulta los
-servicios de pacientes o agenda ni sincroniza sus valores con ellos. Este ajuste
-no implementa cobros, pagos, disponibilidad real, gráficos, nuevos botones ni
-otros indicadores.
-
-## Cómo llegan los datos a las pantallas
-
-El flujo actual es:
-
-```text
-Listado o ficha → PacientesService → PACIENTES_MOCK
-```
-
-`PacientesService` centraliza dos consultas:
-
-| Método | Resultado |
-| --- | --- |
-| `obtenerPacientes()` | `Observable<Paciente[]>`: emite el arreglo de pacientes de ejemplo. |
-| `obtenerPacientePorCodigo(codigo)` | `Observable<Paciente \| undefined>`: emite el paciente cuyo código coincide, o `undefined` si no existe. |
-
-La segunda consulta utiliza `find` para buscar en el arreglo. Ambas usan `of`, de
-RxJS, para entregar el resultado como un Observable. En este paso `of` emite el
-valor inmediatamente y termina: no simula una demora ni hace una petición de red.
-
-Los componentes solicitan datos al servicio y se ocupan de presentarlos. Ya no
-importan directamente el archivo de mocks. Más adelante, el mismo servicio podrá
-consultar una API con `HttpClient`, que también devuelve Observables:
-
-```text
-Listado o ficha → PacientesService → API/backend
-```
-
-Mantener los métodos y la estructura `Paciente` permitirá conservar la presentación
-y concentrar el cambio de origen de datos en el servicio. La conexión real requerirá
-configurar HTTP y definir cómo manejar carga, errores y respuestas del backend en
-esa etapa; esas partes todavía no están implementadas.
-
-## Cómo se abre una ficha
-
-1. Cada tarjeta usa un enlace con `RouterLink` para formar su dirección a partir
-   del código: P-001 lleva a `/pacientes/P-001`. `IonRouterLinkWithHref` integra
-   ese enlace con la navegación de Ionic.
-2. La ruta `pacientes/:codigo` identifica `codigo` como un parámetro variable y
-   carga el componente de detalle.
-3. La ficha recibe ese parámetro mediante `ActivatedRoute.paramMap` y lo utiliza
-   para llamar a `obtenerPacientePorCodigo` del servicio.
-4. El HTML recibe el resultado mediante `AsyncPipe`. Si existe el paciente,
-   muestra la ficha; si no existe, muestra **Paciente no encontrado**.
-5. `IonBackButton` permite regresar al listado. Su `defaultHref="/pacientes"`
-   mantiene ese regreso disponible incluso al abrir la URL de una ficha directamente.
-
-## Cómo funciona Agenda
-
-Agenda muestra la semana fija del **7 al 13 de septiembre de 2026**. Se utiliza una
-semana explícita de ejemplo; no se calcula la semana actual ni se generan turnos
-recurrentes a partir de los pacientes.
-
-| Día | Horarios del ejemplo, en orden |
+| Día | Horarios recibidos de la API, en orden |
 | --- | --- |
 | Lunes 7 | 09:00 Disponible; 11:00 Horario liberado; 15:00 P-001, Presencial, Programado. |
 | Martes 8 | 09:00, 11:00 y 15:00 Disponibles. |
@@ -227,97 +200,328 @@ recurrentes a partir de los pacientes.
 | Sábado 12 | Sin horarios cargados. |
 | Domingo 13 | Sin horarios cargados. |
 
-P-001 y P-002 conservan los días, horas y modalidades de sus fichas. P-003 sigue
-sin horario asignado. Esta coincidencia está escrita en los mocks; todavía no hay
-sincronización automática entre los servicios de pacientes y agenda.
+P-003 permanece sin turno asignado. **Horario liberado** representa visualmente
+el concepto; no existe una operación de cancelación o reasignación.
 
-### Modelos de la agenda
+La API entrega la semana completa. `indiceDiaSeleccionado` comienza en `0`,
+correspondiente al lunes. El evento `(click)="seleccionarDia(indice)"` cambia esa
+posición y Angular presenta `semana.dias[indiceDiaSeleccionado]`. Seleccionar
+otro día no envía otra solicitud ni modifica SQLite: es estado de la interfaz.
 
-Las tres interfaces están en `models/turno.ts`:
+`DatePipe` muestra el número de día y las fechas con formato `dd/MM/yyyy`.
+`@for` presenta los turnos y `@empty` muestra **Sin horarios cargados para este día.**
+cuando el arreglo está vacío. Un día sin registros no equivale a un día con
+horarios disponibles.
 
-| Interfaz | Responsabilidad |
-| --- | --- |
-| `Turno` | Representa un horario y, cuando corresponde, su paciente y modalidad. |
-| `DiaAgenda` | Agrupa `fecha` en formato `YYYY-MM-DD`, `nombre` del día y `turnos`, un arreglo de `Turno`. |
-| `SemanaAgenda` | Agrupa `titulo` de la semana y `dias`, un arreglo de `DiaAgenda`. |
+### Navegación
 
-Cada `Turno` contiene únicamente estos campos:
+La barra inferior conserva **Inicio**, **Pacientes** y **Agenda**. Para el
+recorrido de consulta, elegí **Pacientes** en esa barra y luego una tarjeta:
+**Inicio → Pacientes → Ficha**. La tarjeta forma una ruta como `/pacientes/P-001`.
 
-| Campo | Tipo y significado |
-| --- | --- |
-| `horario` | `string`, en formato `HH:mm`, como `10:30`. |
-| `codigoPaciente` | `string` o `null`; usa códigos como `P-002`, sin nombres reales. |
-| `modalidad` | `Presencial`, `Virtual` o `null`. Los horarios sin paciente no necesitan modalidad. |
-| `estado` | `Programado`, `Disponible` o `Liberado`. |
+La barra vive en `app.component.html`, fuera de `ion-router-outlet`, y tiene
+su propio espacio para no tapar el contenido. `RouterLink` y
+`IonRouterLinkWithHref` realizan la navegación; `routerDirection="root"` abre
+cada sección principal.
 
-Los turnos ya están ordenados cronológicamente en `agenda.mock.ts`. La pantalla
-los presenta en ese orden; no hay un motor que calcule disponibilidad. Los días
-sin horarios tienen un arreglo `turnos: []`. El bloque `@empty` de la plantilla
-muestra **Sin horarios cargados para este día.** cuando ese arreglo está vacío.
+`RouterLinkActive` marca la sección actual. Inicio exige coincidencia exacta
+con `/inicio`; Pacientes también queda activo dentro de una ficha.
+`ariaCurrentWhenActive="page"` comunica esa selección a las herramientas de
+accesibilidad. Los botones de regreso de la ficha y del listado se conservan.
 
-### Servicio y selección del día
-
-El flujo de datos es:
+## Organización del proyecto
 
 ```text
-Agenda → AgendaService.obtenerSemana() → SEMANA_AGENDA_MOCK
+APP-PSIQUE/
+├── src/                         Frontend Ionic + Angular
+│   └── app/
+│       ├── api.config.ts        URL base de la API
+│       ├── app.config.ts        Proveedores de Angular, incluido HttpClient
+│       ├── app.routes.ts        Rutas de las pantallas
+│       ├── models/              Contratos de datos del frontend
+│       ├── services/            Consultas HTTP
+│       ├── inicio/
+│       ├── pacientes/
+│       ├── paciente-detalle/
+│       └── agenda/
+├── backend/
+│   ├── src/
+│   │   ├── server.ts
+│   │   ├── app.ts
+│   │   ├── models.ts
+│   │   └── db/
+│   │       ├── database.ts
+│   │       └── seed.ts
+│   ├── test/api.test.mjs
+│   ├── data/psique.sqlite       Generado localmente; no se versiona
+│   ├── dist/                    Generado al compilar el backend
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── tsconfig.json
+│   └── .env.example
+├── www/                         Frontend compilado
+└── archivos de configuración del frontend
 ```
 
-`AgendaService` está disponible mediante `providedIn: 'root'`. Su método
-`obtenerSemana()` devuelve `Observable<SemanaAgenda>` usando `of`: emite la semana
-completa de ejemplo y termina, sin hacer llamadas HTTP. La pantalla obtiene el
-servicio con `inject`, expone el resultado en `semana$` y lo recibe en el HTML con
-`AsyncPipe`, igual que las pantallas de pacientes.
+### Responsabilidades del frontend
 
-`indiceDiaSeleccionado` guarda una posición del arreglo `dias`. Comienza en `0`,
-que corresponde al lunes. Al presionar otro día, `seleccionarDia(indice)` cambia
-esa propiedad. Angular actualiza el día resaltado y muestra los turnos de
-`semana.dias[indiceDiaSeleccionado]`.
+| Archivo o grupo | Responsabilidad |
+| --- | --- |
+| `src/main.ts` | Inicia Angular. |
+| `src/app/app.config.ts` | Configura Ionic, rutas y `provideHttpClient()` para inyectar `HttpClient`. |
+| `src/app/api.config.ts` | Declara `API_BASE_URL` en un único lugar. |
+| `src/app/app.component.ts/html/scss` | Organiza el contenedor, las pantallas y la barra inferior. |
+| `src/app/app.routes.ts` | Declara `/inicio`, `/pacientes`, `/pacientes/:codigo` y `/agenda`. |
+| `src/app/models/paciente.ts` | Define los once campos de `Paciente`, incluidos los valores que admiten `null`. |
+| `src/app/models/turno.ts` | Define `Turno`, `DiaAgenda` y `SemanaAgenda`. |
+| `src/app/models/dashboard.ts` | Define los cuatro números de `ResumenDashboard`. |
+| `src/app/services/pacientes.service.ts` | Solicita todos los pacientes o uno por código; transforma el 404 de una ficha en `undefined`. |
+| `src/app/services/agenda.service.ts` | Solicita la semana completa mediante `GET /api/agenda`. |
+| `src/app/services/dashboard.service.ts` | Solicita los indicadores mediante `GET /api/dashboard`. |
+| `src/app/inicio/inicio.page.ts/html/scss` | Presenta el resumen recibido en `resumen$` y sus estados de carga o error. |
+| `src/app/pacientes/pacientes.page.ts/html/scss` | Presenta `pacientes$` y los enlaces hacia las fichas. |
+| `src/app/paciente-detalle/paciente-detalle.page.ts/html/scss` | Obtiene el código de la ruta y presenta `paciente$`, un error de carga o el caso inexistente. |
+| `src/app/agenda/agenda.page.ts/html/scss` | Presenta `semana$` y mantiene localmente la selección del día. |
+| `src/global.scss` | Carga estilos generales, tipografía y estilos base de Ionic. |
 
-En el HTML, `(click)="seleccionarDia(indice)"` conecta el botón con el método.
-`[class.seleccionado]` depende de la comparación entre el índice del botón y el
-índice elegido. `DatePipe` presenta la fecha como número de día en el selector
-y como `dd/MM/yyyy` junto al nombre del día seleccionado.
+Los HTML solo incorporan los mensajes mínimos de carga y error. Se conservan
+la estructura visual, los estilos y la navegación.
 
-El índice es **estado de la interfaz**: indica qué parte de los datos se está
-mirando. Cambiarlo no modifica los turnos, no realiza otra consulta al servicio
-ni guarda la selección en una base de datos.
+Se eliminaron del frontend los archivos que ya no se utilizan:
+`src/app/data/pacientes.mock.ts`, `src/app/data/agenda.mock.ts` y
+`src/app/data/dashboard.mock.ts`. Sus datos iniciales están ahora en el seed del
+backend; no existe una copia de reserva que las pantallas utilicen cuando falla la API.
 
-El servicio concentra el origen de los datos. En una futura integración podrá
-reemplazar el acceso al mock por una consulta a una API, manteniendo el contrato
-de `SemanaAgenda` y el uso de Observables en la pantalla. Configurar `HttpClient`
-y manejar la carga, errores y respuestas reales quedará para esa etapa.
+### Responsabilidades del backend
 
-### Alcance de esta agenda
+| Archivo | Responsabilidad |
+| --- | --- |
+| `backend/src/server.ts` | Lee la configuración, abre la base e inicia Express en el puerto local. |
+| `backend/src/app.ts` | Configura CORS, define los endpoints GET y transforma las consultas en respuestas JSON. |
+| `backend/src/models.ts` | Describe los datos que devuelve la API mediante interfaces TypeScript. |
+| `backend/src/db/database.ts` | Abre SQLite, crea las tablas y coordina la inicialización. |
+| `backend/src/db/seed.ts` | Contiene los datos ficticios iniciales e inserta el conjunto de ejemplo cuando corresponde. |
+| `backend/test/api.test.mjs` | Comprueba la API y la persistencia con bases temporales. |
+| `backend/package.json` | Declara dependencias y comandos propios del servidor. |
+| `backend/package-lock.json` | Fija las versiones resueltas de sus dependencias. |
+| `backend/tsconfig.json` | Configura TypeScript para compilar `src` en `dist`. |
+| `backend/.env.example` | Documenta variables de entorno con valores locales de ejemplo. |
 
-**Horario liberado** es una etiqueta de ejemplo sobre el lunes a las 11:00.
-Representa visualmente un horario que quedó disponible; no es el resultado de
-cancelar un turno desde la aplicación.
+El backend utiliza consultas SQL directas y `better-sqlite3`. No incorpora ORM,
+Docker ni capas de arquitectura adicionales. Mantiene sus dependencias y su
+compilación separadas del frontend.
 
-Todavía no están implementados cambio de semana, calendario mensual, feriados,
-creación o edición de turnos, cancelaciones reales, recurrencias, cálculo de
-disponibilidad, notificaciones, alertas, lista de espera o reasignación automática.
-Tampoco se incorporaron autenticación, API, backend o persistencia. Con Agenda y la
-navegación queda completo el alcance solicitado para esta etapa del prototipo.
+## Endpoints de la API
 
-## Cómo funciona la navegación inferior
+URL base: `http://127.0.0.1:3000/api`. Las respuestas tienen formato JSON.
 
-La barra vive en `app.component.html`, fuera de `ion-router-outlet`, por lo que
-permanece visible al cambiar de pantalla. Contiene únicamente enlaces a **Inicio**,
-**Pacientes** y **Agenda**. El contenedor de pantallas y la barra ocupan espacios
-propios en la distribución; la barra no se superpone al contenido y contempla el
-espacio seguro inferior del dispositivo.
+| Método | Endpoint | Respuesta correcta |
+| --- | --- | --- |
+| GET | `/api/dashboard` | HTTP 200, objeto con los cuatro indicadores. |
+| GET | `/api/pacientes` | HTTP 200, arreglo con P-001, P-002 y P-003. |
+| GET | `/api/pacientes/:codigo` | HTTP 200, objeto del paciente; HTTP 404 si el código no existe. |
+| GET | `/api/agenda` | HTTP 200, objeto con el título, siete días y sus turnos. |
 
-Los enlaces combinan `RouterLink` con `IonRouterLinkWithHref`, como las tarjetas
-del listado. `routerDirection="root"` indica a Ionic que el destino es una sección
-principal de la navegación. Los botones de regreso de Pacientes y de la ficha
-siguen disponibles para el recorrido **Inicio → Pacientes → Ficha**.
+Estos son endpoints de consulta. No existen operaciones POST, PUT, PATCH o DELETE
+para crear, editar o eliminar datos.
 
-`RouterLinkActive` aplica el estilo de sección activa según la URL.
-**Inicio** exige una coincidencia exacta con `/inicio`; **Pacientes** también queda
-activo en `/pacientes/P-001` y las demás fichas, porque pertenecen a esa sección.
-`ariaCurrentWhenActive="page"` comunica la opción actual a las herramientas de
-accesibilidad.
+### Ejemplo: Dashboard
+
+`GET /api/dashboard` devuelve:
+
+```json
+{
+  "pacientesActivos": 3,
+  "sesionesSemana": 8,
+  "pendientesCobro": 2,
+  "horariosDisponibles": 4
+}
+```
+
+### Ejemplo: ficha y listado
+
+`GET /api/pacientes/P-001` devuelve:
+
+```json
+{
+  "codigo": "P-001",
+  "modalidad": "Presencial",
+  "estado": "Activo",
+  "proximaSesion": "LUN 15 HS",
+  "frecuencia": "Semanal",
+  "diaHabitual": "Lunes",
+  "horarioHabitual": "15:00",
+  "fechaCreacion": "2026-09-01",
+  "fechaInicioTratamiento": "2026-09-01",
+  "motivoConsulta": "Dificultades vinculadas a situaciones de ansiedad.",
+  "postIt": "Retomar situaciones que generan mayor ansiedad durante la semana."
+}
+```
+
+`GET /api/pacientes` devuelve un arreglo de tres objetos con esta misma estructura.
+En P-003, `proximaSesion`, `diaHabitual` y `horarioHabitual` conservan `null`;
+no se sustituyen por una cadena vacía.
+
+`GET /api/pacientes/P-999` devuelve HTTP 404 y:
+
+```json
+{
+  "mensaje": "Paciente no encontrado"
+}
+```
+
+### Ejemplo: Agenda
+
+`GET /api/agenda` devuelve el título y los siete días. Este fragmento muestra
+únicamente el lunes del objeto completo:
+
+```json
+{
+  "titulo": "7 al 13 de septiembre de 2026",
+  "dias": [
+    {
+      "fecha": "2026-09-07",
+      "nombre": "Lunes",
+      "turnos": [
+        {
+          "horario": "09:00",
+          "codigoPaciente": null,
+          "modalidad": null,
+          "estado": "Disponible"
+        },
+        {
+          "horario": "11:00",
+          "codigoPaciente": null,
+          "modalidad": null,
+          "estado": "Liberado"
+        },
+        {
+          "horario": "15:00",
+          "codigoPaciente": "P-001",
+          "modalidad": "Presencial",
+          "estado": "Programado"
+        }
+      ]
+    }
+  ]
+}
+```
+
+La respuesta completa incluye martes a domingo; sábado y domingo tienen
+`"turnos": []`. SQL y el armado de la respuesta conservan el orden de los días
+y de los horarios.
+
+## SQLite: tablas, inicialización y persistencia
+
+La base predeterminada es `backend/data/psique.sqlite`. Contiene únicamente
+las tablas necesarias para representar los datos existentes:
+
+| Tabla | Contenido |
+| --- | --- |
+| `pacientes` | Tres pacientes, sus datos de seguimiento y Post-it. |
+| `semana_agenda` | Título de la semana de ejemplo. |
+| `dias_agenda` | Las siete fechas y sus nombres. |
+| `turnos` | Los horarios de cada día, códigos, modalidades y estados. |
+| `dashboard` | Los cuatro indicadores fijos 3, 8, 2 y 4. |
+
+Al iniciar el servidor se crean las tablas si faltan. Si las **cinco tablas están
+vacías**, el seed inserta los datos del prototipo en una transacción: se completa
+todo el conjunto o se revierte la inserción. Si ya hay datos, no vuelve a sembrar
+ni sobrescribe registros. No se utiliza el reinicio para reparar o rellenar
+automáticamente una base parcialmente modificada.
+
+Las fechas se conservan como texto ISO `YYYY-MM-DD`; las horas, como `HH:mm`.
+Los campos sin valor usan `NULL` en SQLite y llegan como `null` en JSON. Los
+valores del Dashboard son registros almacenados, no resultados de estadísticas.
+
+La persistencia significa que el archivo SQLite conserva sus registros aunque
+se cierre el frontend o se reinicie Express. Los GET consultan ese archivo.
+Los textos del seed sirven para la primera inicialización; cambiarlos no
+actualiza automáticamente una base que ya contiene datos.
+
+No hay un servidor de base de datos independiente ni un comando adicional de
+instalación de SQLite. El archivo local y sus posibles auxiliares no se suben
+al repositorio. Las pruebas usan otra ubicación temporal para verificar reinicios
+y evitar duplicados sin alterar la base de desarrollo.
+
+## Cómo llegan los datos HTTP a las pantallas
+
+Los servicios mantienen los contratos que ya consumían los componentes:
+
+| Método Angular | Tipo devuelto | Solicitud |
+| --- | --- | --- |
+| `DashboardService.obtenerResumen()` | `Observable<ResumenDashboard>` | GET `/dashboard` |
+| `PacientesService.obtenerPacientes()` | `Observable<Paciente[]>` | GET `/pacientes` |
+| `PacientesService.obtenerPacientePorCodigo(codigo)` | `Observable<Paciente \| undefined>` | GET `/pacientes/:codigo` |
+| `AgendaService.obtenerSemana()` | `Observable<SemanaAgenda>` | GET `/agenda` |
+
+Las rutas de esta tabla se agregan a `API_BASE_URL`. `provideHttpClient()` registra
+el cliente HTTP en Angular; cada servicio lo obtiene mediante `inject(HttpClient)`.
+
+Por ejemplo, al abrir una ficha:
+
+1. La tarjeta navega a `/pacientes/P-001` mediante `RouterLink`.
+2. `ActivatedRoute.paramMap` entrega el parámetro `codigo`. `switchMap` lo convierte
+   en una llamada a `PacientesService.obtenerPacientePorCodigo`.
+3. `HttpClient.get<Paciente>(...)` produce el Observable de la solicitud.
+   `AsyncPipe` se suscribe desde el HTML y Angular envía el GET.
+4. Express recibe el código, consulta SQLite y responde con el objeto JSON.
+5. `HttpClient` entrega el objeto al Observable y `AsyncPipe` lo deja disponible
+   para mostrar los campos con interpolación, como `{{ paciente.codigo }}`.
+
+Los modelos TypeScript ayudan a comprobar cómo usamos esos objetos en el código;
+no validan automáticamente el contenido de una respuesta externa en ejecución.
+
+### Paciente inexistente y errores de carga
+
+Un paciente inexistente es diferente de una API que no responde:
+
+- Si la ficha recibe HTTP 404, `PacientesService` convierte ese error en
+  `of(undefined)`. Se conserva el mensaje **Paciente no encontrado** y el botón
+  para volver a Pacientes.
+- Si ocurre otro error HTTP o de conexión, el servicio lo propaga. La pantalla
+  muestra un mensaje de carga fallida y permite volver a intentar recargando.
+- Mientras espera la respuesta, la pantalla muestra un mensaje de carga.
+  No presenta temporalmente un paciente inexistente ni valores numéricos en cero.
+
+Los componentes mantienen `cargando` y `errorCarga`. `catchError` registra el
+estado de error de presentación y devuelve `EMPTY` para terminar la secuencia
+sin inventar datos. `finalize` apaga el indicador de carga cuando la consulta
+termina, falla o se cancela. No hay un retorno a mocks ni reintentos automáticos.
+
+Después de arrancar de nuevo el backend, recargá la página que mostró el error.
+Ionic puede conservar pantallas ya visitadas; una recarga permite comprobar una
+nueva solicitud HTTP y evita confundir una vista anterior con datos recién obtenidos.
+
+### CORS
+
+Angular se sirve en `http://127.0.0.1:4200` y la API en
+`http://127.0.0.1:3000`. Aunque ambos son locales, el puerto distinto hace que
+sean orígenes diferentes. El navegador necesita que la API autorice ese origen
+para permitir que Angular lea sus respuestas.
+
+Express configura CORS para el origen de desarrollo indicado en
+`FRONTEND_ORIGIN` y las consultas GET. CORS es una regla del navegador;
+**no autentica usuarios ni protege la API frente a otros clientes HTTP**.
+
+## Alcance y seguridad de esta etapa
+
+La API y SQLite son reales; el contenido inicial es ficticio y se mantiene
+únicamente para demostrar el flujo existente. No usar esta versión con
+información clínica real.
+
+No se implementaron login, registro, Google Sign-In, JWT, roles, gestión de
+usuarios, cifrado de la base, cifrado de extremo a extremo o bloqueo automático.
+La comunicación local utiliza HTTP y no existe separación de datos por profesional.
+
+Tampoco se agregaron creación, edición, eliminación, formularios, historial,
+objetivos, pagos reales, honorarios, lista de espera, notificaciones, cambio de
+semana, calendario mensual, recurrencias, cancelaciones ni estadísticas calculadas.
+
+El servidor no necesita registrar los cuerpos de respuesta ni contenido clínico
+para atender las consultas. Las variables locales de configuración se mantienen
+fuera del código cuando corresponde; `.env.example` muestra valores de desarrollo,
+sin credenciales.
 
 ## Archivos de configuración de la raíz
 
@@ -435,7 +639,7 @@ vez. Los identificadores y la cantidad de archivos pueden cambiar al compilar.
 | `browser/chunk-*.js` | Partes del código de la aplicación y sus bibliotecas, separadas por el empaquetador; algunas se cargan al navegar o cuando un componente las necesita. |
 | `browser/styles-*.css` | Estilos globales e importaciones de Ionic procesados para el navegador. |
 | `3rdpartylicenses.txt` | Textos de licencias de bibliotecas incluidas en la compilación. |
-| `prerendered-routes.json` | Registro generado de rutas prerenderizadas. Actualmente contiene `"routes": {}`, sin páginas prerenderizadas; su existencia no significa que haya un backend. |
+| `prerendered-routes.json` | Registro generado de rutas prerenderizadas. Actualmente contiene `"routes": {}`, sin páginas prerenderizadas. No contiene la API de Express. |
 
 Los archivos de `www` no se editan a mano: una nueva compilación puede
 reemplazarlos. Para cambiar una pantalla, modificamos `src` y volvemos a compilar
@@ -448,163 +652,151 @@ con redirección a `index.html` para rutas como `/pacientes`. No se debe abrir
 `www/browser/index.html` con doble clic (`file://`), porque la aplicación necesita
 cargarse por HTTP y resolver correctamente sus rutas y módulos.
 
-## Conceptos para explicar
+## Conceptos para comprender y defender el proyecto
 
-Un **componente** reúne datos, estructura y estilos de una parte de la interfaz.
-En Inicio, Angular reemplaza `{{ resumen.pacientesActivos }}` por el valor de esa
-propiedad del resumen recibido desde el servicio. Esto se llama **interpolación**.
+| Concepto | Qué significa en PSIQUE |
+| --- | --- |
+| API REST | Interfaz de consulta por HTTP que expone recursos como pacientes o agenda mediante direcciones y métodos definidos. |
+| Endpoint | Combinación de método y ruta: por ejemplo, `GET /api/pacientes/P-001`. |
+| Node.js | Ejecuta el código del servidor fuera del navegador. |
+| Express | Recibe las solicitudes, identifica la ruta y devuelve el estado HTTP y el JSON correspondiente. |
+| SQLite | Motor que almacena tablas y registros en un archivo local; no necesita un servicio separado de base de datos. |
+| GET | Solicita datos; estos endpoints no modifican registros. |
+| HTTP 200 / 404 | 200 indica una respuesta correcta; 404 indica que el recurso solicitado no fue encontrado. |
+| JSON | Formato con objetos, arreglos, números, textos y `null` utilizado entre backend y frontend. |
+| Consulta parametrizada | Envía el código del paciente separado del SQL, como valor del parámetro `?`, para no tratarlo como una instrucción SQL. |
+| Seed | Carga inicial de los datos ficticios en una base vacía. No se repite sobre una base que ya tiene datos. |
+| Transacción | Agrupa las inserciones del seed para completarlas juntas o revertirlas ante un error. |
+| Persistencia | Los registros quedan en SQLite, fuera del frontend y del proceso de Express. |
+| CORS | Permite al navegador leer respuestas de otro origen autorizado; no equivale a autenticación. |
 
-La **interfaz `ResumenDashboard`** describe los cuatro valores numéricos que Inicio
-necesita mostrar. Ayuda a comprobar que el mock y el servicio respeten la misma
-estructura; no calcula esos indicadores. Separar modelo, datos, servicio y pantalla
-permite explicar dónde se define cada responsabilidad y cambiar posteriormente
-el origen de los datos en `DashboardService`.
+Una **interfaz TypeScript** define el contrato esperado. `Paciente` mantiene los
+once campos de la ficha; `ResumenDashboard`, los cuatro indicadores numéricos;
+`SemanaAgenda` agrupa `DiaAgenda` y sus `Turno`. Cada turno tiene `horario`,
+`codigoPaciente`, `modalidad` y `estado`. Los horarios libres conservan código y
+modalidad en `null`, y los estados son `Programado`, `Disponible` o `Liberado`.
 
-El **enrutador** elige la pantalla según la dirección del navegador. Al abrir `/`,
-redirige a `/inicio`; `ion-router-outlet` es el lugar donde se muestra esa pantalla.
-`RouterLink` permite ir a `/pacientes` desde **Ver pacientes** sin recargar toda
-la aplicación. Las rutas usan `loadComponent` para cargar cada pantalla cuando
-se necesita.
+Un **servicio Angular** concentra la consulta HTTP. `providedIn: 'root'` lo deja
+disponible en la aplicación y `inject` permite recibir esa dependencia. La
+pantalla se ocupa de presentar la respuesta, sin conocer las tablas ni escribir SQL.
 
-En Pacientes, `IonBackButton` utiliza la navegación de Ionic para volver a la
-pantalla anterior. Su `defaultHref="/inicio"` permite regresar también cuando
-entramos directamente a `/pacientes` y no hay una pantalla anterior en esa navegación.
+Un **Observable** representa la entrega de una respuesta o un error. `HttpClient`
+devuelve Observables y envía la solicitud cuando hay una suscripción. El sufijo
+`$` en `resumen$`, `pacientes$`, `paciente$` y `semana$` es una convención de nombres.
 
-La **interfaz `Paciente`** es un contrato de tipos reutilizable. Describe código,
-modalidad, estado, próxima sesión, frecuencia, día y horario habitual, fecha de
-creación, fecha de inicio del tratamiento, motivo de consulta y Post-it. Ayuda a
-comprobar que mocks, servicio y pantallas usen una estructura compatible. No crea
-una tabla ni guarda información, y tampoco valida por sí sola una futura respuesta
-HTTP en tiempo de ejecución.
+**`AsyncPipe`**, mediante `| async`, se suscribe y entrega el resultado al HTML;
+administra la suscripción y la libera cuando el componente se destruye o cambia
+el Observable. `@let resumen = resumen$ | async;` permite mantener esa suscripción
+antes de elegir qué estado mostrar con `@if`: carga, error o datos.
 
-Un **servicio** reúne una responsabilidad que pueden usar distintas pantallas.
-`PacientesService` concentra el acceso a los pacientes. `providedIn: 'root'` lo
-deja disponible para toda la aplicación y `inject(PacientesService)` permite que
-Angular entregue esa dependencia al componente, sin crearla manualmente con `new`.
+**`ActivatedRoute.paramMap`** entrega el código presente en la URL.
+**`switchMap`** lo transforma en la consulta a la API; si cambia el código, deja
+de escuchar la consulta anterior y utiliza la nueva. En la ficha, el manejo de
+errores está dentro de esa consulta, por lo que no termina el flujo que escucha
+cambios de ruta.
 
-Un **Observable** representa una fuente que puede entregar valores a quien se
-suscriba. En los servicios de Dashboard, pacientes y agenda, `of` entrega los mocks
-y finaliza. El sufijo `$` en `resumen$`, `pacientes$`, `paciente$` o `semana$` es una
-convención para reconocer propiedades que contienen Observables; no es una sintaxis
-especial de Angular.
+**Interpolación**, como `{{ resumen.pacientesActivos }}`, muestra una propiedad.
+**`@for`** repite las tarjetas o los turnos; `track` identifica cada elemento.
+**`@if`** selecciona qué mostrar según carga, error, existencia de datos o un
+campo opcional. **`DatePipe`** transforma la presentación de una fecha ISO a
+`dd/MM/yyyy` sin alterar el valor almacenado. **`??`** permite mostrar
+**Sin definir** para un día u horario habitual ausente.
 
-**`AsyncPipe`**, usado como `| async` en el HTML, se suscribe al Observable y entrega
-su último resultado a la plantilla. Administra esa suscripción y la libera cuando
-el componente se destruye o cambia el Observable. Así las pantallas no necesitan
-escribir un `subscribe` manual para mostrar los datos.
-
-**`ActivatedRoute.paramMap`** entrega los parámetros de la ruta y sus cambios.
-`parametros.get('codigo')` obtiene, por ejemplo, `P-001`. El operador **`switchMap`**
-convierte cada código en la consulta al servicio y entrega el resultado de la
-consulta vigente. Si cambia el código, deja de escuchar la consulta anterior y
-escucha la nueva; también contempla el caso en que Angular reutilice el componente
-para otra ficha. La búsqueda concreta sigue estando en el servicio, mediante `find`.
-
-El bloque **`@for`** del listado recorre el arreglo obtenido con `AsyncPipe` y
-repite la presentación de cada paciente. `track paciente.codigo` le da a Angular
-una identificación estable para cada elemento. En la ficha, **`@if`** permite
-mostrar los datos cuando el servicio encontró el paciente y un mensaje cuando
-devolvió `undefined`.
-
-`proximaSesion` tiene el tipo `string | null`: puede contener una etiqueta de
-horario o representar su ausencia. El bloque `@if` muestra el horario únicamente
-cuando hay un valor; si es `null`, deja ese sector sin texto. Esta condición no
-deduce el estado del paciente ni la razón por la que no tiene una próxima sesión.
-
-`fechaCreacion` y `fechaInicioTratamiento` se guardan como texto con formato
-`YYYY-MM-DD`. En el HTML, **`DatePipe`** aplica `date: 'dd/MM/yyyy'` para presentar,
-por ejemplo, `2026-09-01` como `01/09/2026`. El pipe transforma la presentación,
-sin modificar el valor original ni generar automáticamente una fecha.
-
-El día y el horario habitual también admiten `null`. La ficha usa **`??`** para
-mostrar **Sin definir** cuando falta alguno; este operador elige el texto alternativo
-solo si el valor es `null` o `undefined`.
-
-Los componentes son **standalone**: cada uno declara los elementos de Angular o
-Ionic que necesita en su lista `imports`.
-
-La regla `@media` en SCSS adapta las tarjetas al ancho disponible. El contenido
-es el mismo en PC y en un navegador estrecho.
+Los componentes son **standalone**: declaran sus dependencias de plantilla en
+`imports`. Las rutas usan `loadComponent` para cargar cada pantalla.
+Los estilos SCSS y las reglas `@media` conservan la adaptación a PC y móvil.
 
 ## Verificación y demo
 
+La compilación comprueba los tipos; las pruebas del backend comprueban además
+las respuestas HTTP y el comportamiento de SQLite. Son comprobaciones diferentes.
+
+Verificación de esta integración, realizada el **28/09/2026**:
+
+- Compilaciones del frontend y backend correctas; frontend sin advertencias.
+- Pruebas del backend correctas: ocho casos y su prueba contenedora, nueve
+  resultados informados por el ejecutor de Node.
+- Respuestas de la API comparadas con los datos originales, incluido HTTP 404
+  para P-999; persistencia y seed sin duplicados comprobados.
+- Arranque mediante `dev` y mediante el JavaScript compilado de `start` comprobados.
+- Recorrido en navegador a 1440 × 1080 y 360 × 800, con solicitudes HTTP reales,
+  navegación activa y conservación del diseño.
+- Estados de carga, HTTP 500 en las cuatro pantallas y fallo de conexión en
+  la ficha comprobados, diferenciándolos del paciente inexistente.
+
+Desde `backend`, `npm.cmd test` compila y ejecuta el conjunto de pruebas. Comprueba:
+
+- Campos, textos y valores `null` de pacientes y fichas.
+- HTTP 404 del paciente inexistente.
+- Semana, días y horarios de agenda, y los cuatro valores del Dashboard.
+- Configuración de CORS y consultas con códigos que no deben alterar el SQL.
+- Persistencia al cerrar y abrir la base, ausencia de duplicados y ausencia de
+  restauración de los valores iniciales sobre datos ya existentes.
+
+Las pruebas crean un archivo SQLite temporal y usan un puerto asignado por el
+sistema. No leen ni modifican `backend/data/psique.sqlite`. Así pueden probar
+persistencia y reinicios sin alterar los datos de la demo.
+
+### Comprobar la API por separado
+
+Con Express iniciado, ejecutá desde una terminal libre:
+
 ```powershell
-npm.cmd run build
+Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/dashboard'
+Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/pacientes'
+Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/pacientes/P-001'
+Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/agenda'
 ```
 
-Este comando comprueba la compilación y genera la versión de producción en `www/`.
-Para una demo en clase, iniciá el servidor con `npm.cmd start`, abrí el navegador
-y ajustá el zoom para que los textos se vean bien en el proyector.
+Para el caso inexistente, `curl.exe` permite ver el código de estado y el cuerpo:
 
-Para probar el Dashboard:
+```powershell
+curl.exe -i 'http://127.0.0.1:3000/api/pacientes/P-999'
+```
 
-1. Abrí `http://127.0.0.1:4200/inicio` y comprobá los cuatro indicadores y sus
-   valores: **Pacientes activos: 3**, **Sesiones de la semana: 8**, **Pendientes de
-   cobro: 2** y **Horarios disponibles: 4**. Revisá los textos secundarios de la
-   tabla del Dashboard y sus iconos de personas, calendario, tarjeta y reloj.
-2. En una ventana de escritorio, comprobá una grilla de 2 × 2 con tarjetas de igual
-   altura. Reducí el ancho para comprobar que se apilen en una columna, sin cortar
-   los títulos o las descripciones ni ocultar el contenido bajo la barra inferior.
-3. Recargá `/inicio`: deben seguir apareciendo los cuatro valores. Cambiá de día en
-   Agenda y regresá a Inicio; el resumen debe conservar 3, 8, 2 y 4, porque sus datos
-   mock son independientes.
-4. Probá **Ver pacientes** y la barra inferior para confirmar que siguen disponibles
-   los recorridos existentes de pacientes, ficha y agenda descritos a continuación.
+Debe devolver HTTP 404 con `{"mensaje":"Paciente no encontrado"}`.
+En el navegador, la pestaña **Red/Network** de las herramientas de desarrollo
+permite observar las solicitudes `/api/...` y sus respuestas JSON.
 
-Para comprobar el recorrido existente de pacientes:
+### Recorrer las pantallas
 
-1. Abrí `/inicio` y comprobá que se vea el Dashboard de cuatro indicadores.
-2. Presioná **Ver pacientes**: la dirección debe cambiar a `/pacientes` y aparecer
-   los tres códigos, sus modalidades y sus estados.
-3. Comprobá los horarios de P-001 y P-002 arriba a la derecha, y las tres fechas
-   de creación abajo a la derecha. P-003 debe conservar su estado Activo y dejar
-   el sector del horario vacío.
-4. Seleccioná P-001: debe abrirse `/pacientes/P-001`. Comprobá su estado Activo,
-   modalidad Presencial, frecuencia Semanal, lunes a las 15:00, inicio 01/09/2026,
-   motivo de consulta y Post-it. El Post-it debe distinguirse del resto de la ficha.
-5. Volvé con **Pacientes** y abrí P-002. Comprobá que cambien los datos: modalidad
-   Virtual, miércoles a las 10:30 y los textos correspondientes a ese paciente.
-6. Abrí P-003: debe mostrar frecuencia Quincenal y **Sin definir** para el día y
-   horario habitual, conservando el estado Activo.
-7. Abrí directamente `http://127.0.0.1:4200/pacientes/P-002` en una pestaña nueva,
-   recargá y comprobá que la ficha y el regreso a Pacientes sigan funcionando.
-8. Visitá `http://127.0.0.1:4200/pacientes/P-999`: debe aparecer
-   **Paciente no encontrado**, con el regreso a Pacientes disponible.
-9. Desde el listado, usá **Inicio** y repetí el recorrido. Reducí el ancho de la
-   ventana para revisar que listado, ficha, Post-it, textos y botones se adapten.
+1. Abrí `http://127.0.0.1:4200/inicio`. Comprobá los cuatro valores **3, 8, 2 y 4**,
+   sus textos secundarios y la grilla de 2 × 2 en una ventana amplia.
+2. Elegí **Pacientes** en la barra inferior. Deben aparecer P-001, P-002 y P-003
+   con los mismos estados, modalidades, horarios y fechas.
+3. Abrí P-001 y revisá la ficha y el Post-it. Volvé con **Pacientes** y consultá
+   P-002 y P-003. Este último debe mantener **Sin definir** en día y horario.
+4. Abrí directamente `/pacientes/P-002` en una pestaña nueva y recargá. La ficha
+   debe consultar el backend y mantener disponible el regreso al listado.
+5. Abrí `http://127.0.0.1:4200/pacientes/P-999`. Con la API funcionando debe
+   mostrar **Paciente no encontrado**, y no un error de conexión.
+6. Elegí **Agenda**. Revisá el lunes, su horario liberado y P-001 a las 15:00;
+   el miércoles, P-002 a las 10:30. Seleccioná los siete días: sábado y domingo
+   deben mostrar **Sin horarios cargados para este día.**
+7. Observá Red/Network mientras cambiás de día: la selección usa la semana
+   recibida, sin pedir otra vez la API por cada día.
+8. Volvé a Inicio: los indicadores siguen siendo 3, 8, 2 y 4 porque se leen
+   de un resumen almacenado, sin calcularse a partir de la agenda.
+9. Reducí el ancho de la ventana y comprobá las tarjetas, la ficha, los turnos
+   y la barra inferior. Revisá que pueda alcanzarse todo el contenido y que la
+   navegación marque Pacientes también dentro de una ficha.
 
-Para probar Agenda y la barra inferior:
+### Distinguir carga, fallos y persistencia
 
-1. Desde Inicio, seleccioná **Agenda** en la barra. La URL debe cambiar a `/agenda`,
-   la opción Agenda debe quedar activa y debe aparecer la semana del 7 al 13 de
-   septiembre de 2026, con el lunes seleccionado inicialmente.
-2. Comprobá los horarios del lunes en orden: 09:00 Disponible, 11:00 **Horario
-   liberado** y 15:00 P-001, Presencial, Programado. La etiqueta de horario liberado
-   debe distinguirse visualmente y no ofrecer una cancelación o reasignación real.
-3. Seleccioná el miércoles y comprobá P-002, Virtual, a las 10:30. Cambiá a martes,
-   jueves y viernes: deben verse los horarios disponibles indicados en la tabla
-   de esta documentación. El día resaltado y la lista deben cambiar juntos.
-4. Seleccioná sábado y domingo: debe mostrarse que no hay horarios cargados. Volvé
-   al lunes y comprobá que sigan los mismos tres horarios. P-003 no debe aparecer
-   asignado a un turno de esta semana.
-5. Usá la barra para ir a **Pacientes**, abrí una ficha y comprobá que la sección
-   Pacientes siga activa. Probá el regreso desde la ficha, el acceso a **Inicio**
-   y el regreso a **Agenda** mediante la barra.
-6. Abrí directamente `http://127.0.0.1:4200/agenda` en una pestaña nueva y recargá.
-   Debe aparecer la agenda con el lunes seleccionado y la barra operativa.
-7. Probá una ventana estrecha y otra amplia. Revisá los siete días, la legibilidad
-   de horarios y estados, y que puedas llegar al final del contenido sin que la
-   barra inferior lo tape. Con `Tab` y `Enter`, probá los enlaces de navegación y
-   los botones de selección de día.
+- Para observar la carga, usá una conexión lenta simulada desde Red/Network y
+  recargá. Debe aparecer el mensaje correspondiente, como **Cargando resumen...**,
+  hasta recibir la respuesta.
+- Detené solo Express con `Ctrl+C` y recargá una pantalla. Debe mostrar un mensaje
+  como **No se pudo cargar el resumen. Recargá la página para volver a intentar.**
+  No deben aparecer cifras en cero ni pacientes de reserva.
+- Con Express detenido, una ficha tampoco debe afirmar **Paciente no encontrado**:
+  ese mensaje corresponde al 404 que devuelve una API disponible.
+- Reiniciá Express y recargá el frontend. Los datos deben volver a mostrarse desde
+  el mismo archivo SQLite. El listado debe conservar tres pacientes, sin duplicados.
+- El control de que un valor modificado permanezca tras reabrir la base se realiza
+  en las pruebas temporales; no requiere editar la base utilizada por la demo.
 
-Para relacionar la demo con el código, ubicá primero los registros en
-`pacientes.mock.ts`, después las consultas de `PacientesService` y finalmente
-las propiedades con Observables de cada pantalla. Ese recorrido permite explicar
-qué datos son de ejemplo y cómo cada pantalla recibe únicamente lo que necesita.
-Repetí el recorrido con `agenda.mock.ts`, `AgendaService` y `semana$`: al elegir
-otro día cambia el índice de selección en la pantalla, mientras los datos de la
-semana permanecen iguales.
-En Inicio, seguí `dashboard.mock.ts` → `DashboardService` → `resumen$` →
-`AsyncPipe` → las cuatro tarjetas. Para la defensa oral, distinguí entre presentar
-un número mock y calcular una métrica real: en esta versión se implementa la
-presentación y se prepara el punto donde podrá cambiar el origen de los datos.
+Para la defensa oral, seguí una consulta completa: ruta de Angular → servicio →
+`HttpClient` → endpoint de Express → SQL → JSON → Observable → `AsyncPipe` →
+pantalla. Diferenciá **datos ficticios** de **almacenamiento real** y
+**indicadores almacenados** de **estadísticas calculadas**.

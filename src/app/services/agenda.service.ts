@@ -1,14 +1,16 @@
-import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { SEMANA_AGENDA_MOCK } from '../data/agenda.mock';
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { API_BASE_URL } from '../api.config';
 import { SemanaAgenda } from '../models/turno';
 
-// La pantalla conoce el servicio, pero no importa los mocks directamente.
-// Este método concentra el lugar donde se podrá conectar una futura consulta a la API.
+// La API entrega la misma estructura de semana que ya utiliza Agenda.
+// Seleccionar un día sigue siendo responsabilidad de la pantalla.
 @Injectable({ providedIn: 'root' })
 export class AgendaService {
+  private readonly http = inject(HttpClient);
+
   obtenerSemana(): Observable<SemanaAgenda> {
-    // of emite la semana completa y finaliza; no hace una llamada HTTP.
-    return of(SEMANA_AGENDA_MOCK);
+    return this.http.get<SemanaAgenda>(`${API_BASE_URL}/agenda`);
   }
 }

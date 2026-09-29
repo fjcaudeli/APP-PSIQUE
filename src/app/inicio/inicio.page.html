@@ -18,7 +18,12 @@
       </section>
 
       <!-- Las cuatro tarjetas comparten el resumen recibido mediante AsyncPipe. -->
-      @if (resumen$ | async; as resumen) {
+      @let resumen = resumen$ | async;
+      @if (cargando) {
+        <p class="introduccion" role="status">Cargando resumen...</p>
+      } @else if (errorCarga) {
+        <p class="introduccion" role="alert">No se pudo cargar el resumen. Recargá la página para volver a intentar.</p>
+      } @else if (resumen) {
         <section class="indicadores" aria-label="Resumen del consultorio">
           <article class="indicador indicador-pacientes" aria-labelledby="titulo-pacientes">
             <div class="indicador-encabezado">

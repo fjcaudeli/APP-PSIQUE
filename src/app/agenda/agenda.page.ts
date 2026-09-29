@@ -1,6 +1,7 @@
 import { AsyncPipe, DatePipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { IonContent } from '@ionic/angular';
+import { catchError, EMPTY, finalize } from 'rxjs';
 import { AgendaService } from '../services/agenda.service';
 
 @Component({
@@ -13,9 +14,19 @@ import { AgendaService } from '../services/agenda.service';
 export class AgendaPage {
   private readonly agendaService = inject(AgendaService);
 
+  cargando = true;
+  errorCarga = false;
+
   // El servicio entrega la semana; AsyncPipe recibe el resultado en la plantilla.
   // La pantalla no depende de dónde se guardan los datos.
-  readonly semana$ = this.agendaService.obtenerSemana();
+  readonly semana$ = this.agendaService.obtenerSemana().pipe(
+    // Si la consulta falla, conservamos la navegación y mostramos un mensaje breve.
+    catchError(() => {
+      this.errorCarga = true;
+      return EMPTY;
+    }),
+    finalize(() => { this.cargando = false; }),
+  );
 
   // El índice identifica el día visible; al abrir Agenda mostramos el primero.
   indiceDiaSeleccionado = 0;

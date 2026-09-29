@@ -3,6 +3,7 @@ import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { IonBackButton, IonContent, IonIcon, IonRouterLinkWithHref } from '@ionic/angular';
 import { arrowBackOutline, personOutline } from 'ionicons/icons';
+import { catchError, EMPTY, finalize } from 'rxjs';
 import { PacientesService } from '../services/pacientes.service';
 
 @Component({
@@ -15,9 +16,19 @@ import { PacientesService } from '../services/pacientes.service';
 export class PacientesPage {
   private readonly pacientesService = inject(PacientesService);
 
+  cargando = true;
+  errorCarga = false;
+
   // El componente pide los datos al servicio sin conocer su fuente.
   // El sufijo $ identifica un Observable; AsyncPipe recibe sus valores en el HTML.
-  readonly pacientes$ = this.pacientesService.obtenerPacientes();
+  readonly pacientes$ = this.pacientesService.obtenerPacientes().pipe(
+    // Diferenciamos una consulta fallida de un listado realmente vacío.
+    catchError(() => {
+      this.errorCarga = true;
+      return EMPTY;
+    }),
+    finalize(() => { this.cargando = false; }),
+  );
 
   readonly iconoPaciente = personOutline;
   readonly iconoVolver = arrowBackOutline;

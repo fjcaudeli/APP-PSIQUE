@@ -21,7 +21,17 @@
         ></ion-back-button>
       </nav>
 
-      @if (paciente$ | async; as paciente) {
+      <!-- La suscripción se mantiene también durante la carga y los errores. -->
+      @let paciente = paciente$ | async;
+      @if (cargando) {
+        <section class="no-encontrado">
+          <p role="status">Cargando ficha...</p>
+        </section>
+      } @else if (errorCarga) {
+        <section class="no-encontrado">
+          <p role="alert">No se pudo cargar la ficha. Recargá la página para volver a intentar.</p>
+        </section>
+      } @else if (paciente) {
         <section class="presentacion" aria-labelledby="codigo-paciente">
           <p class="etiqueta">Ficha del paciente</p>
           <div class="titulo-ficha">
