@@ -1,57 +1,18 @@
 # PSIQUE
 
-Aplicación de seguimiento psicoterapéutico y administración de consultorio, con
-frontend Ionic y Angular, API REST en Node.js, Express y TypeScript, y persistencia
-local en SQLite.
+Aplicación de seguimiento psicoterapéutico y administración de consultorio. Se desarrolla con **Ionic y Angular** en el frontend, **Node.js, Express y TypeScript** en la API, y **SQLite** para la persistencia local.
 
-Esta etapa cambia el origen de los datos. Se conservan las pantallas **Inicio**,
-**Pacientes**, **Ficha del paciente** y **Agenda**, su diseño y los recorridos de
-consulta. Los datos de ejemplo ahora se inicializan en el backend y se consultan
-por HTTP. No se incorporan nuevas funciones de administración.
+Esta etapa permite crear y editar pacientes, cargar horarios, agendar sesiones, confirmar que se realizaron y registrar sus honorarios y cobros. Las cuatro tarjetas de Inicio son accesos a estos recorridos y muestran cantidades calculadas a partir de la base de datos.
 
-## Arquitectura actual
+La interfaz puede usarse en el navegador de una PC y se adapta a pantallas pequeñas. El desarrollo continúa: todavía no incluye autenticación, permisos de usuarios ni despliegue para uso clínico en producción.
 
-```text
-Pantalla de Angular
-        ↓
-PacientesService / AgendaService / DashboardService
-        ↓
-HttpClient → GET http://127.0.0.1:3000/api/...
-        ↓
-Express → consulta SQL → archivo SQLite
-        ↓
-Respuesta JSON → Observable → AsyncPipe → pantalla
-```
+## Ejecutar la aplicación
 
-El frontend se ejecuta en el navegador. El backend es un proceso separado que
-recibe solicitudes y consulta SQLite. La base es un archivo local del backend:
-sus registros permanecen al cerrar el navegador o reiniciar los procesos.
-
-Los datos siguen siendo **ficticios**, pero las solicitudes HTTP y la persistencia
-son reales. Esta versión no está preparada para almacenar información clínica real.
-
-## CÓMO EJECUTAR FRONTEND Y BACKEND
-
-Se necesitan dos terminales de PowerShell. Los ejemplos parten de la carpeta
-`APP-PSIQUE`; si abrís el proyecto desde otro lugar, ubicá primero cada terminal
-en la ruta indicada.
-
-El entorno utilizado es **Node.js 24.14.1, npm 11.11.0, Windows x64**. El backend
-utiliza Express 5 y `better-sqlite3` 13.0.3 para acceder a SQLite. No hace falta
-instalar un servidor SQLite por separado, Angular CLI o Ionic de forma global.
-
-Se eligió `better-sqlite3` por su API directa y porque incluye un binario para
-Windows x64, instalado y probado en este entorno sin herramientas de compilación
-nativa adicionales. Las [notas oficiales de la versión 13](https://github.com/WiseLibs/better-sqlite3/releases/tag/v13.0.0)
-documentan esos binarios. El módulo integrado `node:sqlite` todavía figura como
-experimental en la [documentación de Node 24.14.1](https://raw.githubusercontent.com/nodejs/node/v24.14.1/doc/api/sqlite.md),
-por lo que no se utiliza en este backend.
-El backend declara Node 24.x desde la versión 24.14.1; este requisito se debe
-respetar aunque el frontend admita también otras versiones de Node.
+Se necesitan dos terminales, una para cada proceso. El entorno de desarrollo utiliza **Node.js 24.14.1 y npm 11.11.0 en Windows x64**. El backend requiere Node 24.x desde 24.14.1 y utiliza `better-sqlite3` para abrir SQLite; no hace falta instalar un servidor de base de datos separado ni Angular CLI o Ionic globalmente.
 
 ### Terminal 1: backend
 
-Desde la raíz del proyecto:
+Desde la raíz de `APP-PSIQUE`:
 
 ```powershell
 Set-Location .\backend
@@ -59,469 +20,286 @@ npm.cmd install
 npm.cmd run dev
 ```
 
-El servidor escucha en **http://127.0.0.1:3000**. Al iniciar, crea la carpeta y
-el archivo `backend/data/psique.sqlite` si faltan, prepara las tablas y carga los
-datos iniciales únicamente cuando la base está vacía. No hay que ejecutar un
-comando de seed adicional.
+La API queda disponible en **http://127.0.0.1:3000/api**. Al iniciar, crea `backend/data/psique.sqlite` si falta y ejecuta las migraciones pendientes. **Una base nueva comienza vacía**: no se cargan pacientes, horarios, sesiones ni importes de ejemplo automáticamente. Una base de una versión anterior conserva sus registros.
 
-`npm.cmd run dev` utiliza Node con `--watch`: ejecuta el TypeScript compatible
-con Node y reinicia el proceso al cambiar sus archivos. Este modo no reemplaza
-la comprobación de tipos; para eso se ejecuta la compilación.
+`dev` ejecuta Node con `--watch` y reinicia el backend al cambiar el código. La comprobación completa de tipos se realiza mediante `build`.
 
 ### Terminal 2: frontend
 
-Desde la raíz del proyecto, sin entrar en `backend`:
+Desde la raíz de `APP-PSIQUE`, sin entrar en `backend`:
 
 ```powershell
 npm.cmd install
 npm.cmd start
 ```
 
-Abrí **http://127.0.0.1:4200**. Mantené ambas terminales abiertas: Angular sirve
-la interfaz y Express proporciona los datos. Para detener cada proceso,
-presioná `Ctrl+C` en su terminal.
+Abrí **http://127.0.0.1:4200**. Ambas terminales deben permanecer activas. `Ctrl+C` detiene el proceso de su terminal. Las instalaciones son necesarias la primera vez o al cambiar dependencias; la raíz y `backend` tienen paquetes y carpetas `node_modules` separados. `npm.cmd` evita las restricciones de ejecución de scripts de PowerShell.
 
-Las instalaciones son necesarias la primera vez o cuando cambian las dependencias.
-La raíz y `backend` tienen sus propios `package.json`, archivos de bloqueo y
-carpetas `node_modules`. Usamos `npm.cmd` para evitar restricciones de scripts
-de PowerShell.
+### Compilación y pruebas
 
-### Compilar, ejecutar el backend compilado y probar
+Frontend, desde la raíz:
 
-Dentro de `backend`:
+```powershell
+npm.cmd run build
+```
+
+Genera la aplicación web en `www/browser`; no inicia ni incluye Express o SQLite.
+
+Backend, desde `backend`:
 
 ```powershell
 npm.cmd run build
 npm.cmd start
 ```
 
-`build` comprueba los tipos y genera JavaScript en `backend/dist`. `start` ejecuta
-`dist/server.js`; requiere una compilación previa. Usá `dev` o `start`, uno por
-vez para el mismo puerto. Ninguno borra ni restaura los datos existentes.
+`build` comprueba los tipos y genera `backend/dist`; `start` ejecuta `dist/server.js`. Usá `dev` o `start`, uno por vez para el mismo puerto. Compilar o iniciar el servidor no restaura los datos.
 
-Para las pruebas del backend, desde `backend`:
+Para ejecutar las pruebas del backend:
 
 ```powershell
 npm.cmd test
 ```
 
-Este comando compila y ejecuta las pruebas de `test/api.test.mjs` con el ejecutor
-de pruebas de Node. Las pruebas utilizan bases temporales y no necesitan reemplazar
-el archivo de datos de desarrollo.
-
-Para compilar el frontend, desde la raíz:
-
-```powershell
-npm.cmd run build
-```
-
-La salida web queda en `www/browser`. Compilar el frontend no inicia Express
-ni incluye la base SQLite dentro de esa carpeta.
+El comando compila y ejecuta `test/*.test.mjs` con el ejecutor de Node. Las pruebas usan bases temporales, relojes controlados y datos explícitos de prueba; no necesitan reemplazar la base de desarrollo.
 
 ### Configuración local
 
-El backend funciona con valores predeterminados. Si necesitás cambiarlos, creá
-`backend/.env` copiando `backend/.env.example` una vez, desde `backend`:
+El backend funciona sin un archivo `.env`. Para personalizar los valores, desde `backend` se puede crear una copia de `.env.example`:
 
 ```powershell
 Copy-Item -LiteralPath .env.example -Destination .env
 ```
 
-No repitas la copia sobre un `.env` que ya personalizaste. Node carga ese archivo
-opcional con `--env-file-if-exists=.env` en los comandos `dev` y `start`.
+Hacé la copia solo si todavía no existe un `.env` personalizado. Los comandos de inicio cargan ese archivo opcional con `--env-file-if-exists=.env`.
 
-| Variable del backend | Valor predeterminado | Para qué sirve |
+| Variable | Valor predeterminado | Uso |
 | --- | --- | --- |
 | `PORT` | `3000` | Puerto de Express. |
-| `DB_PATH` | `data/psique.sqlite` | Archivo SQLite; una ruta relativa se resuelve desde `backend`. También admite una ruta absoluta. |
+| `DB_PATH` | `data/psique.sqlite` | Archivo SQLite; las rutas relativas se resuelven desde `backend`. |
 | `FRONTEND_ORIGIN` | `http://127.0.0.1:4200` | Origen del navegador permitido por CORS. |
 
-El servidor se limita a `127.0.0.1` para esta etapa local. La URL de la API está
-centralizada en **`src/app/api.config.ts`**:
+La API se limita a `127.0.0.1`. Su URL en el frontend está centralizada en `src/app/api.config.ts`. Si cambiás el puerto del backend, actualizá esa constante. `localhost` y `127.0.0.1` son orígenes distintos para el navegador: con la configuración inicial usá las direcciones indicadas arriba.
 
-```typescript
-export const API_BASE_URL = 'http://127.0.0.1:3000/api';
+La base local, sus archivos auxiliares, los archivos `.env`, las dependencias y las compilaciones no se versionan. `.env.example` contiene únicamente valores de ejemplo. La primera instalación requiere descargar dependencias; luego la aplicación puede ejecutarse localmente con ambos procesos.
+
+## Recorridos de la aplicación
+
+### Inicio
+
+Las cuatro tarjetas completas se pueden seleccionar con mouse, teclado o pantalla táctil. Sus cantidades se consultan al entrar a Inicio.
+
+| Tarjeta | Qué cuenta | Destino |
+| --- | --- | --- |
+| **Pacientes activos** | Pacientes cuyo estado es `Activo`, sin distinguir mayúsculas. | Listado de Pacientes, que incluye todos los estados de tratamiento. |
+| **Sesiones de la semana** | Sesiones marcadas como `Realizada`, con fecha de sesión dentro de la semana actual. | Histórico semanal con fecha, horario, paciente y acceso al detalle. |
+| **Pendientes de cobro** | Sesiones realizadas cuyo total cobrado es menor que sus honorarios, cualquiera sea su fecha. | Modal con cada sesión y su saldo pendiente; seleccionarla abre el detalle. |
+| **Horarios disponibles** | Horarios libres que todavía no pasaron, dentro de la semana actual. | Modal con fecha y hora; seleccionarlos abre Agendar sesión. Incluye acceso para cargar otro horario. |
+
+La semana comienza el **lunes** y termina el **domingo**, según el calendario de **Buenos Aires**. No se mantiene una semana fija ni contadores de ejemplo. Cero representa que no hay registros que cumplan la condición; los estados vacíos explican cómo continuar.
+
+### Pacientes: crear, consultar y editar
+
+**Pacientes → Crear paciente** abre un formulario para cargar identificación, tratamiento, motivo de consulta y Post-it. Los valores iniciales son estado `Activo`, modalidad `Presencial`, frecuencia `Semanal` e inicio del tratamiento en la fecha actual de Buenos Aires. El día y horario habitual, la próxima sesión y las notas pueden quedar sin definir.
+
+Se propone un código disponible, por ejemplo `P-001`. La sugerencia no reserva ese código. Puede personalizarse o dejarse vacío para generar uno al guardar. Si otro registro ya lo ocupa, el formulario conserva lo escrito y muestra el conflicto.
+
+**Crear paciente** guarda el alta y abre su ficha. **Cancelar** vuelve al listado sin crear registros. En las tarjetas siguen apareciendo la próxima sesión, cuando existe, y la fecha de creación.
+
+Desde una ficha, **Editar ficha** permite modificar diez datos: código, modalidad, estado, próxima sesión, frecuencia, día habitual, horario habitual, inicio del tratamiento, motivo de consulta y Post-it. **La fecha de creación se muestra como información y no se puede editar**. El servidor la asigna al crear y rechaza los intentos de cambiarla por la API.
+
+Los formularios trabajan sobre un borrador. Guardar envía los datos a la API; Cancelar descarta cambios no enviados. Los errores de validación, duplicados o conexión conservan el borrador. Mientras una solicitud está en curso se bloquean los botones de guardado para evitar duplicarla.
+
+### Agenda y agendamiento
+
+Agenda abre la semana actual y permite recorrer **Anterior**, **Esta semana** y **Siguiente**. Cada día muestra sus horarios. Un día sin registros no significa que tenga horarios ofrecidos: primero se agregan mediante **Agregar horario disponible**, indicando una fecha y hora futuras.
+
+Un horario disponible puede abrirse desde Agenda o desde la tarjeta de Inicio. **Agendar sesión** permite elegir un paciente existente, la modalidad de esa sesión y sus honorarios en ARS. Guardar ocupa el horario y abre el detalle de la sesión creada. No pueden coexistir dos sesiones para la misma fecha y hora.
+
+Si el paciente aún no existe, **Crear paciente** dentro de Agendar sesión conserva la fecha, hora, modalidad e importe elegidos. El formulario muestra ese contexto y su botón pasa a ser **Crear paciente y agendar**. El backend realiza ambas operaciones en una misma transacción: si el horario se ocupó o algún dato no es válido, no queda un paciente creado sin la reserva solicitada. Cancelar vuelve al agendamiento con el contexto conservado.
+
+Al agendar se actualiza la etiqueta de próxima sesión del paciente con su primera sesión programada futura. Cambiar los datos habituales desde la ficha no modifica las fechas, horarios ni modalidades de las sesiones que ya se agendaron. La modalidad habitual del tratamiento y la modalidad de una sesión son datos distintos.
+
+Los horarios ya pasados no pueden reservarse. Los registros antiguos de tipo `Liberado` siguen siendo utilizables si son futuros; todavía no hay un recorrido para cancelar sesiones y liberar nuevos horarios.
+
+### Sesiones realizadas e histórico semanal
+
+Toda sesión agendada comienza como **Programada**. Desde su detalle se puede seleccionar **Marcar como realizada** cuando llegó su horario. Esta acción confirma que efectivamente ocurrió.
+
+Que pase la hora no cambia automáticamente su estado: una sesión que no se confirmó continúa programada y no aparece en el histórico de realizadas ni en pendientes de cobro. El histórico usa la fecha de la sesión, no la fecha en que se presionó el botón. Por ejemplo, confirmar hoy una sesión de la semana anterior no aumenta el contador de la semana actual.
+
+La pantalla **Sesiones de la semana** muestra las realizadas de lunes a domingo de la semana actual. Seleccionar una abre su detalle; desde allí también se puede acceder a la ficha del paciente.
+
+### Honorarios y cobros
+
+El detalle muestra **Honorarios**, **Total cobrado** y **Saldo pendiente**. El formulario permite modificar honorarios y el total acumulado cobrado por esa sesión. No registra una lista separada de movimientos de pago.
+
+Por ejemplo, si los honorarios son ARS 25.000 y ya se recibieron ARS 10.000, el saldo es ARS 15.000. Al recibir los ARS 15.000 restantes, se ingresa **25000** como total cobrado, porque ese campo representa la suma acumulada. Una sesión realizada desaparece de pendientes al quedar sin saldo.
+
+Los importes se presentan en pesos argentinos y se guardan como **centavos enteros** para evitar errores de representación decimal. Se admiten entre 0 y 999.999.999 centavos (ARS 9.999.999,99), con hasta dos decimales en los formularios. Al escribir, se usa coma o punto como separador decimal y se omiten separadores de miles. El total cobrado no puede superar los honorarios. Las sesiones programadas pueden tener importes registrados, pero solo las realizadas con saldo positivo integran los pendientes de cobro.
+
+No se inventan montos ni se generan sesiones por el paso del tiempo. Los honorarios se cargan al reservar o desde el detalle.
+
+## Datos y validaciones
+
+| Campo del paciente | Regla |
+| --- | --- |
+| `codigo` | Entre 1 y 12 caracteres; comienza con letra ASCII o número y admite luego letras ASCII, números, guion y guion bajo. Único sin distinguir mayúsculas. `nuevo` está reservado, también con otra capitalización. En el alta puede omitirse o estar vacío para generación automática. |
+| `modalidad` | `Presencial` o `Virtual`. |
+| `estado` y `frecuencia` | Textos obligatorios de hasta 40 caracteres cada uno. |
+| `proximaSesion` | `null` o texto de hasta 30 caracteres. Es la etiqueta breve de la tarjeta. |
+| `diaHabitual` | `null` o uno de los siete nombres de días en español. |
+| `horarioHabitual` | `null` o una hora válida de 24 horas, con formato `HH:mm`. |
+| `fechaCreacion` | Fecha `YYYY-MM-DD`, asignada por el servidor y conservada durante las ediciones. |
+| `fechaInicioTratamiento` | Fecha de calendario válida `YYYY-MM-DD`, editable. |
+| `motivoConsulta` | Texto de hasta 3000 caracteres; puede quedar vacío. |
+| `postIt` | Texto de hasta 300 caracteres; puede quedar vacío. |
+
+Usá alias o códigos y evitá nombres reales como identificador. El código aparece en las fichas, listados, agenda y URLs. `PA-01` y `ab_2` cumplen el formato; `Ana Pérez`, `-P001` y `nuevo` no. `PA-01` y `pa-01` no pueden identificar a pacientes diferentes.
+
+El backend valida nuevamente todas las solicitudes: tipos, campos permitidos, longitudes, fechas reales, importes y relaciones entre registros. Recorta espacios externos de los textos, pero no trunca contenido para hacerlo entrar en un límite. Las respuestas de error usan `{ "mensaje": "..." }`.
+
+Cambiar un código actualiza al paciente y sus referencias en horarios y sesiones dentro de una transacción. Si algo falla, SQLite revierte el conjunto. La fecha de creación y los datos de las sesiones se conservan. Las pantallas renuevan sus consultas al entrar para mostrar lo guardado.
+
+## Arquitectura y organización
+
+```text
+Pantalla de Ionic + Angular
+        ↓ formulario o consulta
+Servicio de Angular → HttpClient
+        ↓ HTTP: GET / POST / PUT
+Express → validación → consultas y transacciones SQLite
+        ↓ JSON
+Estado del componente / Observable → plantilla
 ```
 
-Si cambiás `PORT`, actualizá también esa URL. Si cambiás la dirección desde la que
-abrís Angular, ajustá `FRONTEND_ORIGIN`. `localhost` y `127.0.0.1` son orígenes
-distintos para el navegador; con la configuración inicial usá las direcciones
-`127.0.0.1` indicadas arriba.
-
-La base local, sus archivos auxiliares, `.env`, dependencias y compilaciones
-del backend no se versionan. El archivo de ejemplo de configuración sí se
-incluye y no contiene secretos. La instalación inicial requiere descargar
-dependencias; después, frontend, backend y SQLite funcionan localmente.
-
-## Pantallas y datos conservados
-
-Inicio mantiene cuatro tarjetas con igual altura, grilla de 2 × 2 en escritorio
-y una columna en pantallas pequeñas. Conserva colores, bordes, tipografía e
-iconos de personas, calendario, tarjeta y reloj de Ionicons.
-
-| Indicador | Valor almacenado | Texto secundario |
-| --- | --- | --- |
-| Pacientes activos | 3 | Tratamientos en curso |
-| Sesiones de la semana | 8 | Actividad semanal del consultorio |
-| Pendientes de cobro | 2 | Sesiones pendientes de pago |
-| Horarios disponibles | 4 | Disponibles esta semana |
-
-Estos cuatro números se almacenan en la tabla `dashboard`. **No se calculan**
-a partir de pacientes o turnos: Agenda contiene dos turnos programados y eso no
-modifica el valor 8. Tampoco hay lógica de pagos o cálculo real de disponibilidad.
-
-Pacientes conserva las tarjetas seleccionables, el horario de próxima sesión
-arriba a la derecha y la fecha de creación abajo a la derecha:
-
-| Código | Modalidad | Estado | Próxima sesión | Fecha de creación |
-| --- | --- | --- | --- | --- |
-| P-001 | Presencial | Activo | LUN 15 HS | 01/09/2026 |
-| P-002 | Virtual | Activo | MIÉ 10:30 HS | 02/09/2026 |
-| P-003 | Presencial | Activo | `null`; no se muestra | 05/09/2026 |
-
-Cada ficha mantiene código, estado, modalidad, frecuencia, día y horario habitual,
-fecha de inicio del tratamiento, motivo de consulta y Post-it destacado en terracota.
-P-001 tiene frecuencia semanal, lunes a las 15:00; P-002, semanal, miércoles a las
-10:30; P-003, quincenal, con día y horario en `null`, mostrados como **Sin definir**.
-Los textos y fechas iniciales son los mismos del prototipo anterior.
-
-### Agenda
-
-La semana sigue siendo del **7 al 13 de septiembre de 2026**. No se convierte
-automáticamente en la semana actual.
-
-| Día | Horarios recibidos de la API, en orden |
-| --- | --- |
-| Lunes 7 | 09:00 Disponible; 11:00 Horario liberado; 15:00 P-001, Presencial, Programado. |
-| Martes 8 | 09:00, 11:00 y 15:00 Disponibles. |
-| Miércoles 9 | 09:00 Disponible; 10:30 P-002, Virtual, Programado; 12:00 Disponible. |
-| Jueves 10 | 09:00 y 11:00 Disponibles. |
-| Viernes 11 | 09:00, 11:00 y 15:00 Disponibles. |
-| Sábado 12 | Sin horarios cargados. |
-| Domingo 13 | Sin horarios cargados. |
-
-P-003 permanece sin turno asignado. **Horario liberado** representa visualmente
-el concepto; no existe una operación de cancelación o reasignación.
-
-La API entrega la semana completa. `indiceDiaSeleccionado` comienza en `0`,
-correspondiente al lunes. El evento `(click)="seleccionarDia(indice)"` cambia esa
-posición y Angular presenta `semana.dias[indiceDiaSeleccionado]`. Seleccionar
-otro día no envía otra solicitud ni modifica SQLite: es estado de la interfaz.
-
-`DatePipe` muestra el número de día y las fechas con formato `dd/MM/yyyy`.
-`@for` presenta los turnos y `@empty` muestra **Sin horarios cargados para este día.**
-cuando el arreglo está vacío. Un día sin registros no equivale a un día con
-horarios disponibles.
-
-### Navegación
-
-La barra inferior conserva **Inicio**, **Pacientes** y **Agenda**. Para el
-recorrido de consulta, elegí **Pacientes** en esa barra y luego una tarjeta:
-**Inicio → Pacientes → Ficha**. La tarjeta forma una ruta como `/pacientes/P-001`.
-
-La barra vive en `app.component.html`, fuera de `ion-router-outlet`, y tiene
-su propio espacio para no tapar el contenido. `RouterLink` y
-`IonRouterLinkWithHref` realizan la navegación; `routerDirection="root"` abre
-cada sección principal.
-
-`RouterLinkActive` marca la sección actual. Inicio exige coincidencia exacta
-con `/inicio`; Pacientes también queda activo dentro de una ficha.
-`ariaCurrentWhenActive="page"` comunica esa selección a las herramientas de
-accesibilidad. Los botones de regreso de la ficha y del listado se conservan.
-
-## Organización del proyecto
+El navegador muestra la interfaz; el backend aplica las reglas y es el único proceso de la aplicación que accede al archivo SQLite. Una respuesta correcta confirma un guardado persistido. Los componentes muestran errores de carga o guardado y no reemplazan silenciosamente una API caída con datos de ejemplo.
 
 ```text
 APP-PSIQUE/
-├── src/                         Frontend Ionic + Angular
+├── src/
+│   ├── main.ts                   Inicio de Angular
+│   ├── global.scss               Estilos globales e Ionic
 │   └── app/
-│       ├── api.config.ts        URL base de la API
-│       ├── app.config.ts        Proveedores de Angular, incluido HttpClient
-│       ├── app.routes.ts        Rutas de las pantallas
-│       ├── models/              Contratos de datos del frontend
-│       ├── services/            Consultas HTTP
-│       ├── inicio/
-│       ├── pacientes/
-│       ├── paciente-detalle/
-│       └── agenda/
+│       ├── app.component.*       Contenedor y navegación inferior
+│       ├── app.config.ts         Proveedores y configuración regional
+│       ├── app.routes.ts         Rutas con carga de pantallas por demanda
+│       ├── api.config.ts         URL base de la API
+│       ├── models/               Paciente, turno, sesión y resumen
+│       ├── services/             Acceso HTTP a la API
+│       ├── shared/               Estilos y funciones compartidas
+│       ├── inicio/               Cuatro tarjetas y modales
+│       ├── pacientes/            Listado y acceso al alta
+│       ├── paciente-crear/       Alta independiente o con reserva
+│       ├── paciente-detalle/     Ficha y edición
+│       ├── agenda/               Semana, días y alta de horarios
+│       ├── agendar/              Asignación de un horario
+│       ├── sesiones/             Histórico de la semana actual
+│       └── sesion-detalle/       Datos, realización y cobros
 ├── backend/
 │   ├── src/
-│   │   ├── server.ts
-│   │   ├── app.ts
-│   │   ├── models.ts
+│   │   ├── server.ts             Configuración e inicio del servidor
+│   │   ├── app.ts                Endpoints y operaciones de negocio
+│   │   ├── models.ts             Contratos JSON de la API
+│   │   ├── validar-paciente.ts   Validación de fichas
+│   │   ├── calendario.ts         Fechas, semana y reloj de Buenos Aires
 │   │   └── db/
-│   │       ├── database.ts
-│   │       └── seed.ts
-│   ├── test/api.test.mjs
-│   ├── data/psique.sqlite       Generado localmente; no se versiona
-│   ├── dist/                    Generado al compilar el backend
+│   │       ├── database.ts       Apertura, tablas y migraciones
+│   │       └── seed.ts           Ejemplos históricos solo para pruebas
+│   ├── test/                     Pruebas y fixtures temporales
+│   ├── data/psique.sqlite        Base local generada; no se versiona
+│   ├── dist/                     JavaScript compilado del backend
 │   ├── package.json
 │   ├── package-lock.json
 │   ├── tsconfig.json
 │   └── .env.example
-├── www/                         Frontend compilado
-└── archivos de configuración del frontend
+└── www/                          Aplicación web compilada
 ```
 
-### Responsabilidades del frontend
+### Frontend
+
+Los componentes son `standalone`: cada pantalla declara las dependencias que usa. `app.routes.ts` registra `/inicio`, `/pacientes`, `/pacientes/nuevo`, `/pacientes/:codigo`, `/agenda`, `/agenda/agendar`, `/sesiones` y `/sesiones/:id`. La ruta estática `pacientes/nuevo` se declara antes de `pacientes/:codigo`.
+
+La barra inferior mantiene Inicio, Pacientes y Agenda, con espacio propio para no cubrir el contenido. Las pantallas se organizan mediante `ion-router-outlet`, `RouterLink` y `NavController`. Ionic puede conservar una pantalla en memoria; `ionViewWillEnter` permite actualizar sus datos al regresar.
 
 | Archivo o grupo | Responsabilidad |
 | --- | --- |
-| `src/main.ts` | Inicia Angular. |
-| `src/app/app.config.ts` | Configura Ionic, rutas y `provideHttpClient()` para inyectar `HttpClient`. |
-| `src/app/api.config.ts` | Declara `API_BASE_URL` en un único lugar. |
-| `src/app/app.component.ts/html/scss` | Organiza el contenedor, las pantallas y la barra inferior. |
-| `src/app/app.routes.ts` | Declara `/inicio`, `/pacientes`, `/pacientes/:codigo` y `/agenda`. |
-| `src/app/models/paciente.ts` | Define los once campos de `Paciente`, incluidos los valores que admiten `null`. |
-| `src/app/models/turno.ts` | Define `Turno`, `DiaAgenda` y `SemanaAgenda`. |
-| `src/app/models/dashboard.ts` | Define los cuatro números de `ResumenDashboard`. |
-| `src/app/services/pacientes.service.ts` | Solicita todos los pacientes o uno por código; transforma el 404 de una ficha en `undefined`. |
-| `src/app/services/agenda.service.ts` | Solicita la semana completa mediante `GET /api/agenda`. |
-| `src/app/services/dashboard.service.ts` | Solicita los indicadores mediante `GET /api/dashboard`. |
-| `src/app/inicio/inicio.page.ts/html/scss` | Presenta el resumen recibido en `resumen$` y sus estados de carga o error. |
-| `src/app/pacientes/pacientes.page.ts/html/scss` | Presenta `pacientes$` y los enlaces hacia las fichas. |
-| `src/app/paciente-detalle/paciente-detalle.page.ts/html/scss` | Obtiene el código de la ruta y presenta `paciente$`, un error de carga o el caso inexistente. |
-| `src/app/agenda/agenda.page.ts/html/scss` | Presenta `semana$` y mantiene localmente la selección del día. |
-| `src/global.scss` | Carga estilos generales, tipografía y estilos base de Ionic. |
+| `services/pacientes.service.ts` | Consultar, sugerir códigos, crear pacientes y actualizar fichas. Solo transforma el 404 de una consulta individual en paciente inexistente. |
+| `services/agenda.service.ts` | Consultar la semana que contiene una fecha. |
+| `services/dashboard.service.ts` | Consultar cantidades calculadas por el backend. |
+| `services/sesiones.service.ts` | Consultar sesiones e importes, marcar realizadas, consultar y crear horarios, y agendar. |
+| `models/paciente.ts` | Modelo completo de paciente y datos de alta sin fecha de creación. |
+| `models/turno.ts` | Horarios y estructura de la semana de Agenda. |
+| `models/sesion.ts` | Sesiones, reserva y respuestas del histórico y disponibilidad. |
+| `models/dashboard.ts` | Las cuatro cantidades del resumen. |
+| `shared/tiempo.ts` | Fecha y hora del consultorio, desplazamiento de fechas y comprobación de horarios pasados. |
+| `shared/importes.ts` | Conversión de texto en pesos a centavos, validación de formularios y conversión inversa. |
+| `shared/pagina.scss` | Estilos comunes de las pantallas nuevas. |
 
-Los HTML solo incorporan los mensajes mínimos de carga y error. Se conservan
-la estructura visual, los estilos y la navegación.
+Los formularios utilizan **Reactive Forms** con validadores y estados de carga/guardado. `HttpClient` devuelve Observables; las pantallas consumen sus resultados con `AsyncPipe` o suscripciones vinculadas a su ciclo de vida. `DatePipe` y `CurrencyPipe` presentan fechas e importes, con configuración regional argentina.
 
-Se eliminaron del frontend los archivos que ya no se utilizan:
-`src/app/data/pacientes.mock.ts`, `src/app/data/agenda.mock.ts` y
-`src/app/data/dashboard.mock.ts`. Sus datos iniciales están ahora en el seed del
-backend; no existe una copia de reserva que las pantallas utilicen cuando falla la API.
+### Backend y persistencia
 
-### Responsabilidades del backend
+`server.ts` carga la configuración, abre la base e inicia Express. `app.ts` configura JSON y CORS, define las rutas, valida los cuerpos y ejecuta operaciones SQL parametrizadas. `calendario.ts` centraliza el calendario de Buenos Aires; el reloj es inyectable para probar semanas y límites horarios sin depender del momento de ejecución.
 
-| Archivo | Responsabilidad |
+La base contiene pacientes, días y horarios, y la tabla `sesiones`, que guarda paciente, fecha, hora, modalidad, estado, honorarios y total cobrado. Cada sesión corresponde a un horario único. `pendienteCentavos` se calcula al consultar como honorarios menos total cobrado.
+
+`database.ts` activa claves foráneas y aplica migraciones con `PRAGMA user_version`. La **migración 1** conserva los pacientes y horarios existentes y agrega una sesión por cada turno previamente programado. Esas sesiones se importan como `Programada`, con honorarios y total cobrado en cero porque esos importes no existían en la base anterior. No se presume que ocurrieron: se confirman desde el detalle cuando corresponde. Reabrir la base no duplica esa migración.
+
+Las tablas antiguas `semana_agenda` y `dias_agenda` se conservan para los horarios; la API arma semanas de siete días a partir de la fecha consultada. La tabla histórica `dashboard` puede seguir en la base por compatibilidad, pero sus números almacenados ya no alimentan Inicio.
+
+`db/seed.ts` conserva ejemplos de la etapa anterior para pruebas explícitas de migración. El servidor no lo importa ni ejecuta al iniciar. `test/fixtures.mjs` prepara bases temporales con esos datos cuando una prueba los necesita. Una instalación vacía permanece vacía hasta que se crean registros desde la aplicación o la API.
+
+Las operaciones que deben guardarse juntas usan transacciones inmediatas: alta con reserva, asignación de horario y cambio de identificador. En el renombrado se difiere la verificación de claves foráneas hasta finalizar la transacción, de modo que paciente, turnos y sesiones cambian de referencia como una sola operación.
+
+## API HTTP
+
+Todas las rutas parten de `/api`. Las consultas correctas y las actualizaciones devuelven `200`; las altas, `201`. Los errores usan `400` para datos inválidos, `404` para un recurso inexistente, `409` para conflictos como código duplicado u horario ocupado, `413` para un JSON que supera 32 KB, y `500` para un fallo interno.
+
+| Método y ruta | Datos o comportamiento |
 | --- | --- |
-| `backend/src/server.ts` | Lee la configuración, abre la base e inicia Express en el puerto local. |
-| `backend/src/app.ts` | Configura CORS, define los endpoints GET y transforma las consultas en respuestas JSON. |
-| `backend/src/models.ts` | Describe los datos que devuelve la API mediante interfaces TypeScript. |
-| `backend/src/db/database.ts` | Abre SQLite, crea las tablas y coordina la inicialización. |
-| `backend/src/db/seed.ts` | Contiene los datos ficticios iniciales e inserta el conjunto de ejemplo cuando corresponde. |
-| `backend/test/api.test.mjs` | Comprueba la API y la persistencia con bases temporales. |
-| `backend/package.json` | Declara dependencias y comandos propios del servidor. |
-| `backend/package-lock.json` | Fija las versiones resueltas de sus dependencias. |
-| `backend/tsconfig.json` | Configura TypeScript para compilar `src` en `dist`. |
-| `backend/.env.example` | Documenta variables de entorno con valores locales de ejemplo. |
+| `GET /pacientes` | Arreglo de pacientes, ordenado por código. |
+| `GET /pacientes/siguiente-codigo` | `{ codigo }` sugerido; no lo reserva. |
+| `GET /pacientes/:codigo` | Ficha de un paciente. |
+| `POST /pacientes` | Recibe `{ paciente, turno? }`; devuelve `{ paciente, sesion }`. La sesión es `null` en un alta independiente. |
+| `PUT /pacientes/:codigo` | Reemplaza los datos editables de la ficha identificada por el código anterior. `fechaCreacion` puede omitirse o conservar su valor; no puede cambiar. |
+| `GET /sesiones/semana` | `{ desde, hasta, sesiones }` de las realizadas en la semana actual. |
+| `GET /sesiones/pendientes` | Arreglo de sesiones realizadas con saldo, de cualquier fecha. |
+| `GET /sesiones/:id` | Datos e importes de una sesión. |
+| `POST /sesiones` | Recibe `{ fecha, horario, codigoPaciente, modalidad, importeCentavos }` y reserva un horario existente futuro. Devuelve la sesión. |
+| `POST /sesiones/:id/realizar` | Confirma que ocurrió una sesión cuyo horario ya llegó. Devuelve la sesión realizada. |
+| `PUT /sesiones/:id` | Recibe `{ importeCentavos, pagadoCentavos }` y devuelve la sesión con el saldo calculado. |
+| `GET /horarios/disponibles?fecha=YYYY-MM-DD` | `{ desde, hasta, horarios }` futuros de la semana que contiene esa fecha. Sin fecha usa la semana actual. |
+| `GET /horarios/:fecha/:horario` | Horario individual, estado, paciente, modalidad y `sesionId`, si tiene sesión. |
+| `POST /horarios` | Recibe `{ fecha, horario }` y crea un horario disponible futuro. |
+| `GET /agenda?fecha=YYYY-MM-DD` | Semana de siete días con sus horarios; sin fecha usa la actual. |
+| `GET /dashboard` | `{ pacientesActivos, sesionesSemana, pendientesCobro, horariosDisponibles }` calculado. |
 
-El backend utiliza consultas SQL directas y `better-sqlite3`. No incorpora ORM,
-Docker ni capas de arquitectura adicionales. Mantiene sus dependencias y su
-compilación separadas del frontend.
-
-## Endpoints de la API
-
-URL base: `http://127.0.0.1:3000/api`. Las respuestas tienen formato JSON.
-
-| Método | Endpoint | Respuesta correcta |
-| --- | --- | --- |
-| GET | `/api/dashboard` | HTTP 200, objeto con los cuatro indicadores. |
-| GET | `/api/pacientes` | HTTP 200, arreglo con P-001, P-002 y P-003. |
-| GET | `/api/pacientes/:codigo` | HTTP 200, objeto del paciente; HTTP 404 si el código no existe. |
-| GET | `/api/agenda` | HTTP 200, objeto con el título, siete días y sus turnos. |
-
-Estos son endpoints de consulta. No existen operaciones POST, PUT, PATCH o DELETE
-para crear, editar o eliminar datos.
-
-### Ejemplo: Dashboard
-
-`GET /api/dashboard` devuelve:
+En el alta, `paciente` contiene los diez campos editables; `codigo` es opcional y `fechaCreacion` no se debe enviar. Si se incluye `turno`, requiere fecha, horario, modalidad e importe en centavos. Por ejemplo:
 
 ```json
 {
-  "pacientesActivos": 3,
-  "sesionesSemana": 8,
-  "pendientesCobro": 2,
-  "horariosDisponibles": 4
+  "paciente": {
+    "codigo": "PA-01",
+    "modalidad": "Virtual",
+    "estado": "Activo",
+    "proximaSesion": null,
+    "frecuencia": "Semanal",
+    "diaHabitual": null,
+    "horarioHabitual": null,
+    "fechaInicioTratamiento": "2026-10-05",
+    "motivoConsulta": "",
+    "postIt": ""
+  }
 }
 ```
 
-### Ejemplo: ficha y listado
+El ejemplo es un alta independiente. Para asociarla a un horario se agrega, al mismo nivel de `paciente`, un objeto como `"turno": { "fecha": "YYYY-MM-DD", "horario": "15:00", "modalidad": "Virtual", "importeCentavos": 2500000 }`, reemplazando la fecha por una futura con un horario disponible real.
 
-`GET /api/pacientes/P-001` devuelve:
+CORS permite los métodos GET, POST y PUT para el origen configurado. Controla el acceso desde el navegador; no sustituye la autenticación. No existen rutas de eliminación ni de cancelación de sesiones en esta etapa.
 
-```json
-{
-  "codigo": "P-001",
-  "modalidad": "Presencial",
-  "estado": "Activo",
-  "proximaSesion": "LUN 15 HS",
-  "frecuencia": "Semanal",
-  "diaHabitual": "Lunes",
-  "horarioHabitual": "15:00",
-  "fechaCreacion": "2026-09-01",
-  "fechaInicioTratamiento": "2026-09-01",
-  "motivoConsulta": "Dificultades vinculadas a situaciones de ansiedad.",
-  "postIt": "Retomar situaciones que generan mayor ansiedad durante la semana."
-}
-```
+## Alcance pendiente
 
-`GET /api/pacientes` devuelve un arreglo de tres objetos con esta misma estructura.
-En P-003, `proximaSesion`, `diaHabitual` y `horarioHabitual` conservan `null`;
-no se sustituyen por una cadena vacía.
-
-`GET /api/pacientes/P-999` devuelve HTTP 404 y:
-
-```json
-{
-  "mensaje": "Paciente no encontrado"
-}
-```
-
-### Ejemplo: Agenda
-
-`GET /api/agenda` devuelve el título y los siete días. Este fragmento muestra
-únicamente el lunes del objeto completo:
-
-```json
-{
-  "titulo": "7 al 13 de septiembre de 2026",
-  "dias": [
-    {
-      "fecha": "2026-09-07",
-      "nombre": "Lunes",
-      "turnos": [
-        {
-          "horario": "09:00",
-          "codigoPaciente": null,
-          "modalidad": null,
-          "estado": "Disponible"
-        },
-        {
-          "horario": "11:00",
-          "codigoPaciente": null,
-          "modalidad": null,
-          "estado": "Liberado"
-        },
-        {
-          "horario": "15:00",
-          "codigoPaciente": "P-001",
-          "modalidad": "Presencial",
-          "estado": "Programado"
-        }
-      ]
-    }
-  ]
-}
-```
-
-La respuesta completa incluye martes a domingo; sábado y domingo tienen
-`"turnos": []`. SQL y el armado de la respuesta conservan el orden de los días
-y de los horarios.
-
-## SQLite: tablas, inicialización y persistencia
-
-La base predeterminada es `backend/data/psique.sqlite`. Contiene únicamente
-las tablas necesarias para representar los datos existentes:
-
-| Tabla | Contenido |
-| --- | --- |
-| `pacientes` | Tres pacientes, sus datos de seguimiento y Post-it. |
-| `semana_agenda` | Título de la semana de ejemplo. |
-| `dias_agenda` | Las siete fechas y sus nombres. |
-| `turnos` | Los horarios de cada día, códigos, modalidades y estados. |
-| `dashboard` | Los cuatro indicadores fijos 3, 8, 2 y 4. |
-
-Al iniciar el servidor se crean las tablas si faltan. Si las **cinco tablas están
-vacías**, el seed inserta los datos del prototipo en una transacción: se completa
-todo el conjunto o se revierte la inserción. Si ya hay datos, no vuelve a sembrar
-ni sobrescribe registros. No se utiliza el reinicio para reparar o rellenar
-automáticamente una base parcialmente modificada.
-
-Las fechas se conservan como texto ISO `YYYY-MM-DD`; las horas, como `HH:mm`.
-Los campos sin valor usan `NULL` en SQLite y llegan como `null` en JSON. Los
-valores del Dashboard son registros almacenados, no resultados de estadísticas.
-
-La persistencia significa que el archivo SQLite conserva sus registros aunque
-se cierre el frontend o se reinicie Express. Los GET consultan ese archivo.
-Los textos del seed sirven para la primera inicialización; cambiarlos no
-actualiza automáticamente una base que ya contiene datos.
-
-No hay un servidor de base de datos independiente ni un comando adicional de
-instalación de SQLite. El archivo local y sus posibles auxiliares no se suben
-al repositorio. Las pruebas usan otra ubicación temporal para verificar reinicios
-y evitar duplicados sin alterar la base de desarrollo.
-
-## Cómo llegan los datos HTTP a las pantallas
-
-Los servicios mantienen los contratos que ya consumían los componentes:
-
-| Método Angular | Tipo devuelto | Solicitud |
-| --- | --- | --- |
-| `DashboardService.obtenerResumen()` | `Observable<ResumenDashboard>` | GET `/dashboard` |
-| `PacientesService.obtenerPacientes()` | `Observable<Paciente[]>` | GET `/pacientes` |
-| `PacientesService.obtenerPacientePorCodigo(codigo)` | `Observable<Paciente \| undefined>` | GET `/pacientes/:codigo` |
-| `AgendaService.obtenerSemana()` | `Observable<SemanaAgenda>` | GET `/agenda` |
-
-Las rutas de esta tabla se agregan a `API_BASE_URL`. `provideHttpClient()` registra
-el cliente HTTP en Angular; cada servicio lo obtiene mediante `inject(HttpClient)`.
-
-Por ejemplo, al abrir una ficha:
-
-1. La tarjeta navega a `/pacientes/P-001` mediante `RouterLink`.
-2. `ActivatedRoute.paramMap` entrega el parámetro `codigo`. `switchMap` lo convierte
-   en una llamada a `PacientesService.obtenerPacientePorCodigo`.
-3. `HttpClient.get<Paciente>(...)` produce el Observable de la solicitud.
-   `AsyncPipe` se suscribe desde el HTML y Angular envía el GET.
-4. Express recibe el código, consulta SQLite y responde con el objeto JSON.
-5. `HttpClient` entrega el objeto al Observable y `AsyncPipe` lo deja disponible
-   para mostrar los campos con interpolación, como `{{ paciente.codigo }}`.
-
-Los modelos TypeScript ayudan a comprobar cómo usamos esos objetos en el código;
-no validan automáticamente el contenido de una respuesta externa en ejecución.
-
-### Paciente inexistente y errores de carga
-
-Un paciente inexistente es diferente de una API que no responde:
-
-- Si la ficha recibe HTTP 404, `PacientesService` convierte ese error en
-  `of(undefined)`. Se conserva el mensaje **Paciente no encontrado** y el botón
-  para volver a Pacientes.
-- Si ocurre otro error HTTP o de conexión, el servicio lo propaga. La pantalla
-  muestra un mensaje de carga fallida y permite volver a intentar recargando.
-- Mientras espera la respuesta, la pantalla muestra un mensaje de carga.
-  No presenta temporalmente un paciente inexistente ni valores numéricos en cero.
-
-Los componentes mantienen `cargando` y `errorCarga`. `catchError` registra el
-estado de error de presentación y devuelve `EMPTY` para terminar la secuencia
-sin inventar datos. `finalize` apaga el indicador de carga cuando la consulta
-termina, falla o se cancela. No hay un retorno a mocks ni reintentos automáticos.
-
-Después de arrancar de nuevo el backend, recargá la página que mostró el error.
-Ionic puede conservar pantallas ya visitadas; una recarga permite comprobar una
-nueva solicitud HTTP y evita confundir una vista anterior con datos recién obtenidos.
-
-### CORS
-
-Angular se sirve en `http://127.0.0.1:4200` y la API en
-`http://127.0.0.1:3000`. Aunque ambos son locales, el puerto distinto hace que
-sean orígenes diferentes. El navegador necesita que la API autorice ese origen
-para permitir que Angular lea sus respuestas.
-
-Express configura CORS para el origen de desarrollo indicado en
-`FRONTEND_ORIGIN` y las consultas GET. CORS es una regla del navegador;
-**no autentica usuarios ni protege la API frente a otros clientes HTTP**.
-
-## Alcance y seguridad de esta etapa
-
-La API y SQLite son reales; el contenido inicial es ficticio y se mantiene
-únicamente para demostrar el flujo existente. No usar esta versión con
-información clínica real.
-
-No se implementaron login, registro, Google Sign-In, JWT, roles, gestión de
-usuarios, cifrado de la base, cifrado de extremo a extremo o bloqueo automático.
-La comunicación local utiliza HTTP y no existe separación de datos por profesional.
-
-Tampoco se agregaron creación, edición, eliminación, formularios, historial,
-objetivos, pagos reales, honorarios, lista de espera, notificaciones, cambio de
-semana, calendario mensual, recurrencias, cancelaciones ni estadísticas calculadas.
-
-El servidor no necesita registrar los cuerpos de respuesta ni contenido clínico
-para atender las consultas. Las variables locales de configuración se mantienen
-fuera del código cuando corresponde; `.env.example` muestra valores de desarrollo,
-sin credenciales.
+La aplicación funciona localmente y tiene persistencia, pero todavía requiere trabajo antes de un uso clínico real: autenticación, control de acceso, protección y copias de seguridad de datos, y configuración de despliegue. Tampoco incluye múltiples profesionales, cancelaciones/reprogramaciones, recurrencia automática ni un historial individual de movimientos de pago. El destino móvil y la distribución instalable continúan como pasos posteriores.
 
 ## Archivos de configuración de la raíz
 
@@ -652,151 +430,24 @@ con redirección a `index.html` para rutas como `/pacientes`. No se debe abrir
 `www/browser/index.html` con doble clic (`file://`), porque la aplicación necesita
 cargarse por HTTP y resolver correctamente sus rutas y módulos.
 
-## Conceptos para comprender y defender el proyecto
+## Verificación y recorrido de prueba
 
-| Concepto | Qué significa en PSIQUE |
-| --- | --- |
-| API REST | Interfaz de consulta por HTTP que expone recursos como pacientes o agenda mediante direcciones y métodos definidos. |
-| Endpoint | Combinación de método y ruta: por ejemplo, `GET /api/pacientes/P-001`. |
-| Node.js | Ejecuta el código del servidor fuera del navegador. |
-| Express | Recibe las solicitudes, identifica la ruta y devuelve el estado HTTP y el JSON correspondiente. |
-| SQLite | Motor que almacena tablas y registros en un archivo local; no necesita un servicio separado de base de datos. |
-| GET | Solicita datos; estos endpoints no modifican registros. |
-| HTTP 200 / 404 | 200 indica una respuesta correcta; 404 indica que el recurso solicitado no fue encontrado. |
-| JSON | Formato con objetos, arreglos, números, textos y `null` utilizado entre backend y frontend. |
-| Consulta parametrizada | Envía el código del paciente separado del SQL, como valor del parámetro `?`, para no tratarlo como una instrucción SQL. |
-| Seed | Carga inicial de los datos ficticios en una base vacía. No se repite sobre una base que ya tiene datos. |
-| Transacción | Agrupa las inserciones del seed para completarlas juntas o revertirlas ante un error. |
-| Persistencia | Los registros quedan en SQLite, fuera del frontend y del proceso de Express. |
-| CORS | Permite al navegador leer respuestas de otro origen autorizado; no equivale a autenticación. |
+Verificación completada el **05/10/2026**:
 
-Una **interfaz TypeScript** define el contrato esperado. `Paciente` mantiene los
-once campos de la ficha; `ResumenDashboard`, los cuatro indicadores numéricos;
-`SemanaAgenda` agrupa `DiaAgenda` y sus `Turno`. Cada turno tiene `horario`,
-`codigoPaciente`, `modalidad` y `estado`. Los horarios libres conservan código y
-modalidad en `null`, y los estados son `Programado`, `Disponible` o `Liberado`.
+- Compilación del frontend y del backend correcta; frontend sin advertencias.
+- Backend: **36 casos efectivos aprobados** (39 resultados al incluir los tres contenedores del ejecutor de Node), con bases SQLite temporales. Incluyen migración y persistencia, fecha de creación inmutable, reservas concurrentes, reversión completa ante fallos y límites del calendario de Buenos Aires.
+- Navegador: **56 comprobaciones aprobadas**, con una API y una base temporales. Se verificaron los cuatro accesos de Inicio, altas independientes y con reserva, conflictos sin altas parciales, confirmación manual de sesiones, cobros y contadores, navegación entre semanas, recarga, errores y estados vacíos. También se comprobaron teclado y presentación en PC y anchos de 360 y 320 píxeles.
+- Se respaldó la base local antes de actualizarla. La migración conservó sus pacientes y horarios originales, convirtió los turnos asignados en sesiones programadas sin inventar importes y mantuvo válidas las relaciones entre registros.
 
-Un **servicio Angular** concentra la consulta HTTP. `providedIn: 'root'` lo deja
-disponible en la aplicación y `inject` permite recibir esa dependencia. La
-pantalla se ocupa de presentar la respuesta, sin conocer las tablas ni escribir SQL.
+Para recorrer la aplicación con datos propios de prueba:
 
-Un **Observable** representa la entrega de una respuesta o un error. `HttpClient`
-devuelve Observables y envía la solicitud cuando hay una suscripción. El sufijo
-`$` en `resumen$`, `pacientes$`, `paciente$` y `semana$` es una convención de nombres.
+1. Abrí Pacientes y creá un paciente con un alias. Confirmá que aparece en el listado y que su ficha muestra la fecha de creación sin permitir editarla.
+2. Editá algún dato, cancelá y comprobá que conserva su valor. Después guardá un cambio de código y revisá la ficha actualizada.
+3. En Agenda, agregá un horario futuro y seleccioná **Agendar sesión**. Elegí el paciente, la modalidad y los honorarios; guardá y abrí el detalle.
+4. Volvé a Inicio. El horario reservado ya no debe figurar entre los disponibles. Una sesión programada no incrementa todavía las sesiones realizadas ni los pendientes de cobro.
+5. Agregá otro horario y usá **Crear paciente** desde el agendamiento. Revisá el contexto; **Crear paciente y agendar** debe guardar ambos registros y abrir la sesión. Cancelar el alta debe volver sin guardar ninguno.
+6. Cuando haya llegado el horario de una sesión, marcala como realizada. Si pertenece a la semana actual debe figurar en el histórico; si tiene saldo, también en el modal de pendientes.
+7. Registrá un cobro parcial y verificá el saldo; después completá el total acumulado y comprobá que desaparece de pendientes.
+8. Reiniciá frontend y backend y comprobá que los cambios siguen guardados. Recorré Agenda por semanas anteriores y siguientes para consultar las fechas correspondientes.
 
-**`AsyncPipe`**, mediante `| async`, se suscribe y entrega el resultado al HTML;
-administra la suscripción y la libera cuando el componente se destruye o cambia
-el Observable. `@let resumen = resumen$ | async;` permite mantener esa suscripción
-antes de elegir qué estado mostrar con `@if`: carga, error o datos.
-
-**`ActivatedRoute.paramMap`** entrega el código presente en la URL.
-**`switchMap`** lo transforma en la consulta a la API; si cambia el código, deja
-de escuchar la consulta anterior y utiliza la nueva. En la ficha, el manejo de
-errores está dentro de esa consulta, por lo que no termina el flujo que escucha
-cambios de ruta.
-
-**Interpolación**, como `{{ resumen.pacientesActivos }}`, muestra una propiedad.
-**`@for`** repite las tarjetas o los turnos; `track` identifica cada elemento.
-**`@if`** selecciona qué mostrar según carga, error, existencia de datos o un
-campo opcional. **`DatePipe`** transforma la presentación de una fecha ISO a
-`dd/MM/yyyy` sin alterar el valor almacenado. **`??`** permite mostrar
-**Sin definir** para un día u horario habitual ausente.
-
-Los componentes son **standalone**: declaran sus dependencias de plantilla en
-`imports`. Las rutas usan `loadComponent` para cargar cada pantalla.
-Los estilos SCSS y las reglas `@media` conservan la adaptación a PC y móvil.
-
-## Verificación y demo
-
-La compilación comprueba los tipos; las pruebas del backend comprueban además
-las respuestas HTTP y el comportamiento de SQLite. Son comprobaciones diferentes.
-
-Verificación de esta integración, realizada el **28/09/2026**:
-
-- Compilaciones del frontend y backend correctas; frontend sin advertencias.
-- Pruebas del backend correctas: ocho casos y su prueba contenedora, nueve
-  resultados informados por el ejecutor de Node.
-- Respuestas de la API comparadas con los datos originales, incluido HTTP 404
-  para P-999; persistencia y seed sin duplicados comprobados.
-- Arranque mediante `dev` y mediante el JavaScript compilado de `start` comprobados.
-- Recorrido en navegador a 1440 × 1080 y 360 × 800, con solicitudes HTTP reales,
-  navegación activa y conservación del diseño.
-- Estados de carga, HTTP 500 en las cuatro pantallas y fallo de conexión en
-  la ficha comprobados, diferenciándolos del paciente inexistente.
-
-Desde `backend`, `npm.cmd test` compila y ejecuta el conjunto de pruebas. Comprueba:
-
-- Campos, textos y valores `null` de pacientes y fichas.
-- HTTP 404 del paciente inexistente.
-- Semana, días y horarios de agenda, y los cuatro valores del Dashboard.
-- Configuración de CORS y consultas con códigos que no deben alterar el SQL.
-- Persistencia al cerrar y abrir la base, ausencia de duplicados y ausencia de
-  restauración de los valores iniciales sobre datos ya existentes.
-
-Las pruebas crean un archivo SQLite temporal y usan un puerto asignado por el
-sistema. No leen ni modifican `backend/data/psique.sqlite`. Así pueden probar
-persistencia y reinicios sin alterar los datos de la demo.
-
-### Comprobar la API por separado
-
-Con Express iniciado, ejecutá desde una terminal libre:
-
-```powershell
-Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/dashboard'
-Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/pacientes'
-Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/pacientes/P-001'
-Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/agenda'
-```
-
-Para el caso inexistente, `curl.exe` permite ver el código de estado y el cuerpo:
-
-```powershell
-curl.exe -i 'http://127.0.0.1:3000/api/pacientes/P-999'
-```
-
-Debe devolver HTTP 404 con `{"mensaje":"Paciente no encontrado"}`.
-En el navegador, la pestaña **Red/Network** de las herramientas de desarrollo
-permite observar las solicitudes `/api/...` y sus respuestas JSON.
-
-### Recorrer las pantallas
-
-1. Abrí `http://127.0.0.1:4200/inicio`. Comprobá los cuatro valores **3, 8, 2 y 4**,
-   sus textos secundarios y la grilla de 2 × 2 en una ventana amplia.
-2. Elegí **Pacientes** en la barra inferior. Deben aparecer P-001, P-002 y P-003
-   con los mismos estados, modalidades, horarios y fechas.
-3. Abrí P-001 y revisá la ficha y el Post-it. Volvé con **Pacientes** y consultá
-   P-002 y P-003. Este último debe mantener **Sin definir** en día y horario.
-4. Abrí directamente `/pacientes/P-002` en una pestaña nueva y recargá. La ficha
-   debe consultar el backend y mantener disponible el regreso al listado.
-5. Abrí `http://127.0.0.1:4200/pacientes/P-999`. Con la API funcionando debe
-   mostrar **Paciente no encontrado**, y no un error de conexión.
-6. Elegí **Agenda**. Revisá el lunes, su horario liberado y P-001 a las 15:00;
-   el miércoles, P-002 a las 10:30. Seleccioná los siete días: sábado y domingo
-   deben mostrar **Sin horarios cargados para este día.**
-7. Observá Red/Network mientras cambiás de día: la selección usa la semana
-   recibida, sin pedir otra vez la API por cada día.
-8. Volvé a Inicio: los indicadores siguen siendo 3, 8, 2 y 4 porque se leen
-   de un resumen almacenado, sin calcularse a partir de la agenda.
-9. Reducí el ancho de la ventana y comprobá las tarjetas, la ficha, los turnos
-   y la barra inferior. Revisá que pueda alcanzarse todo el contenido y que la
-   navegación marque Pacientes también dentro de una ficha.
-
-### Distinguir carga, fallos y persistencia
-
-- Para observar la carga, usá una conexión lenta simulada desde Red/Network y
-  recargá. Debe aparecer el mensaje correspondiente, como **Cargando resumen...**,
-  hasta recibir la respuesta.
-- Detené solo Express con `Ctrl+C` y recargá una pantalla. Debe mostrar un mensaje
-  como **No se pudo cargar el resumen. Recargá la página para volver a intentar.**
-  No deben aparecer cifras en cero ni pacientes de reserva.
-- Con Express detenido, una ficha tampoco debe afirmar **Paciente no encontrado**:
-  ese mensaje corresponde al 404 que devuelve una API disponible.
-- Reiniciá Express y recargá el frontend. Los datos deben volver a mostrarse desde
-  el mismo archivo SQLite. El listado debe conservar tres pacientes, sin duplicados.
-- El control de que un valor modificado permanezca tras reabrir la base se realiza
-  en las pruebas temporales; no requiere editar la base utilizada por la demo.
-
-Para la defensa oral, seguí una consulta completa: ruta de Angular → servicio →
-`HttpClient` → endpoint de Express → SQL → JSON → Observable → `AsyncPipe` →
-pantalla. Diferenciá **datos ficticios** de **almacenamiento real** y
-**indicadores almacenados** de **estadísticas calculadas**.
+Los casos de prueba que necesitan fechas pasadas o cambios de reloj deben usar una base aislada y el reloj inyectable del backend; no hace falta cambiar el reloj de Windows ni alterar registros del consultorio. Las pruebas de errores deben comprobar que se muestran mensajes útiles y se conserva el borrador, sin confirmar un guardado que no ocurrió.

@@ -26,6 +26,10 @@
         <p class="etiqueta">Tu espacio profesional</p>
         <h1 id="titulo-pacientes">Pacientes</h1>
         <p class="introduccion">Tus pacientes, en un solo lugar.</p>
+        <a class="crear-paciente" routerLink="/pacientes/nuevo" routerDirection="forward">
+          <ion-icon [icon]="iconoCrear" aria-hidden="true"></ion-icon>
+          Crear paciente
+        </a>
       </section>
 
       @let pacientes = pacientes$ | async;
@@ -34,6 +38,9 @@
       } @else if (errorCarga) {
         <p class="introduccion" role="alert">No se pudieron cargar los pacientes. Recargá la página para volver a intentar.</p>
       } @else if (pacientes) {
+        @if (!pacientes.length) {
+          <p class="introduccion">Todavía no hay pacientes. Creá el primero para comenzar.</p>
+        }
         <!-- @for crea una fila por paciente; track usa su código para identificarla. -->
         <ul class="lista-pacientes" aria-label="Listado de pacientes">
           @for (paciente of pacientes; track paciente.codigo) {

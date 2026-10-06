@@ -109,6 +109,24 @@ h1 {
   list-style: none;
 }
 
+.crear-paciente {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 22px;
+  padding: 11px 18px;
+  border: 1px solid #355b4e;
+  border-radius: 12px;
+  background: #355b4e;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.crear-paciente ion-icon { font-size: 20px; }
+.crear-paciente:focus-visible { outline: 3px solid #945f46; outline-offset: 4px; }
+
 .paciente {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -132,6 +150,7 @@ h1 {
 }
 
 .identificacion {
+  min-width: 0;
   grid-column: 1;
   grid-row: 1 / span 2;
   display: flex;
@@ -152,6 +171,8 @@ h1 {
 }
 
 h2 {
+  min-width: 0;
+  overflow-wrap: anywhere;
   margin: 0;
   font-size: 22px;
   font-weight: 600;
@@ -162,7 +183,7 @@ h2 {
   grid-column: 2;
   grid-row: 2;
   display: grid;
-  grid-template-columns: 1fr 1.4fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
   gap: 28px;
   margin: 0;
 }
@@ -178,7 +199,9 @@ h2 {
   font-weight: 600;
   line-height: 1.5;
   letter-spacing: 0.03em;
-  white-space: nowrap;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .fecha-creacion {
@@ -210,12 +233,15 @@ dt {
 }
 
 dd {
+  overflow-wrap: anywhere;
   margin: 0;
   font-size: 16px;
   line-height: 1.5;
 }
 
 .estado {
+  max-width: 100%;
+  overflow-wrap: anywhere;
   display: inline-block;
   padding: 3px 12px;
   border-radius: 20px;
@@ -247,7 +273,7 @@ dd {
   }
 
   .paciente {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 22px 12px;
     padding: 22px;
   }

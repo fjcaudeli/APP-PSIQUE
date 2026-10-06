@@ -33,15 +33,121 @@
         </section>
       } @else if (paciente) {
         <section class="presentacion" aria-labelledby="codigo-paciente">
-          <p class="etiqueta">Ficha del paciente</p>
+          <p class="etiqueta">{{ editando ? 'Editar ficha del paciente' : 'Ficha del paciente' }}</p>
           <div class="titulo-ficha">
             <h1 id="codigo-paciente">{{ paciente.codigo }}</h1>
             <span class="estado" [attr.aria-label]="'Estado del tratamiento: ' + paciente.estado">
               {{ paciente.estado }}
             </span>
           </div>
+          @if (!editando) {
+            <div class="acciones-ficha">
+              <button type="button" class="boton boton-editar" [disabled]="guardando" (click)="iniciarEdicion(paciente)">
+                <ion-icon [icon]="iconoEditar" aria-hidden="true"></ion-icon>
+                Editar ficha
+              </button>
+              @if (mensajeGuardado) {
+                <p class="confirmacion" role="status">{{ mensajeGuardado }}</p>
+              }
+            </div>
+          }
         </section>
 
+        @if (editando) {
+          <!-- Los controles editan una copia; únicamente Guardar envía el PUT a la API. -->
+          <form [formGroup]="formulario" (ngSubmit)="guardar()" aria-label="Editar datos del paciente">
+            <fieldset [disabled]="guardando">
+              <legend class="solo-lectores">Datos editables del paciente</legend>
+              <section class="datos-tratamiento" aria-labelledby="titulo-identificacion">
+                <h2 id="titulo-identificacion">Identificación y tratamiento</h2>
+                <div class="campos">
+                  <div class="campo campo-completo">
+                    <label for="codigo">Identificador del paciente</label>
+                    <input id="codigo" formControlName="codigo" maxlength="12" autocomplete="off" spellcheck="false"
+                      aria-describedby="ayuda-codigo error-codigo" [attr.aria-invalid]="campoInvalido('codigo')" />
+                    <p id="ayuda-codigo" class="ayuda-campo">Usá un alias, iniciales o un código. Evitá nombres reales. De 1 a 12 caracteres: letras sin tildes, números, guion o guion bajo; comenzá con una letra o un número.</p>
+                    @if (campoInvalido('codigo')) {
+                      <p id="error-codigo" class="error-campo">{{ formulario.controls.codigo.hasError('codigoReservado') ? 'El código «nuevo» está reservado. Elegí otro identificador.' : 'Ingresá un identificador válido de hasta 12 caracteres, sin espacios.' }}</p>
+                    }
+                  </div>
+                  <div class="campo">
+                    <label for="estado">Estado del tratamiento</label>
+                    <input id="estado" formControlName="estado" maxlength="40" list="estados" autocomplete="off"
+                      [attr.aria-invalid]="campoInvalido('estado')" aria-describedby="error-estado" />
+                    <datalist id="estados"><option value="Activo"></option><option value="En pausa"></option><option value="Finalizado"></option></datalist>
+                    @if (campoInvalido('estado')) {
+                      <p id="error-estado" class="error-campo">Completá el estado con hasta 40 caracteres.</p>
+                    }
+                  </div>
+                  <div class="campo">
+                    <label for="modalidad">Modalidad</label>
+                    <select id="modalidad" formControlName="modalidad">
+                      <option value="Presencial">Presencial</option>
+                      <option value="Virtual">Virtual</option>
+                    </select>
+                  </div>
+                  <div class="campo">
+                    <label for="frecuencia">Frecuencia</label>
+                    <input id="frecuencia" formControlName="frecuencia" maxlength="40" list="frecuencias" autocomplete="off"
+                      [attr.aria-invalid]="campoInvalido('frecuencia')" aria-describedby="error-frecuencia" />
+                    <datalist id="frecuencias"><option value="Semanal"></option><option value="Quincenal"></option><option value="Mensual"></option></datalist>
+                    @if (campoInvalido('frecuencia')) {
+                      <p id="error-frecuencia" class="error-campo">Completá la frecuencia con hasta 40 caracteres.</p>
+                    }
+                  </div>
+                  <div class="campo">
+                    <label for="diaHabitual">Día habitual</label>
+                    <select id="diaHabitual" formControlName="diaHabitual">
+                      <option value="">Sin definir</option>
+                      @for (dia of dias; track dia) {
+                        <option [value]="dia">{{ dia }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="campo">
+                    <label for="horarioHabitual">Horario habitual</label>
+                    <input id="horarioHabitual" type="time" formControlName="horarioHabitual" />
+                    <p class="ayuda-campo">Podés dejarlo vacío si todavía no está definido.</p>
+                  </div>
+                  <div class="campo">
+                    <label for="proximaSesion">Próxima sesión</label>
+                    <input id="proximaSesion" formControlName="proximaSesion" maxlength="30" placeholder="Ej.: LUN 15 HS"
+                      [attr.aria-invalid]="campoInvalido('proximaSesion')" aria-describedby="ayuda-proxima-sesion" />
+                    <p id="ayuda-proxima-sesion" class="ayuda-campo">Texto de la tarjeta del paciente. Dejalo vacío si no hay una próxima sesión definida. Máximo 30 caracteres.</p>
+                  </div>
+                  <p class="ayuda-campo campo-completo">Estos datos describen la atención habitual. Los turnos ya agendados conservan su fecha, horario y modalidad.</p>
+                  <div class="campo">
+                    <label for="fechaInicioTratamiento">Inicio del tratamiento</label>
+                    <input id="fechaInicioTratamiento" type="date" formControlName="fechaInicioTratamiento" min="0001-01-01" max="9999-12-31"
+                      [attr.aria-invalid]="campoInvalido('fechaInicioTratamiento')" aria-describedby="error-inicio" />
+                    @if (campoInvalido('fechaInicioTratamiento')) {
+                      <p id="error-inicio" class="error-campo">Ingresá una fecha válida de inicio.</p>
+                    }
+                  </div>
+                </div>
+              </section>
+              <section class="motivo-consulta" aria-labelledby="titulo-editar-motivo">
+                <h2 id="titulo-editar-motivo"><label for="motivoConsulta">Motivo de consulta</label></h2>
+                <textarea id="motivoConsulta" formControlName="motivoConsulta" rows="4" maxlength="3000"
+                  [attr.aria-invalid]="campoInvalido('motivoConsulta')" aria-describedby="ayuda-motivo"></textarea>
+                <p id="ayuda-motivo" class="ayuda-campo">Hasta 3000 caracteres.</p>
+              </section>
+              <section class="post-it" aria-labelledby="titulo-editar-postit">
+                <h2 id="titulo-editar-postit"><label for="postIt">Post-it de próxima sesión</label></h2>
+                <textarea id="postIt" formControlName="postIt" rows="3" maxlength="300"
+                  [attr.aria-invalid]="campoInvalido('postIt')" aria-describedby="ayuda-postit"></textarea>
+                <p id="ayuda-postit" class="ayuda-campo">Una nota breve para retomar en la próxima sesión. Hasta 300 caracteres.</p>
+              </section>
+            </fieldset>
+            @if (errorGuardado) {
+              <p class="error-guardado" role="alert">{{ errorGuardado }}</p>
+            }
+            <div class="acciones-edicion" [attr.aria-busy]="guardando">
+              <button type="submit" class="boton" [disabled]="guardando">{{ guardando ? 'Guardando...' : 'Guardar cambios' }}</button>
+              <button type="button" class="boton boton-secundario" [disabled]="guardando" (click)="cancelarEdicion()">Cancelar</button>
+            </div>
+          </form>
+        } @else {
         <section class="datos-tratamiento" aria-labelledby="titulo-tratamiento">
           <h2 id="titulo-tratamiento">Datos del tratamiento</h2>
           <dl class="datos">
@@ -81,6 +187,8 @@
           </div>
           <p>{{ paciente.postIt }}</p>
         </section>
+        }
+        <p class="fecha-creacion">Creado el <time [attr.datetime]="paciente.fechaCreacion">{{ paciente.fechaCreacion | date: 'dd/MM/yyyy' }}</time></p>
       } @else {
         <!-- Una URL con un código inexistente mantiene disponible el regreso al listado. -->
         <section class="no-encontrado">

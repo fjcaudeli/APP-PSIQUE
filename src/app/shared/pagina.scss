@@ -1,0 +1,47 @@
+:host { --verde-oscuro: #284b41; --texto-secundario: #626b62; }
+ion-content { --background: #f7f6f0; --color: var(--verde-oscuro); }
+.pagina { width: min(100%, 1040px); margin: 0 auto; padding: 40px 40px 36px; }
+.encabezado { padding-bottom: 30px; border-bottom: 1px solid #dce1d7; }
+.marca { display: flex; align-items: center; gap: 14px; }
+.marca-simbolo { display: grid; place-items: center; width: 52px; height: 52px; flex-shrink: 0; border: 1px solid #cbd6c8; border-radius: 17px; background: #e9eee4; font-family: Georgia, serif; font-size: 36px; }
+.marca-nombre { margin: 0; font-size: 21px; font-weight: 700; letter-spacing: .15em; }
+.marca-descripcion { margin: 5px 0 0; color: var(--texto-secundario); font-size: 13px; }
+.navegacion { display: flex; margin: 24px 0 18px; }
+ion-back-button { min-height: 44px; --color: var(--verde-oscuro); --padding-start: 0; --padding-end: 12px; font-size: 16px; text-transform: none; letter-spacing: normal; }
+ion-back-button::part(native):focus-visible { outline: 3px solid #945f46; outline-offset: 3px; }
+.presentacion { padding-bottom: 28px; }
+.etiqueta { margin: 0 0 14px; color: var(--texto-secundario); font-size: 12px; font-weight: 600; letter-spacing: .11em; text-transform: uppercase; }
+h1 { margin: 0; font-size: clamp(36px, 6vw, 52px); font-weight: 600; letter-spacing: -.04em; line-height: 1.15; overflow-wrap: anywhere; }
+h2 { margin: 0 0 20px; font-size: 21px; line-height: 1.4; }
+.introduccion { margin: 16px 0 0; color: var(--texto-secundario); font-size: 17px; line-height: 1.6; }
+.tarjeta { padding: 28px; margin-bottom: 20px; border: 1px solid #d8dfd2; border-radius: 22px; background: #fdfdf8; }
+.tarjeta-destacada { background: #e9eee4; }
+.campos, .datos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.campo { min-width: 0; }
+.campo-completo { grid-column: 1 / -1; }
+label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
+input, select { width: 100%; min-width: 0; min-height: 46px; padding: 12px; border: 1px solid #b8c8b5; border-radius: 10px; background: #fffef9; color: var(--verde-oscuro); font: inherit; font-size: 16px; }
+input:focus-visible, select:focus-visible, .boton:focus-visible, a:focus-visible { outline: 3px solid #945f46; outline-offset: 3px; }
+[aria-invalid='true'] { border-color: #94513e; }
+.ayuda { margin: 8px 0 0; font-size: 13px; color: var(--texto-secundario); line-height: 1.5; }
+.error { margin: 14px 0; color: #8a402d; line-height: 1.5; }
+.confirmacion { padding: 14px 18px; border-radius: 12px; background: #e9eee4; line-height: 1.5; }
+.acciones { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+.boton { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 11px 18px; border: 1px solid #355b4e; border-radius: 12px; background: #355b4e; color: #fff; font: inherit; font-weight: 600; text-align: center; text-decoration: none; cursor: pointer; }
+.boton-secundario { color: var(--verde-oscuro); background: transparent; }
+.boton:disabled { opacity: .6; cursor: default; }
+fieldset { margin: 0; padding: 0; min-width: 0; border: 0; }
+.datos { margin: 0; }
+dt { font-size: 14px; color: var(--texto-secundario); margin-bottom: 8px; }
+dd { margin: 0; line-height: 1.6; overflow-wrap: anywhere; }
+a { color: inherit; }
+.estado { display: inline-block; padding: 5px 14px; border-radius: 20px; background: #e9eee4; font-size: 14px; font-weight: 600; }
+@media (max-width: 640px) {
+  .pagina { padding: 28px 22px; }
+  .encabezado { padding-bottom: 24px; }
+  .navegacion { margin: 16px 0; }
+  .tarjeta { padding: 22px; }
+  .campos { grid-template-columns: 1fr; }
+  .datos { gap: 22px 16px; }
+  .acciones .boton { flex: 1; }
+}

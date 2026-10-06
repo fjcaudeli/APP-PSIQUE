@@ -19,6 +19,25 @@ export interface Turno {
   codigoPaciente: string | null;
   modalidad: 'Presencial' | 'Virtual' | null;
   estado: 'Programado' | 'Disponible' | 'Liberado';
+  sesionId?: number | null;
+}
+
+export interface Sesion {
+  id: number;
+  fecha: string;
+  horario: string;
+  codigoPaciente: string;
+  modalidad: 'Presencial' | 'Virtual';
+  importeCentavos: number;
+  pagadoCentavos: number;
+  pendienteCentavos: number;
+  estado: 'Programada' | 'Realizada';
+}
+
+export interface HorarioDisponible {
+  fecha: string;
+  horario: string;
+  estado: 'Disponible' | 'Liberado';
 }
 
 export interface DiaAgenda {

@@ -15,3 +15,6 @@ export interface Paciente {
   motivoConsulta: string;
   postIt: string;
 }
+
+// La fecha de creación la asigna el servidor. Un código vacío solicita uno automático.
+export type NuevoPaciente = Omit<Paciente, 'fechaCreacion' | 'codigo'> & { codigo?: string };

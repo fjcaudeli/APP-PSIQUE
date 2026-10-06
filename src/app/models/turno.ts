@@ -5,6 +5,7 @@ export interface Turno {
   codigoPaciente: string | null;
   modalidad: 'Presencial' | 'Virtual' | null;
   estado: 'Programado' | 'Disponible' | 'Liberado';
+  sesionId: number | null;
 }
 
 // Agrupamos los horarios por fecha para consultar una semana completa.

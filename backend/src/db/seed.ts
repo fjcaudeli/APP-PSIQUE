@@ -1,8 +1,8 @@
 import type Database from 'better-sqlite3';
 import type { Paciente, ResumenDashboard, SemanaAgenda } from '../models.ts';
 
-// Datos ficticios que antes estaban en los mocks de Angular. Solo se usan para
-// inicializar una base vacía; las consultas HTTP leen las tablas de SQLite.
+// Fixture histórica conservada para pruebas explícitas de migración.
+// La aplicación no importa ni ejecuta esta carga al iniciar.
 export const PACIENTES_INICIALES: Paciente[] = [
   {
     codigo: 'P-001',

@@ -89,9 +89,30 @@ h1 {
 }
 
 .indicador {
+  display: block;
+  min-width: 0;
   padding: 28px;
   border: 1px solid #cdd8c9;
   border-radius: 24px;
+  color: var(--verde-oscuro);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.indicador:hover {
+  border-color: #81947b;
+  box-shadow: 0 5px 15px #284b4110;
+}
+
+.indicador:focus-visible,
+.boton:focus-visible,
+.cerrar-modal:focus-visible,
+.fila-modal:focus-visible {
+  outline: 3px solid #945f46;
+  outline-offset: 3px;
 }
 
 .indicador-pacientes {
@@ -120,7 +141,7 @@ h1 {
   gap: 14px;
 }
 
-h2 {
+h2, .indicador-titulo {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
@@ -158,6 +179,7 @@ h2 {
 }
 
 .indicador-valor {
+  display: block;
   margin: 30px 0 10px;
   font-size: 76px;
   font-weight: 500;
@@ -167,6 +189,7 @@ h2 {
 }
 
 .indicador-descripcion {
+  display: block;
   margin: 0;
   color: #55624f;
   font-size: 14px;
@@ -185,49 +208,115 @@ h2 {
   color: #55685e;
 }
 
-.accesos {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 28px;
-}
-
-.acceso-pacientes {
-  min-height: 50px;
-  margin: 0;
-  --border-radius: 14px;
-  --box-shadow: none;
-  --padding-start: 24px;
-  --padding-end: 24px;
-  font-size: 16px;
+.boton {
+  min-height: 44px;
+  margin-top: 18px;
+  padding: 11px 18px;
+  border: 1px solid #284b41;
+  border-radius: 12px;
+  background: #284b41;
+  color: #fffef9;
+  font: inherit;
   font-weight: 600;
-  letter-spacing: normal;
-  text-transform: none;
+  cursor: pointer;
 }
 
-.acceso-pacientes::part(native):focus-visible {
-  outline: 3px solid #945f46;
-  outline-offset: 4px;
+ion-modal {
+  --width: min(580px, calc(100% - 28px));
+  --height: min(700px, 85vh);
+  --border-radius: 24px;
+  --background: #f7f6f0;
+  --color: #284b41;
 }
 
-.pie {
-  padding-top: 28px;
-}
-
-.pie p {
+.modal-interior {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  color: var(--texto-secundario);
-  font-size: 12px;
+  flex-direction: column;
+  height: 100%;
+  color: #284b41;
+}
+
+.modal-encabezado {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 26px;
+  border-bottom: 1px solid #dce1d7;
+}
+
+.modal-encabezado .etiqueta { margin-bottom: 10px; }
+.modal-encabezado h2 { font-size: 23px; }
+
+.cerrar-modal {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: 1px solid #cdd8c9;
+  border-radius: 12px;
+  background: #e9eee4;
+  color: #284b41;
+  font-size: 19px;
+  cursor: pointer;
+}
+
+.modal-cuerpo {
+  flex: 1;
+  min-height: 0;
+  padding: 22px 26px;
+  overflow-y: auto;
+}
+
+.mensaje {
+  margin: 0 0 16px;
+  color: #626b62;
+  font-size: 15px;
   line-height: 1.5;
 }
 
-.punto-prototipo {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #a8785b;
+.listado-modal {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fila-modal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  width: 100%;
+  min-height: 84px;
+  padding: 18px;
+  border: 1px solid #d3ddce;
+  border-radius: 16px;
+  background: #fffef9;
+  color: #284b41;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fila-modal:hover { background: #e9eee4; }
+.fila-datos, .fila-importe { display: grid; gap: 6px; min-width: 0; overflow-wrap: anywhere; }
+.fila-datos > span { color: #626b62; font-size: 13px; }
+.fila-importe { text-align: right; }
+.fila-importe small { color: #626b62; font-size: 12px; }
+.fila-estado { padding: 5px 10px; border-radius: 12px; background: #e9eee4; font-size: 12px; }
+
+.modal-pie {
+  padding: 18px 26px;
+  border-top: 1px solid #dce1d7;
+}
+
+.modal-pie .boton { width: 100%; margin: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .indicador { transition: none; }
 }
 
 @media (max-width: 640px) {
@@ -261,7 +350,10 @@ h2 {
     font-size: 17px;
   }
 
-  .acceso-pacientes {
-    width: 100%;
-  }
+  .modal-encabezado { padding: 20px 18px; }
+  .modal-encabezado h2 { font-size: 21px; }
+  .modal-cuerpo { padding: 20px 18px; }
+  .modal-pie { padding: 16px 18px; }
+  .fila-modal { flex-wrap: wrap; gap: 12px; padding: 15px; }
+  .fila-importe { margin-left: auto; }
 }

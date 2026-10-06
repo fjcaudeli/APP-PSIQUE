@@ -1,7 +1,6 @@
 import Database from 'better-sqlite3';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { cargarDatosIniciales } from './seed.ts';
 
 export function abrirBaseDeDatos(ruta: string): Database.Database {
   mkdirSync(dirname(ruta), { recursive: true });
@@ -10,6 +9,7 @@ export function abrirBaseDeDatos(ruta: string): Database.Database {
   try {
     // Las claves foráneas mantienen las relaciones entre pacientes, días y turnos.
     db.pragma('foreign_keys = ON');
+    db.pragma('busy_timeout = 5000');
     db.exec(`
       CREATE TABLE IF NOT EXISTS pacientes (
         codigo TEXT PRIMARY KEY NOT NULL,
@@ -58,10 +58,43 @@ export function abrirBaseDeDatos(ruta: string): Database.Database {
       );
     `);
 
-    cargarDatosIniciales(db);
+    migrarBaseDeDatos(db);
     return db;
   } catch (error) {
     db.close();
     throw error;
   }
+}
+
+// La versión 1 agrega sesiones a las bases anteriores conservando cada turno,
+// su fecha y paciente. Los honorarios desconocidos permanecen en cero.
+// Una instalación nueva comienza vacía; los ejemplos ya no se cargan al iniciar.
+export function migrarBaseDeDatos(db: Database.Database): void {
+  db.transaction(() => {
+    const version = db.pragma('user_version', { simple: true }) as number;
+    if (version >= 1) return;
+    db.exec(`
+      CREATE TABLE sesiones (
+        id INTEGER PRIMARY KEY,
+        fecha TEXT NOT NULL,
+        horario TEXT NOT NULL,
+        codigoPaciente TEXT NOT NULL REFERENCES pacientes(codigo),
+        modalidad TEXT NOT NULL CHECK (modalidad IN ('Presencial', 'Virtual')),
+        estado TEXT NOT NULL DEFAULT 'Programada' CHECK (estado IN ('Programada', 'Realizada')),
+        importeCentavos INTEGER NOT NULL DEFAULT 0 CHECK (
+          typeof(importeCentavos) = 'integer' AND importeCentavos BETWEEN 0 AND 999999999
+        ),
+        pagadoCentavos INTEGER NOT NULL DEFAULT 0 CHECK (
+          typeof(pagadoCentavos) = 'integer' AND pagadoCentavos BETWEEN 0 AND importeCentavos
+        ),
+        UNIQUE (fecha, horario),
+        FOREIGN KEY (fecha, horario) REFERENCES turnos(fecha, horario)
+      );
+      INSERT INTO sesiones (fecha, horario, codigoPaciente, modalidad)
+        SELECT fecha, horario, codigoPaciente, modalidad FROM turnos
+        WHERE estado = 'Programado' ORDER BY fecha, horario;
+      CREATE INDEX sesiones_paciente ON sesiones(codigoPaciente);
+      PRAGMA user_version = 1;
+    `);
+  }).immediate();
 }

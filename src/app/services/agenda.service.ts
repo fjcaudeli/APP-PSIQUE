@@ -10,7 +10,7 @@ import { SemanaAgenda } from '../models/turno';
 export class AgendaService {
   private readonly http = inject(HttpClient);
 
-  obtenerSemana(): Observable<SemanaAgenda> {
-    return this.http.get<SemanaAgenda>(`${API_BASE_URL}/agenda`);
+  obtenerSemana(fecha?: string): Observable<SemanaAgenda> {
+    return this.http.get<SemanaAgenda>(`${API_BASE_URL}/agenda`, { params: fecha ? { fecha } : {} });
   }
 }

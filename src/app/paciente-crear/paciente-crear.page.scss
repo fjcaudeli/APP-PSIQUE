@@ -1,0 +1,27 @@
+.introduccion { margin: 18px 0 0; color: var(--texto-secundario); font-size: 18px; line-height: 1.5; }
+
+.volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px 0 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--verde-oscuro);
+  font: inherit;
+  cursor: pointer;
+}
+
+.volver ion-icon { font-size: 22px; }
+.volver:focus-visible { outline: 3px solid #945f46; outline-offset: 4px; }
+.volver:disabled { opacity: .65; cursor: wait; }
+.contexto-turno { margin: 0 0 24px; padding: 22px; border: 1px solid #cbd6c8; border-radius: 18px; background: #e9eee4; }
+.contexto-turno p { margin: 12px 0 0; line-height: 1.5; }
+.error-contexto { margin: 0 0 22px; padding: 18px; border: 1px solid #e4d6cb; border-radius: 12px; background: #f3eae2; color: #8a402d; line-height: 1.5; }
+
+@media (max-width: 640px) {
+  .introduccion { font-size: 17px; }
+  .acciones-edicion .boton { flex: 1 1 100%; }
+}

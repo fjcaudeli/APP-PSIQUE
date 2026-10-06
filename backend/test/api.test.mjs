@@ -6,17 +6,18 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { crearApp } from '../dist/app.js';
 import { abrirBaseDeDatos } from '../dist/db/database.js';
-import { DASHBOARD_INICIAL, PACIENTES_INICIALES, SEMANA_INICIAL } from '../dist/db/seed.js';
+import { PACIENTES_INICIALES } from '../dist/db/seed.js';
+import { abrirFixtureLegacy, AGENDA_LEGACY, DASHBOARD_LEGACY, RELOJ_LEGACY } from './fixtures.mjs';
 
 const origenFrontend = 'http://127.0.0.1:4200';
 
 // Las pruebas usan un archivo temporal y un puerto asignado por el sistema.
 // Nunca leen ni modifican backend/data/psique.sqlite.
-test('API REST y persistencia del prototipo', async (t) => {
+test('API REST y persistencia de los datos anteriores', async (t) => {
   const carpeta = mkdtempSync(join(tmpdir(), 'psique-api-'));
   const ruta = join(carpeta, 'prueba.sqlite');
-  let db = abrirBaseDeDatos(ruta);
-  const servidor = crearApp(db, origenFrontend).listen(0, '127.0.0.1');
+  let db = abrirFixtureLegacy(ruta);
+  const servidor = crearApp(db, origenFrontend, RELOJ_LEGACY).listen(0, '127.0.0.1');
 
   try {
     await once(servidor, 'listening');
@@ -46,7 +47,7 @@ test('API REST y persistencia del prototipo', async (t) => {
       const respuesta = await fetch(`${base}/agenda`);
       assert.equal(respuesta.status, 200);
       const agenda = await respuesta.json();
-      assert.deepEqual(agenda, SEMANA_INICIAL);
+      assert.deepEqual(agenda, AGENDA_LEGACY);
       assert.equal(agenda.dias.length, 7);
       assert.equal(agenda.dias.flatMap((dia) => dia.turnos).length, 14);
       for (const dia of agenda.dias) {
@@ -55,19 +56,13 @@ test('API REST y persistencia del prototipo', async (t) => {
       }
     });
 
-    await t.test('dashboard mantiene 3, 8, 2 y 4 sin calcularlos desde los turnos', async () => {
+    await t.test('dashboard calcula los indicadores sin inventar sesiones realizadas ni deudas', async () => {
       const respuesta = await fetch(`${base}/dashboard`);
       assert.equal(respuesta.status, 200);
-      assert.deepEqual(await respuesta.json(), DASHBOARD_INICIAL);
-      assert.deepEqual(DASHBOARD_INICIAL, {
-        pacientesActivos: 3,
-        sesionesSemana: 8,
-        pendientesCobro: 2,
-        horariosDisponibles: 4,
-      });
+      assert.deepEqual(await respuesta.json(), DASHBOARD_LEGACY);
     });
 
-    await t.test('CORS habilita el origen local y anuncia únicamente GET', async () => {
+    await t.test('CORS habilita el origen local y anuncia GET, POST y PUT', async () => {
       const respuesta = await fetch(`${base}/dashboard`, { headers: { Origin: origenFrontend } });
       assert.equal(respuesta.headers.get('access-control-allow-origin'), origenFrontend);
 
@@ -78,13 +73,18 @@ test('API REST y persistencia del prototipo', async (t) => {
 
       const opciones = await fetch(`${base}/dashboard`, {
         method: 'OPTIONS',
-        headers: { Origin: origenFrontend, 'Access-Control-Request-Method': 'GET' },
+        headers: {
+          Origin: origenFrontend,
+          'Access-Control-Request-Method': 'PUT',
+          'Access-Control-Request-Headers': 'content-type',
+        },
       });
-      assert.equal(opciones.headers.get('access-control-allow-methods'), 'GET');
+      assert.equal(opciones.headers.get('access-control-allow-methods'), 'GET,POST,PUT');
+      assert.equal(opciones.headers.get('access-control-allow-headers'), 'content-type');
     });
 
-    await t.test('no existen endpoints para crear, editar o borrar pacientes', async () => {
-      for (const metodo of ['POST', 'PUT', 'PATCH', 'DELETE']) {
+    await t.test('no hay edición colectiva ni eliminación de pacientes', async () => {
+      for (const metodo of ['PUT', 'PATCH', 'DELETE']) {
         const respuesta = await fetch(`${base}/pacientes`, { method: metodo });
         assert.equal(respuesta.status, 404);
       }
@@ -98,7 +98,7 @@ test('API REST y persistencia del prototipo', async (t) => {
       const ficha = await (await fetch(`${base}/pacientes/P-001`)).json();
       assert.equal(ficha.postIt, 'Texto ficticio para comprobar persistencia.');
       const dashboard = await (await fetch(`${base}/dashboard`)).json();
-      assert.equal(dashboard.sesionesSemana, 12);
+      assert.equal(dashboard.sesionesSemana, 0);
     });
 
     await new Promise((resolve, reject) => servidor.close((error) => error ? reject(error) : resolve()));

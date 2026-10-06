@@ -1,0 +1,123 @@
+<ion-content>
+  <div class="pagina-ficha">
+    <header class="encabezado">
+      <div class="marca">
+        <span class="marca-simbolo" aria-hidden="true">Ψ</span>
+        <div>
+          <p class="marca-nombre">PSIQUE</p>
+          <p class="marca-descripcion">Seguimiento psicoterapéutico</p>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <nav class="navegacion" aria-label="Volver sin crear el paciente">
+        <button type="button" class="volver" [disabled]="guardando" (click)="cancelar()">
+          <ion-icon [icon]="iconoVolver" aria-hidden="true"></ion-icon>
+          {{ turno ? 'Agendamiento' : contextoSolicitado ? 'Inicio' : 'Pacientes' }}
+        </button>
+      </nav>
+      <section class="presentacion" aria-labelledby="titulo-crear">
+        <p class="etiqueta">Un nuevo acompañamiento</p>
+        <h1 id="titulo-crear">Crear paciente</h1>
+        <p class="introduccion">Completá su ficha para comenzar el seguimiento.</p>
+      </section>
+
+      @if (turno) {
+        <section class="contexto-turno" aria-labelledby="titulo-turno">
+          <h2 id="titulo-turno">Primera sesión</h2>
+          <p><time [attr.datetime]="turno.fecha + 'T' + turno.horario">{{ turno.fecha | date: 'dd/MM/yyyy' }} · {{ turno.horario }} hs</time> · {{ turno.modalidad }}</p>
+          <p>Importe de la sesión: {{ turno.importeCentavos / 100 | currency: 'ARS' : 'symbol' : '1.2-2' }}</p>
+          <p class="ayuda-campo">Al guardar, este paciente quedará asignado automáticamente al horario elegido.</p>
+        </section>
+      }
+      @if (cargandoContexto) { <p class="ayuda-campo" role="status">Comprobando disponibilidad del horario...</p> }
+      @if (errorContexto) { <p class="error-contexto" role="alert">{{ errorContexto }}</p> }
+
+      <form [formGroup]="formulario" (ngSubmit)="guardar()" aria-label="Crear datos del paciente">
+        <fieldset [disabled]="guardando || cargandoContexto || !!errorContexto">
+          <legend class="solo-lectores">Datos del nuevo paciente</legend>
+          <section class="datos-tratamiento" aria-labelledby="titulo-identificacion">
+            <h2 id="titulo-identificacion">Identificación y tratamiento</h2>
+            <div class="campos">
+              <div class="campo campo-completo">
+                <label for="nuevo-codigo">Identificador del paciente</label>
+                <input id="nuevo-codigo" formControlName="codigo" maxlength="12" autocomplete="off" spellcheck="false"
+                  placeholder="Automático al guardar" aria-describedby="nuevo-ayuda-codigo nuevo-error-codigo" [attr.aria-invalid]="campoInvalido('codigo')" />
+                <p id="nuevo-ayuda-codigo" class="ayuda-campo">Usá un alias, iniciales o un código. Evitá nombres reales. De 1 a 12 caracteres: letras sin tildes, números, guion o guion bajo; comenzá con una letra o un número. Si lo dejás vacío, se genera automáticamente al guardar.</p>
+                @if (cargandoCodigo) { <p class="ayuda-campo" role="status">Buscando un código disponible...</p> }
+                @if (avisoCodigo) { <p class="ayuda-campo" role="status">{{ avisoCodigo }}</p> }
+                @if (campoInvalido('codigo')) {
+                  <p id="nuevo-error-codigo" class="error-campo">{{ formulario.controls.codigo.hasError('codigoReservado') ? 'El código «nuevo» está reservado. Elegí otro identificador.' : 'Ingresá un identificador válido de hasta 12 caracteres, sin espacios.' }}</p>
+                }
+              </div>
+              <div class="campo">
+                <label for="nuevo-estado">Estado del tratamiento</label>
+                <input id="nuevo-estado" formControlName="estado" maxlength="40" list="nuevos-estados" autocomplete="off"
+                  [attr.aria-invalid]="campoInvalido('estado')" aria-describedby="nuevo-error-estado" />
+                <datalist id="nuevos-estados"><option value="Activo"></option><option value="En pausa"></option><option value="Finalizado"></option></datalist>
+                @if (campoInvalido('estado')) { <p id="nuevo-error-estado" class="error-campo">Completá el estado con hasta 40 caracteres.</p> }
+              </div>
+              <div class="campo">
+                <label for="nuevo-modalidad">Modalidad habitual</label>
+                <select id="nuevo-modalidad" formControlName="modalidad">
+                  <option value="Presencial">Presencial</option><option value="Virtual">Virtual</option>
+                </select>
+                @if (turno) { <p class="ayuda-campo">La primera sesión se agenda en modalidad {{ turno.modalidad }}. Esta opción define la modalidad habitual del tratamiento.</p> }
+              </div>
+              <div class="campo">
+                <label for="nuevo-frecuencia">Frecuencia</label>
+                <input id="nuevo-frecuencia" formControlName="frecuencia" maxlength="40" list="nuevas-frecuencias" autocomplete="off"
+                  [attr.aria-invalid]="campoInvalido('frecuencia')" aria-describedby="nuevo-error-frecuencia" />
+                <datalist id="nuevas-frecuencias"><option value="Semanal"></option><option value="Quincenal"></option><option value="Mensual"></option></datalist>
+                @if (campoInvalido('frecuencia')) { <p id="nuevo-error-frecuencia" class="error-campo">Completá la frecuencia con hasta 40 caracteres.</p> }
+              </div>
+              <div class="campo">
+                <label for="nuevo-diaHabitual">Día habitual</label>
+                <select id="nuevo-diaHabitual" formControlName="diaHabitual">
+                  <option value="">Sin definir</option>
+                  @for (dia of dias; track dia) { <option [value]="dia">{{ dia }}</option> }
+                </select>
+              </div>
+              <div class="campo">
+                <label for="nuevo-horarioHabitual">Horario habitual</label>
+                <input id="nuevo-horarioHabitual" type="time" formControlName="horarioHabitual" />
+                <p class="ayuda-campo">Podés dejarlo vacío si todavía no está definido.</p>
+              </div>
+              <div class="campo">
+                <label for="nuevo-proximaSesion">Próxima sesión</label>
+                <input id="nuevo-proximaSesion" formControlName="proximaSesion" maxlength="30" placeholder="Ej.: LUN 15 HS"
+                  [attr.aria-invalid]="campoInvalido('proximaSesion')" aria-describedby="nuevo-ayuda-proxima" />
+                <p id="nuevo-ayuda-proxima" class="ayuda-campo">Texto de la tarjeta del paciente. Podés dejarlo vacío. Máximo 30 caracteres.</p>
+              </div>
+              <div class="campo">
+                <label for="nuevo-fechaInicioTratamiento">Inicio del tratamiento</label>
+                <input id="nuevo-fechaInicioTratamiento" type="date" formControlName="fechaInicioTratamiento" min="0001-01-01" max="9999-12-31"
+                  [attr.aria-invalid]="campoInvalido('fechaInicioTratamiento')" aria-describedby="nuevo-error-inicio" />
+                @if (campoInvalido('fechaInicioTratamiento')) { <p id="nuevo-error-inicio" class="error-campo">Ingresá una fecha válida de inicio.</p> }
+              </div>
+            </div>
+          </section>
+          <section class="motivo-consulta" aria-labelledby="titulo-motivo">
+            <h2 id="titulo-motivo"><label for="nuevo-motivoConsulta">Motivo de consulta</label></h2>
+            <textarea id="nuevo-motivoConsulta" formControlName="motivoConsulta" rows="4" maxlength="3000"
+              [attr.aria-invalid]="campoInvalido('motivoConsulta')" aria-describedby="nuevo-ayuda-motivo"></textarea>
+            <p id="nuevo-ayuda-motivo" class="ayuda-campo">Hasta 3000 caracteres. Podés completarlo más adelante.</p>
+          </section>
+          <section class="post-it" aria-labelledby="titulo-postit">
+            <h2 id="titulo-postit"><label for="nuevo-postIt">Post-it de próxima sesión</label></h2>
+            <textarea id="nuevo-postIt" formControlName="postIt" rows="3" maxlength="300"
+              [attr.aria-invalid]="campoInvalido('postIt')" aria-describedby="nuevo-ayuda-postit"></textarea>
+            <p id="nuevo-ayuda-postit" class="ayuda-campo">Una nota breve para retomar en la próxima sesión. Hasta 300 caracteres.</p>
+          </section>
+        </fieldset>
+        <p class="ayuda-campo">La fecha de creación se registra automáticamente al guardar.</p>
+        @if (errorGuardado) { <p class="error-guardado" role="alert">{{ errorGuardado }}</p> }
+        <div class="acciones-edicion" [attr.aria-busy]="guardando">
+          <button type="submit" class="boton" [disabled]="guardando || cargandoContexto || !!errorContexto">{{ guardando ? 'Guardando...' : turno ? 'Crear paciente y agendar' : 'Crear paciente' }}</button>
+          <button type="button" class="boton boton-secundario" [disabled]="guardando" (click)="cancelar()">Cancelar</button>
+        </div>
+      </form>
+    </main>
+  </div>
+</ion-content>

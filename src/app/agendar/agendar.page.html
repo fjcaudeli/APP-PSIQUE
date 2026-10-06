@@ -1,0 +1,35 @@
+<ion-content>
+  <div class="pagina">
+    <header class="encabezado"><div class="marca"><span class="marca-simbolo" aria-hidden="true">Ψ</span><div><p class="marca-nombre">PSIQUE</p><p class="marca-descripcion">Seguimiento psicoterapéutico</p></div></div></header>
+    <main>
+      <nav class="navegacion" aria-label="Volver a Agenda"><ion-back-button defaultHref="/agenda" text="Volver" [icon]="iconoVolver"></ion-back-button></nav>
+      <section class="presentacion"><p class="etiqueta">Organizá tu consultorio</p><h1>Agendar sesión</h1><p class="introduccion">Asigná este horario a un paciente.</p></section>
+      @if (cargando) { <p role="status">Cargando horario y pacientes...</p> }
+      @else if (errorCarga) {
+        <div class="tarjeta"><p role="alert" class="error">{{ errorCarga }}</p><div class="acciones"><button class="boton" (click)="cargar()">Reintentar</button><button class="boton boton-secundario" (click)="volver()">Ver Agenda</button></div></div>
+      } @else if (turno) {
+        <section class="tarjeta tarjeta-destacada" aria-label="Horario elegido"><p class="etiqueta">Horario elegido</p><h2>{{ fecha | date:'dd/MM/yyyy' }} · {{ horario }} hs</h2><p class="ayuda">El horario queda reservado al confirmar el agendamiento.</p></section>
+        <form (ngSubmit)="guardar()" [formGroup]="formulario" aria-label="Agendar sesión">
+          <fieldset [disabled]="guardando">
+            <section class="tarjeta"><h2>Datos de la sesión</h2>
+              <div class="campos">
+                <div class="campo campo-completo"><label for="codigoPaciente">Paciente</label>
+                  <select id="codigoPaciente" formControlName="codigoPaciente" (change)="seleccionarPaciente()" [attr.aria-invalid]="formulario.controls.codigoPaciente.invalid && formulario.controls.codigoPaciente.touched"><option value="">Seleccioná un paciente</option>@for (paciente of pacientes; track paciente.codigo) { <option [value]="paciente.codigo">{{ paciente.codigo }} · {{ paciente.estado }}</option> }</select>
+                  @if (formulario.controls.codigoPaciente.invalid && formulario.controls.codigoPaciente.touched) { <p class="error">Seleccioná un paciente para continuar.</p> }
+                  @if (!pacientes.length) { <p class="ayuda">Todavía no hay pacientes. Podés crear el primero desde el botón de abajo.</p> }
+                </div>
+                <div class="campo"><label for="modalidad">Modalidad</label><select id="modalidad" formControlName="modalidad"><option value="Presencial">Presencial</option><option value="Virtual">Virtual</option></select></div>
+                <div class="campo"><label for="importe">Honorarios de la sesión (ARS)</label><input id="importe" formControlName="importe" inputmode="decimal" maxlength="10" [attr.aria-invalid]="formulario.controls.importe.invalid && formulario.controls.importe.touched" aria-describedby="ayuda-importe" /><p id="ayuda-importe" class="ayuda">Importe en pesos, con hasta dos decimales. Podés ajustarlo luego en la sesión.</p>
+                  @if (formulario.controls.importe.invalid && formulario.controls.importe.touched) { <p class="error">Ingresá un importe entre 0 y 9.999.999,99.</p> }
+                </div>
+              </div>
+              <div class="acciones"><button type="button" class="boton boton-secundario" (click)="crearPaciente()">Crear paciente y usar este horario</button></div>
+            </section>
+          </fieldset>
+          @if (errorGuardado) { <p role="alert" class="error">{{ errorGuardado }}</p> }
+          <div class="acciones"><button type="submit" class="boton" [disabled]="guardando || !pacientes.length">{{ guardando ? 'Agendando...' : 'Confirmar sesión' }}</button><button type="button" class="boton boton-secundario" [disabled]="guardando" (click)="volver()">Cancelar</button></div>
+        </form>
+      }
+    </main>
+  </div>
+</ion-content>
