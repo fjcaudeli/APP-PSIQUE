@@ -12,6 +12,8 @@ export interface Sesion {
   estado: 'Programada' | 'Realizada';
 }
 
+export type EdicionSesion = Omit<Sesion, 'id' | 'pendienteCentavos'>;
+
 export interface HistorialSemanal {
   desde: string;
   hasta: string;

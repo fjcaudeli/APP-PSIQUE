@@ -61,6 +61,24 @@ function validarReserva(valor: unknown, incluyePaciente: boolean): Reserva & { c
   };
 }
 
+type DatosSesion = Omit<Sesion, 'id' | 'pendienteCentavos'>;
+
+function validarSesion(valor: unknown): DatosSesion {
+  const datos = objeto(valor);
+  campos(datos, ['fecha', 'horario', 'codigoPaciente', 'modalidad', 'estado', 'importeCentavos', 'pagadoCentavos']);
+  const reserva = validarReserva({
+    fecha: datos['fecha'], horario: datos['horario'], codigoPaciente: datos['codigoPaciente'],
+    modalidad: datos['modalidad'], importeCentavos: datos['importeCentavos'],
+  }, true);
+  if (datos['estado'] !== 'Programada' && datos['estado'] !== 'Realizada') {
+    throw new ErrorApi(400, 'El estado debe ser Programada o Realizada.');
+  }
+  if (!centavos(datos['pagadoCentavos']) || datos['pagadoCentavos'] > reserva.importeCentavos) {
+    throw new ErrorApi(400, 'Usá importes enteros en centavos: el total cobrado no puede superar los honorarios.');
+  }
+  return { ...reserva, codigoPaciente: reserva.codigoPaciente!, estado: datos['estado'], pagadoCentavos: datos['pagadoCentavos'] };
+}
+
 export function crearApp(db: Database.Database, origenFrontend: string, reloj: () => Date = () => new Date()) {
   const app = express();
   app.disable('x-powered-by');
@@ -133,6 +151,16 @@ export function crearApp(db: Database.Database, origenFrontend: string, reloj: (
       WHERE estado = 'Realizada' AND pagadoCentavos < importeCentavos ORDER BY fecha, horario, id`).all();
   }
 
+  function actualizarProximaSesion(codigoPaciente: string, ahora: string): void {
+    const proxima = db.prepare<[string, string], { fecha: string; horario: string }>(`
+      SELECT fecha, horario FROM sesiones WHERE codigoPaciente = ? AND estado = 'Programada'
+        AND fecha || ' ' || horario > ? ORDER BY fecha, horario LIMIT 1
+    `).get(codigoPaciente, ahora);
+    const diasCortos: Record<string, string> = { Lunes: 'LUN', Martes: 'MAR', Miércoles: 'MIÉ', Jueves: 'JUE', Viernes: 'VIE', Sábado: 'SÁB', Domingo: 'DOM' };
+    const etiqueta = proxima ? `${diasCortos[nombreDia(proxima.fecha)]} ${proxima.horario} HS` : null;
+    db.prepare('UPDATE pacientes SET proximaSesion = ? WHERE codigo = ?').run(etiqueta, codigoPaciente);
+  }
+
   // Se llama dentro de una transacción inmediata. Un conflicto lanza una excepción
   // y revierte también el paciente cuando ambos se crean en la misma operación.
   function reservar(datos: Reserva, codigoPaciente: string, ahora: string): Sesion {
@@ -147,13 +175,7 @@ export function crearApp(db: Database.Database, origenFrontend: string, reloj: (
     if (actualizado.changes !== 1) throw new ErrorApi(409, 'Ese horario ya no está disponible.');
     const registro = db.prepare(`INSERT INTO sesiones (fecha, horario, codigoPaciente, modalidad, importeCentavos)
       VALUES (?, ?, ?, ?, ?)`).run(datos.fecha, datos.horario, codigoPaciente, datos.modalidad, datos.importeCentavos);
-    const proxima = db.prepare<[string, string], { fecha: string; horario: string }>(`
-      SELECT fecha, horario FROM sesiones WHERE codigoPaciente = ? AND estado = 'Programada'
-        AND fecha || ' ' || horario > ? ORDER BY fecha, horario LIMIT 1
-    `).get(codigoPaciente, ahora)!;
-    const diasCortos: Record<string, string> = { Lunes: 'LUN', Martes: 'MAR', Miércoles: 'MIÉ', Jueves: 'JUE', Viernes: 'VIE', Sábado: 'SÁB', Domingo: 'DOM' };
-    db.prepare('UPDATE pacientes SET proximaSesion = ? WHERE codigo = ?')
-      .run(`${diasCortos[nombreDia(proxima.fecha)]} ${proxima.horario} HS`, codigoPaciente);
+    actualizarProximaSesion(codigoPaciente, ahora);
     return buscarSesion.get(Number(registro.lastInsertRowid))!;
   }
 
@@ -220,7 +242,7 @@ export function crearApp(db: Database.Database, origenFrontend: string, reloj: (
   });
   app.put('/api/pacientes/:codigo', (req, res) => { res.json(actualizarPaciente.immediate(req.params.codigo, req.body)); });
 
-  app.get('/api/sesiones/semana', (_req, res) => { res.json(sesionesSemana(instanteLocal(reloj()).fecha)); });
+  app.get('/api/sesiones/semana', (req, res) => { res.json(sesionesSemana(fechaConsulta(req.query))); });
   app.get('/api/sesiones/pendientes', (_req, res) => { res.json(pendientes()); });
   app.get('/api/sesiones/:id', (req, res) => { res.json(sesionPorId(req.params.id)); });
   const crearSesion = db.transaction((cuerpo: unknown) => {
@@ -230,26 +252,58 @@ export function crearApp(db: Database.Database, origenFrontend: string, reloj: (
   app.post('/api/sesiones', (req, res) => { res.status(201).json(crearSesion.immediate(req.body)); });
   const realizarSesion = db.transaction((id: string) => {
     const sesion = sesionPorId(id);
-    if (`${sesion.fecha} ${sesion.horario}` > instanteLocal(reloj()).instante) {
+    const ahora = instanteLocal(reloj()).instante;
+    if (`${sesion.fecha} ${sesion.horario}` > ahora) {
       throw new ErrorApi(400, 'La sesión todavía no comenzó. Podrás marcarla realizada después de su horario.');
     }
     db.prepare("UPDATE sesiones SET estado = 'Realizada' WHERE id = ?").run(sesion.id);
+    actualizarProximaSesion(sesion.codigoPaciente, ahora);
     return buscarSesion.get(sesion.id)!;
   });
   app.post('/api/sesiones/:id/realizar', (req, res) => { res.json(realizarSesion.immediate(req.params.id)); });
-  const actualizarCobro = db.transaction((id: string, cuerpo: unknown) => {
+  const actualizarSesion = db.transaction((id: string, cuerpo: unknown) => {
     const sesion = sesionPorId(id);
-    const datos = objeto(cuerpo);
-    campos(datos, ['importeCentavos', 'pagadoCentavos']);
-    const importe = datos['importeCentavos'];
-    const pagado = datos['pagadoCentavos'];
-    if (!centavos(importe) || !centavos(pagado) || pagado > importe) {
-      throw new ErrorApi(400, 'Usá importes enteros en centavos: el total cobrado no puede superar los honorarios.');
+    const datos = validarSesion(cuerpo);
+    if (!buscarPaciente.get(datos.codigoPaciente)) throw new ErrorApi(404, 'Paciente no encontrado');
+    const ahora = instanteLocal(reloj()).instante;
+    if (datos.estado === 'Realizada' && `${datos.fecha} ${datos.horario}` > ahora) {
+      throw new ErrorApi(400, 'La sesión todavía no comenzó. Podrás marcarla realizada después de su horario.');
     }
-    db.prepare('UPDATE sesiones SET importeCentavos = ?, pagadoCentavos = ? WHERE id = ?').run(importe, pagado, sesion.id);
+    const cambiaHorario = datos.fecha !== sesion.fecha || datos.horario !== sesion.horario;
+    if (cambiaHorario) {
+      const ocupante = db.prepare('SELECT id FROM sesiones WHERE fecha = ? AND horario = ?').get(datos.fecha, datos.horario);
+      const destino = db.prepare<[string, string], { estado: Turno['estado']; codigoPaciente: string | null }>(
+        'SELECT estado, codigoPaciente FROM turnos WHERE fecha = ? AND horario = ?',
+      ).get(datos.fecha, datos.horario);
+      if (ocupante || (destino && (destino.estado === 'Programado' || destino.codigoPaciente !== null))) {
+        throw new ErrorApi(409, 'Ese horario ya está ocupado. Elegí otro.');
+      }
+      if (!destino) {
+        db.prepare("INSERT OR IGNORE INTO semana_agenda (id, titulo) VALUES (1, 'Agenda')").run();
+        db.prepare('INSERT OR IGNORE INTO dias_agenda (fecha, nombre, semanaId) VALUES (?, ?, 1)').run(datos.fecha, nombreDia(datos.fecha));
+        db.prepare("INSERT INTO turnos (fecha, horario, codigoPaciente, modalidad, estado) VALUES (?, ?, ?, ?, 'Programado')")
+          .run(datos.fecha, datos.horario, datos.codigoPaciente, datos.modalidad);
+      } else {
+        const asignado = db.prepare(`UPDATE turnos SET codigoPaciente = ?, modalidad = ?, estado = 'Programado'
+          WHERE fecha = ? AND horario = ? AND estado IN ('Disponible', 'Liberado') AND codigoPaciente IS NULL`)
+          .run(datos.codigoPaciente, datos.modalidad, datos.fecha, datos.horario);
+        if (asignado.changes !== 1) throw new ErrorApi(409, 'Ese horario ya no está disponible.');
+      }
+    } else {
+      db.prepare('UPDATE turnos SET codigoPaciente = ?, modalidad = ? WHERE fecha = ? AND horario = ?')
+        .run(datos.codigoPaciente, datos.modalidad, datos.fecha, datos.horario);
+    }
+    db.prepare(`UPDATE sesiones SET fecha = @fecha, horario = @horario, codigoPaciente = @codigoPaciente,
+      modalidad = @modalidad, estado = @estado, importeCentavos = @importeCentavos,
+      pagadoCentavos = @pagadoCentavos WHERE id = @id`).run({ ...datos, id: sesion.id });
+    if (cambiaHorario) {
+      db.prepare("UPDATE turnos SET codigoPaciente = NULL, modalidad = NULL, estado = 'Liberado' WHERE fecha = ? AND horario = ?")
+        .run(sesion.fecha, sesion.horario);
+    }
+    for (const codigo of new Set([sesion.codigoPaciente, datos.codigoPaciente])) actualizarProximaSesion(codigo, ahora);
     return buscarSesion.get(sesion.id)!;
   });
-  app.put('/api/sesiones/:id', (req, res) => { res.json(actualizarCobro.immediate(req.params.id, req.body)); });
+  app.put('/api/sesiones/:id', (req, res) => { res.json(actualizarSesion.immediate(req.params.id, req.body)); });
 
   app.get('/api/horarios/disponibles', (req, res) => {
     res.json(disponibles(fechaConsulta(req.query), instanteLocal(reloj()).instante));

@@ -101,6 +101,8 @@ La semana comienza el **lunes** y termina el **domingo**, según el calendario d
 
 **Pacientes → Crear paciente** abre un formulario para cargar identificación, tratamiento, motivo de consulta y Post-it. Los valores iniciales son estado `Activo`, modalidad `Presencial`, frecuencia `Semanal` e inicio del tratamiento en la fecha actual de Buenos Aires. El día y horario habitual, la próxima sesión y las notas pueden quedar sin definir.
 
+La frecuencia usa un selector con **Semanal**, **Quincenal** y **Mensual**, tanto en el alta como en la edición. Las opciones permanecen visibles al abrirlo aunque ya haya una frecuencia seleccionada; una frecuencia personalizada de un registro anterior se conserva al editarlo.
+
 Se propone un código disponible, por ejemplo `P-001`. La sugerencia no reserva ese código. Puede personalizarse o dejarse vacío para generar uno al guardar. Si otro registro ya lo ocupa, el formulario conserva lo escrito y muestra el conflicto.
 
 **Crear paciente** guarda el alta y abre su ficha. **Cancelar** vuelve al listado sin crear registros. En las tarjetas siguen apareciendo la próxima sesión, cuando existe, y la fecha de creación.
@@ -119,7 +121,7 @@ Si el paciente aún no existe, **Crear paciente** dentro de Agendar sesión cons
 
 Al agendar se actualiza la etiqueta de próxima sesión del paciente con su primera sesión programada futura. Cambiar los datos habituales desde la ficha no modifica las fechas, horarios ni modalidades de las sesiones que ya se agendaron. La modalidad habitual del tratamiento y la modalidad de una sesión son datos distintos.
 
-Los horarios ya pasados no pueden reservarse. Los registros antiguos de tipo `Liberado` siguen siendo utilizables si son futuros; todavía no hay un recorrido para cancelar sesiones y liberar nuevos horarios.
+Los horarios ya pasados no pueden reservarse desde Agendar sesión. En cambio, la edición permite corregir la fecha de una sesión ya registrada, incluso en el pasado. Al cambiarla de fecha u hora, el horario anterior queda `Liberado`; puede volver a reservarse si es futuro. Todavía no hay un recorrido de cancelación.
 
 ### Sesiones realizadas e histórico semanal
 
@@ -127,11 +129,17 @@ Toda sesión agendada comienza como **Programada**. Desde su detalle se puede se
 
 Que pase la hora no cambia automáticamente su estado: una sesión que no se confirmó continúa programada y no aparece en el histórico de realizadas ni en pendientes de cobro. El histórico usa la fecha de la sesión, no la fecha en que se presionó el botón. Por ejemplo, confirmar hoy una sesión de la semana anterior no aumenta el contador de la semana actual.
 
-La pantalla **Sesiones de la semana** muestra las realizadas de lunes a domingo de la semana actual. Seleccionar una abre su detalle; desde allí también se puede acceder a la ficha del paciente.
+La pantalla **Sesiones de la semana** abre las realizadas de lunes a domingo de la semana actual. **Anterior** permite consultar semanas pasadas, **Siguiente** avanzar hasta la actual y **Esta semana** regresar a ella. La semana elegida queda en la URL (`/sesiones?fecha=YYYY-MM-DD`) y se conserva al abrir un detalle, volver o recargar. Seleccionar una sesión abre su detalle; desde allí también se puede acceder a la ficha del paciente. El contador de Inicio siempre corresponde a la semana actual.
+
+### Edición completa de una sesión
+
+El detalle se presenta inicialmente en modo lectura. **Editar sesión** abre un borrador con paciente, fecha, horario, modalidad, estado, honorarios y total cobrado. **Guardar cambios** confirma todo junto y **Cancelar** descarta el borrador sin escribir en la base. El identificador interno de la sesión se conserva y el saldo se calcula a partir de los importes.
+
+Al reprogramar, el backend utiliza el horario de destino si está libre o lo crea si no existía. Si otra sesión lo ocupa, muestra un conflicto y mantiene intactos los registros y el borrador. Sesión, turno de destino, liberación del anterior y etiquetas de próxima sesión de los pacientes afectados se actualizan dentro de la misma transacción. No se puede guardar una sesión futura como realizada; cambiar su estado a Programada la retira del histórico y de pendientes de cobro.
 
 ### Honorarios y cobros
 
-El detalle muestra **Honorarios**, **Total cobrado** y **Saldo pendiente**. El formulario permite modificar honorarios y el total acumulado cobrado por esa sesión. No registra una lista separada de movimientos de pago.
+El detalle muestra **Honorarios**, **Total cobrado** y **Saldo pendiente** como información de lectura. Para modificarlos se utiliza **Editar sesión**, junto con el resto de sus datos. No hay un formulario separado de honorarios ni una lista de movimientos individuales de pago.
 
 Por ejemplo, si los honorarios son ARS 25.000 y ya se recibieron ARS 10.000, el saldo es ARS 15.000. Al recibir los ARS 15.000 restantes, se ingresa **25000** como total cobrado, porque ese campo representa la suma acumulada. Una sesión realizada desaparece de pendientes al quedar sin saldo.
 
@@ -262,12 +270,12 @@ Todas las rutas parten de `/api`. Las consultas correctas y las actualizaciones 
 | `GET /pacientes/:codigo` | Ficha de un paciente. |
 | `POST /pacientes` | Recibe `{ paciente, turno? }`; devuelve `{ paciente, sesion }`. La sesión es `null` en un alta independiente. |
 | `PUT /pacientes/:codigo` | Reemplaza los datos editables de la ficha identificada por el código anterior. `fechaCreacion` puede omitirse o conservar su valor; no puede cambiar. |
-| `GET /sesiones/semana` | `{ desde, hasta, sesiones }` de las realizadas en la semana actual. |
+| `GET /sesiones/semana?fecha=YYYY-MM-DD` | `{ desde, hasta, sesiones }` realizadas de la semana que contiene la fecha; sin fecha usa la actual. |
 | `GET /sesiones/pendientes` | Arreglo de sesiones realizadas con saldo, de cualquier fecha. |
 | `GET /sesiones/:id` | Datos e importes de una sesión. |
 | `POST /sesiones` | Recibe `{ fecha, horario, codigoPaciente, modalidad, importeCentavos }` y reserva un horario existente futuro. Devuelve la sesión. |
 | `POST /sesiones/:id/realizar` | Confirma que ocurrió una sesión cuyo horario ya llegó. Devuelve la sesión realizada. |
-| `PUT /sesiones/:id` | Recibe `{ importeCentavos, pagadoCentavos }` y devuelve la sesión con el saldo calculado. |
+| `PUT /sesiones/:id` | Recibe `{ fecha, horario, codigoPaciente, modalidad, estado, importeCentavos, pagadoCentavos }`, actualiza la sesión y sus horarios atómicamente y devuelve el mismo ID con saldo calculado. |
 | `GET /horarios/disponibles?fecha=YYYY-MM-DD` | `{ desde, hasta, horarios }` futuros de la semana que contiene esa fecha. Sin fecha usa la semana actual. |
 | `GET /horarios/:fecha/:horario` | Horario individual, estado, paciente, modalidad y `sesionId`, si tiene sesión. |
 | `POST /horarios` | Recibe `{ fecha, horario }` y crea un horario disponible futuro. |
@@ -299,7 +307,7 @@ CORS permite los métodos GET, POST y PUT para el origen configurado. Controla e
 
 ## Alcance pendiente
 
-La aplicación funciona localmente y tiene persistencia, pero todavía requiere trabajo antes de un uso clínico real: autenticación, control de acceso, protección y copias de seguridad de datos, y configuración de despliegue. Tampoco incluye múltiples profesionales, cancelaciones/reprogramaciones, recurrencia automática ni un historial individual de movimientos de pago. El destino móvil y la distribución instalable continúan como pasos posteriores.
+La aplicación funciona localmente y tiene persistencia, pero todavía requiere trabajo antes de un uso clínico real: autenticación, control de acceso, protección y copias de seguridad de datos, y configuración de despliegue. Tampoco incluye múltiples profesionales, cancelaciones, recurrencia automática ni un historial individual de movimientos de pago. El destino móvil y la distribución instalable continúan como pasos posteriores.
 
 ## Archivos de configuración de la raíz
 
@@ -439,6 +447,10 @@ Verificación completada el **05/10/2026**:
 - Navegador: **56 comprobaciones aprobadas**, con una API y una base temporales. Se verificaron los cuatro accesos de Inicio, altas independientes y con reserva, conflictos sin altas parciales, confirmación manual de sesiones, cobros y contadores, navegación entre semanas, recarga, errores y estados vacíos. También se comprobaron teclado y presentación en PC y anchos de 360 y 320 píxeles.
 - Se respaldó la base local antes de actualizarla. La migración conservó sus pacientes y horarios originales, convirtió los turnos asignados en sesiones programadas sin inventar importes y mantuvo válidas las relaciones entre registros.
 
+La ampliación del **06/10/2026** se comprobó con compilaciones correctas, **47 casos efectivos del backend** (51 resultados con cuatro contenedores) y **36 comprobaciones en navegador**. Cubren semanas anteriores y conservación de la selección, edición completa y cancelación, reprogramación atómica y conflictos, sincronización de saldos y estado, errores con borrador conservado y Quincenal en alta y edición. Las pantallas se revisaron en PC y anchos de 320 y 360 píxeles. Las pruebas automatizadas utilizaron bases temporales.
+
+Por pedido del usuario se agregó una sesión de ejemplo a la base local el 06/10/2026, después de respaldarla: paciente **P-001**, fecha **05/10/2026**, hora **10:00**, estado **Realizada**, honorarios **ARS 25.000** y total cobrado **ARS 0**. Se puede consultar desde el histórico de esa semana o Pendientes de cobro. Es una carga puntual: reiniciar la aplicación no la vuelve a crear.
+
 Para recorrer la aplicación con datos propios de prueba:
 
 1. Abrí Pacientes y creá un paciente con un alias. Confirmá que aparece en el listado y que su ficha muestra la fecha de creación sin permitir editarla.
@@ -447,7 +459,7 @@ Para recorrer la aplicación con datos propios de prueba:
 4. Volvé a Inicio. El horario reservado ya no debe figurar entre los disponibles. Una sesión programada no incrementa todavía las sesiones realizadas ni los pendientes de cobro.
 5. Agregá otro horario y usá **Crear paciente** desde el agendamiento. Revisá el contexto; **Crear paciente y agendar** debe guardar ambos registros y abrir la sesión. Cancelar el alta debe volver sin guardar ninguno.
 6. Cuando haya llegado el horario de una sesión, marcala como realizada. Si pertenece a la semana actual debe figurar en el histórico; si tiene saldo, también en el modal de pendientes.
-7. Registrá un cobro parcial y verificá el saldo; después completá el total acumulado y comprobá que desaparece de pendientes.
+7. Abrí **Editar sesión**, registrá un cobro parcial y verificá el saldo; después completá el total acumulado y comprobá que desaparece de pendientes. Probá Cancelar y la edición del resto de los datos; un cambio de fecha u hora debe liberar el horario anterior.
 8. Reiniciá frontend y backend y comprobá que los cambios siguen guardados. Recorré Agenda por semanas anteriores y siguientes para consultar las fechas correspondientes.
 
 Los casos de prueba que necesitan fechas pasadas o cambios de reloj deben usar una base aislada y el reloj inyectable del backend; no hace falta cambiar el reloj de Windows ni alterar registros del consultorio. Las pruebas de errores deben comprobar que se muestran mensajes útiles y se conserva el borrador, sin confirmar un guardado que no ocurrió.

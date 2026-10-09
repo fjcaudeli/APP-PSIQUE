@@ -3,37 +3,102 @@
     <header class="encabezado"><div class="marca"><span class="marca-simbolo" aria-hidden="true">Ψ</span><div><p class="marca-nombre">PSIQUE</p><p class="marca-descripcion">Seguimiento psicoterapéutico</p></div></div></header>
     <main>
       <nav class="navegacion" aria-label="Volver"><ion-back-button defaultHref="/agenda" text="Volver" [icon]="iconoVolver"></ion-back-button></nav>
-      <section class="presentacion"><p class="etiqueta">Registro del consultorio</p><h1>Detalle de sesión</h1></section>
+      <section class="presentacion"><p class="etiqueta">Registro del consultorio</p><h1>{{ editando ? 'Editar sesión' : 'Detalle de sesión' }}</h1></section>
       @if (cargando) { <p role="status">Cargando sesión...</p> }
       @else if (errorCarga) { <p role="alert" class="error">{{ errorCarga }}</p><button class="boton" (click)="cargar()">Reintentar</button> }
       @else if (sesion) {
         @if (mensaje) { <p class="confirmacion" role="status">{{ mensaje }}</p> }
-        <section class="tarjeta"><h2>Datos de la sesión</h2><dl class="datos">
-          <div><dt>Paciente</dt><dd><a [routerLink]="['/pacientes', sesion.codigoPaciente]" routerDirection="forward">{{ sesion.codigoPaciente }}</a></dd></div>
-          <div><dt>Estado</dt><dd><span class="estado">{{ sesion.estado }}</span></dd></div>
-          <div><dt>Fecha</dt><dd>{{ sesion.fecha | date:'dd/MM/yyyy' }}</dd></div>
-          <div><dt>Horario</dt><dd>{{ sesion.horario }} hs</dd></div>
-          <div><dt>Modalidad</dt><dd>{{ sesion.modalidad }}</dd></div>
-        </dl>
-        @if (sesion.estado === 'Programada') {
-          <div class="acciones"><button class="boton" type="button" [disabled]="guardando || !puedeRealizar" (click)="realizar()">Marcar como realizada</button></div>
-          <p class="ayuda">{{ puedeRealizar ? 'Confirmá que la sesión se realizó para incluirla en el histórico y, si tiene saldo, en pendientes de cobro.' : 'Podrás confirmar que se realizó cuando haya pasado su horario.' }}</p>
-        }
-        </section>
-        <section class="tarjeta tarjeta-destacada" aria-label="Resumen de cobro"><dl class="datos">
-          <div><dt>Honorarios</dt><dd>{{ sesion.importeCentavos / 100 | currency:'ARS':'symbol-narrow':'1.2-2' }}</dd></div>
-          <div><dt>Total cobrado</dt><dd>{{ sesion.pagadoCentavos / 100 | currency:'ARS':'symbol-narrow':'1.2-2' }}</dd></div>
-          <div class="campo-completo"><dt>Saldo pendiente</dt><dd class="saldo">{{ sesion.pendienteCentavos / 100 | currency:'ARS':'symbol-narrow':'1.2-2' }}</dd></div>
-        </dl></section>
-        <form [formGroup]="formulario" (ngSubmit)="guardarImportes()" class="tarjeta" aria-label="Importes de la sesión">
-          <h2>Honorarios y cobro</h2><fieldset [disabled]="guardando"><div class="campos">
-            <div class="campo"><label for="importe">Honorarios (ARS)</label><input id="importe" formControlName="importe" inputmode="decimal" maxlength="10" [attr.aria-invalid]="formulario.controls.importe.invalid && formulario.controls.importe.touched" /></div>
-            <div class="campo"><label for="pagado">Total cobrado hasta ahora (ARS)</label><input id="pagado" formControlName="pagado" inputmode="decimal" maxlength="10" [attr.aria-invalid]="formulario.controls.pagado.invalid && formulario.controls.pagado.touched" /></div>
-          </div><p class="ayuda">Ingresá el total acumulado que recibiste por esta sesión, incluidos pagos anteriores. Los importes admiten hasta dos decimales.</p></fieldset>
-          @if (formulario.invalid && formulario.touched) { <p class="error">Ingresá importes entre 0 y 9.999.999,99, con hasta dos decimales.</p> }
-          <div class="acciones"><button type="submit" class="boton" [disabled]="guardando">{{ guardando ? 'Guardando...' : 'Guardar importes' }}</button><button type="button" class="boton boton-secundario" [disabled]="guardando || !formulario.dirty" (click)="restaurarImportes()">Descartar cambios</button></div>
-        </form>
         @if (errorGuardado) { <p class="error" role="alert">{{ errorGuardado }}</p> }
+        @if (editando) {
+          <form [formGroup]="formulario" (ngSubmit)="guardar()" aria-label="Editar datos de la sesión">
+            <section class="tarjeta">
+              <h2>Datos de la sesión</h2>
+              @if (cargandoPacientes) { <p role="status">Cargando pacientes...</p> }
+              @if (errorPacientes) {
+                <p class="error" role="alert">{{ errorPacientes }}</p>
+                <button class="boton boton-secundario reintentar" type="button" (click)="cargarPacientes()">Reintentar carga de pacientes</button>
+              }
+              <fieldset [disabled]="guardando || cargandoPacientes || !!errorPacientes">
+                <legend class="solo-lectores">Paciente, fecha, horario, modalidad y estado</legend>
+                <div class="campos">
+                  <div class="campo campo-completo">
+                    <label for="codigoPaciente">Paciente</label>
+                    <select id="codigoPaciente" formControlName="codigoPaciente" [attr.aria-invalid]="campoInvalido('codigoPaciente')" [attr.aria-describedby]="campoInvalido('codigoPaciente') ? 'error-paciente' : null">
+                      <option value="" disabled>Seleccioná un paciente</option>
+                      @for (paciente of pacientes; track paciente.codigo) { <option [value]="paciente.codigo">{{ paciente.codigo }}</option> }
+                    </select>
+                    @if (campoInvalido('codigoPaciente')) { <p class="error error-campo" id="error-paciente">Seleccioná un paciente.</p> }
+                  </div>
+                  <div class="campo">
+                    <label for="fecha">Fecha</label>
+                    <input id="fecha" type="date" min="0001-01-01" max="9999-12-31" formControlName="fecha" [attr.aria-invalid]="campoInvalido('fecha')" [attr.aria-describedby]="campoInvalido('fecha') ? 'ayuda-horario error-fecha' : 'ayuda-horario'" />
+                    @if (campoInvalido('fecha')) { <p class="error error-campo" id="error-fecha">Ingresá una fecha válida.</p> }
+                  </div>
+                  <div class="campo">
+                    <label for="horario">Horario</label>
+                    <input id="horario" type="time" formControlName="horario" [attr.aria-invalid]="campoInvalido('horario')" [attr.aria-describedby]="campoInvalido('horario') ? 'ayuda-horario error-horario' : 'ayuda-horario'" />
+                    @if (campoInvalido('horario')) { <p class="error error-campo" id="error-horario">Ingresá un horario válido.</p> }
+                  </div>
+                  <p class="ayuda campo-completo ayuda-reprogramacion" id="ayuda-horario">Al cambiar la fecha o el horario, se libera el anterior. El nuevo horario debe estar libre.</p>
+                  <div class="campo">
+                    <label for="modalidad">Modalidad</label>
+                    <select id="modalidad" formControlName="modalidad" [attr.aria-invalid]="campoInvalido('modalidad')" [attr.aria-describedby]="campoInvalido('modalidad') ? 'error-modalidad' : null"><option value="Presencial">Presencial</option><option value="Virtual">Virtual</option></select>
+                    @if (campoInvalido('modalidad')) { <p class="error error-campo" id="error-modalidad">Seleccioná una modalidad.</p> }
+                  </div>
+                  <div class="campo">
+                    <label for="estado">Estado</label>
+                    <select id="estado" formControlName="estado" [attr.aria-invalid]="campoInvalido('estado') || realizadaEnFuturo" aria-describedby="ayuda-estado"><option value="Programada">Programada</option><option value="Realizada">Realizada</option></select>
+                    <p id="ayuda-estado" [class]="realizadaEnFuturo ? 'error error-campo' : 'ayuda'">{{ realizadaEnFuturo ? 'Una sesión futura debe permanecer programada hasta que pase su horario.' : 'Marcá Realizada cuando confirmes que la sesión se llevó a cabo.' }}</p>
+                    @if (campoInvalido('estado')) { <p class="error error-campo">Seleccioná un estado.</p> }
+                  </div>
+                </div>
+              </fieldset>
+            </section>
+            <section class="tarjeta">
+              <h2>Honorarios y cobro</h2>
+              <fieldset [disabled]="guardando || cargandoPacientes || !!errorPacientes">
+                <legend class="solo-lectores">Importes de la sesión en pesos</legend>
+                <div class="campos">
+                  <div class="campo">
+                    <label for="importe">Honorarios (ARS)</label>
+                    <input id="importe" formControlName="importe" inputmode="decimal" maxlength="10" [attr.aria-invalid]="campoInvalido('importe')" [attr.aria-describedby]="campoInvalido('importe') ? 'ayuda-importes error-importe' : 'ayuda-importes'" />
+                    @if (campoInvalido('importe')) { <p class="error error-campo" id="error-importe">Ingresá un importe entre 0 y 9.999.999,99, con hasta dos decimales.</p> }
+                  </div>
+                  <div class="campo">
+                    <label for="pagado">Total cobrado hasta ahora (ARS)</label>
+                    <input id="pagado" formControlName="pagado" inputmode="decimal" maxlength="10" [attr.aria-invalid]="campoInvalido('pagado') || cobradoSuperaHonorarios" [attr.aria-describedby]="campoInvalido('pagado') || cobradoSuperaHonorarios ? 'ayuda-importes error-pagado' : 'ayuda-importes'" />
+                    @if (campoInvalido('pagado')) { <p class="error error-campo" id="error-pagado">Ingresá un importe entre 0 y 9.999.999,99, con hasta dos decimales.</p> }
+                    @else if (cobradoSuperaHonorarios) { <p class="error error-campo" id="error-pagado">El total cobrado no puede superar los honorarios.</p> }
+                  </div>
+                </div>
+                <p class="ayuda" id="ayuda-importes">Ingresá el total acumulado que recibiste por esta sesión, incluidos pagos anteriores. El saldo pendiente se calcula automáticamente.</p>
+              </fieldset>
+            </section>
+            <div class="acciones acciones-edicion" [attr.aria-busy]="guardando">
+              <button type="submit" class="boton" [disabled]="guardando || cargandoPacientes || !!errorPacientes">{{ guardando ? 'Guardando...' : 'Guardar cambios' }}</button>
+              <button type="button" class="boton boton-secundario" [disabled]="guardando" (click)="cancelarEdicion()">Cancelar</button>
+            </div>
+          </form>
+        } @else {
+          <div class="acciones acciones-ficha"><button class="boton" type="button" [disabled]="guardando" (click)="iniciarEdicion()">Editar sesión</button></div>
+          <section class="tarjeta"><h2>Datos de la sesión</h2><dl class="datos">
+            <div><dt>Paciente</dt><dd><a [routerLink]="['/pacientes', sesion.codigoPaciente]" routerDirection="forward">{{ sesion.codigoPaciente }}</a></dd></div>
+            <div><dt>Estado</dt><dd><span class="estado">{{ sesion.estado }}</span></dd></div>
+            <div><dt>Fecha</dt><dd>{{ sesion.fecha | date:'dd/MM/yyyy' }}</dd></div>
+            <div><dt>Horario</dt><dd>{{ sesion.horario }} hs</dd></div>
+            <div><dt>Modalidad</dt><dd>{{ sesion.modalidad }}</dd></div>
+          </dl>
+          @if (sesion.estado === 'Programada') {
+            <div class="acciones"><button class="boton" type="button" [disabled]="guardando || !puedeRealizar" (click)="realizar()">Marcar como realizada</button></div>
+            <p class="ayuda">{{ puedeRealizar ? 'Confirmá que la sesión se realizó para incluirla en el histórico y, si tiene saldo, en pendientes de cobro.' : 'Podrás confirmar que se realizó cuando haya pasado su horario.' }}</p>
+          }
+          </section>
+          <section class="tarjeta tarjeta-destacada" aria-label="Resumen de cobro"><dl class="datos">
+            <div><dt>Honorarios</dt><dd>{{ sesion.importeCentavos / 100 | currency:'ARS':'symbol-narrow':'1.2-2' }}</dd></div>
+            <div><dt>Total cobrado</dt><dd>{{ sesion.pagadoCentavos / 100 | currency:'ARS':'symbol-narrow':'1.2-2' }}</dd></div>
+            <div class="campo-completo"><dt>Saldo pendiente</dt><dd class="saldo">{{ sesion.pendienteCentavos / 100 | currency:'ARS':'symbol-narrow':'1.2-2' }}</dd></div>
+          </dl></section>
+        }
       }
     </main>
   </div>

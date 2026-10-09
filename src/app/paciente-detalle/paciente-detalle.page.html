@@ -88,9 +88,15 @@
                   </div>
                   <div class="campo">
                     <label for="frecuencia">Frecuencia</label>
-                    <input id="frecuencia" formControlName="frecuencia" maxlength="40" list="frecuencias" autocomplete="off"
-                      [attr.aria-invalid]="campoInvalido('frecuencia')" aria-describedby="error-frecuencia" />
-                    <datalist id="frecuencias"><option value="Semanal"></option><option value="Quincenal"></option><option value="Mensual"></option></datalist>
+                    <select id="frecuencia" formControlName="frecuencia"
+                      [attr.aria-invalid]="campoInvalido('frecuencia')" aria-describedby="error-frecuencia">
+                      <option value="Semanal">Semanal</option>
+                      <option value="Quincenal">Quincenal</option>
+                      <option value="Mensual">Mensual</option>
+                      @if (formulario.controls.frecuencia.value && !['Semanal', 'Quincenal', 'Mensual'].includes(formulario.controls.frecuencia.value)) {
+                        <option [value]="formulario.controls.frecuencia.value">{{ formulario.controls.frecuencia.value }}</option>
+                      }
+                    </select>
                     @if (campoInvalido('frecuencia')) {
                       <p id="error-frecuencia" class="error-campo">Completá la frecuencia con hasta 40 caracteres.</p>
                     }

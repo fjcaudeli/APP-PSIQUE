@@ -1,2 +1,8 @@
 @use '../shared/pagina';
 .saldo { font-size: 28px; font-weight: 600; }
+.acciones-ficha { margin: 0 0 20px; }
+.acciones-edicion { margin-top: 0; }
+.error-campo { margin-bottom: 0; font-size: 13px; }
+.ayuda-reprogramacion { margin-top: -12px; }
+.reintentar { margin-bottom: 20px; }
+.solo-lectores { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

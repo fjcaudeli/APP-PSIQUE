@@ -11,6 +11,7 @@ import { instanteLocal, semanaDe } from '../dist/calendario.js';
 
 const { codigo: _codigo, fechaCreacion: _fechaCreacion, ...ficha } = PACIENTES_INICIALES[0];
 const nuevoPaciente = (codigo) => ({ ...ficha, proximaSesion: null, ...(codigo === undefined ? {} : { codigo }) });
+const editableSesion = ({ id: _id, pendienteCentavos: _pendiente, ...datos }) => datos;
 
 async function entorno(t, fecha = '2026-10-05T12:00:00Z') {
   const carpeta = mkdtempSync(join(tmpdir(), 'psique-final-'));
@@ -167,9 +168,10 @@ test('Creación de pacientes, agenda, sesiones y cobros reales', async t => {
       { importeCentavos: -1, pagadoCentavos: 0 }, { importeCentavos: 10.5, pagadoCentavos: 0 },
       { importeCentavos: 10, pagadoCentavos: 11 }, { importeCentavos: 10, pagadoCentavos: -1 },
       { importeCentavos: 10, pagadoCentavos: 1.5 }, { importeCentavos: '10', pagadoCentavos: 0 },
-      { importeCentavos: 10, pagadoCentavos: 0, estado: 'Realizada' }, { importeCentavos: 10 },
-    ]) assert.equal((await e.pedir(`sesiones/${sesion.id}`, 'PUT', body)).status, 400);
-    const parcial = await e.pedir(`sesiones/${sesion.id}`, 'PUT', { importeCentavos: 123456, pagadoCentavos: 23456 });
+      { importeCentavos: 10, pagadoCentavos: 0, estado: 'Realizada' },
+    ]) assert.equal((await e.pedir(`sesiones/${sesion.id}`, 'PUT', { ...editableSesion(sesion), ...body })).status, 400);
+    assert.equal((await e.pedir(`sesiones/${sesion.id}`, 'PUT', { importeCentavos: 10 })).status, 400);
+    const parcial = await e.pedir(`sesiones/${sesion.id}`, 'PUT', { ...editableSesion(sesion), importeCentavos: 123456, pagadoCentavos: 23456 });
     assert.equal(parcial.status, 200);
     assert.equal(parcial.body.pendienteCentavos, 100000);
     assert.equal(parcial.body.estado, 'Programada');
@@ -252,7 +254,8 @@ test('Creación de pacientes, agenda, sesiones y cobros reales', async t => {
   });
 
   await t.test('un cobro completo quita el pendiente y persiste después de reabrir SQLite', async () => {
-    const respuesta = await e.pedir(`sesiones/${sesion.id}`, 'PUT', { importeCentavos: 123456, pagadoCentavos: 123456 });
+    const actual = (await e.pedir(`sesiones/${sesion.id}`)).body;
+    const respuesta = await e.pedir(`sesiones/${sesion.id}`, 'PUT', { ...editableSesion(actual), importeCentavos: 123456, pagadoCentavos: 123456 });
     assert.equal(respuesta.body.pendienteCentavos, 0);
     assert.deepEqual((await e.pedir('sesiones/pendientes')).body, []);
     assert.equal((await e.pedir('dashboard')).body.pendientesCobro, 0);

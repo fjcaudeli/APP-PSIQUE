@@ -18,8 +18,14 @@
       <section class="presentacion" aria-labelledby="titulo-sesiones">
         <p class="etiqueta">Histórico de sesiones</p>
         <h1 id="titulo-sesiones">Sesiones de la semana</h1>
-        <p class="introduccion">Las sesiones de esta semana que marcaste como realizadas.</p>
+        <p class="introduccion">Consultá las sesiones que marcaste como realizadas, semana por semana.</p>
       </section>
+
+      <nav class="selector-semana" aria-label="Consultar otra semana">
+        <button class="boton boton-secundario" type="button" (click)="cambiarSemana(-7)">Anterior</button>
+        <button class="boton boton-secundario" type="button" (click)="semanaActual()" [attr.aria-current]="esSemanaActual ? 'date' : null">Esta semana</button>
+        <button class="boton boton-secundario" type="button" (click)="cambiarSemana(7)" [disabled]="!puedeAvanzar">Siguiente</button>
+      </nav>
 
       @let historial = historial$ | async;
       @if (cargando) {
@@ -36,12 +42,12 @@
 
           @if (historial.sesiones.length === 0) {
             <div class="vacio">
-              <h3>Todavía no hay sesiones realizadas esta semana</h3>
+              <h3>No hay sesiones realizadas en esta semana</h3>
               <p>Cuando finalice una sesión, abrí su detalle desde la agenda y marcala como realizada.</p>
               <a class="boton" routerLink="/agenda">Ir a Agenda</a>
             </div>
           } @else {
-            <ul class="lista-sesiones" aria-label="Sesiones realizadas esta semana">
+            <ul class="lista-sesiones" aria-label="Sesiones realizadas en la semana seleccionada">
               @for (sesion of historial.sesiones; track sesion.id) {
                 <li>
                   <a class="sesion" [routerLink]="['/sesiones', sesion.id]" [attr.aria-label]="'Ver sesión de ' + sesion.codigoPaciente + ' del ' + (sesion.fecha | date:'dd/MM/yyyy') + ' a las ' + sesion.horario">

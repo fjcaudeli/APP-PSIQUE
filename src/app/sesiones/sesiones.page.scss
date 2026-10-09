@@ -1,3 +1,16 @@
+.selector-semana {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 24px;
+}
+.boton.boton-secundario { background: transparent; color: #284b41; }
+.boton:disabled { opacity: .45; cursor: default; }
+@media (max-width: 640px) {
+  .selector-semana { gap: 8px; }
+  .selector-semana .boton { flex: 1; min-width: 0; padding: 10px 8px; font-size: 13px; }
+}
+
 :host {
   --verde-oscuro: #284b41;
   --texto-secundario: #626b62;
