@@ -1,3 +1,4 @@
+import { crearUsuarioFixture, fetchAutenticado, SECRETO_PRUEBA } from './fixtures.mjs';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { mkdtempSync, readdirSync, rmdirSync, unlinkSync } from 'node:fs';
@@ -6,17 +7,17 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { crearApp } from '../dist/app.js';
 import { abrirBaseDeDatos } from '../dist/db/database.js';
-import { nombreDia } from '../dist/calendario.js';
-import { abrirFixtureLegacy } from './fixtures.mjs';
+import { abrirFixtureProfesional } from './fixtures.mjs';
 
 const editable = ({ id: _id, pendienteCentavos: _pendiente, ...datos }) => datos;
 
 async function entorno(t, fecha = '2026-10-05T15:00:00Z') {
   const carpeta = mkdtempSync(join(tmpdir(), 'psique-editar-sesion-'));
   const ruta = join(carpeta, 'prueba.sqlite');
-  const db = abrirFixtureLegacy(ruta);
+  const db = abrirFixtureProfesional(ruta);
   let ahora = new Date(fecha);
-  const servidor = crearApp(db, 'http://127.0.0.1:4200', () => ahora).listen(0, '127.0.0.1');
+  const fetch = fetchAutenticado(() => ahora);
+  const servidor = crearApp(db, 'http://127.0.0.1:4200', () => ahora, SECRETO_PRUEBA).listen(0, '127.0.0.1');
   await once(servidor, 'listening');
   const base = `http://127.0.0.1:${servidor.address().port}/api`;
   t.after(async () => {
@@ -33,13 +34,13 @@ async function entorno(t, fecha = '2026-10-05T15:00:00Z') {
   }
   const consultar = async recurso => (await pedir(recurso)).body;
   const guardar = async (id, cambios) => pedir(`sesiones/${id}`, 'PUT', { ...editable(await consultar(`sesiones/${id}`)), ...cambios });
-  const snapshot = () => Object.fromEntries(['pacientes', 'turnos', 'dias_agenda', 'semana_agenda', 'sesiones']
+  const snapshot = () => Object.fromEntries(['pacientes', 'turnos', 'sesiones']
     .map(tabla => [tabla, db.prepare(`SELECT * FROM ${tabla} ORDER BY rowid`).all()]));
   return { db, ruta, pedir, consultar, guardar, snapshot, avanzar: valor => { ahora = new Date(valor); } };
 }
 
 test('Edición completa de sesiones y sincronización con la agenda', async t => {
-  await t.test('edita una sesión migrada, mantiene su ID y libera el turno anterior al cambiar fecha y paciente', async t => {
+  await t.test('edita una sesión existente, mantiene su ID y libera el turno anterior al cambiar fecha y paciente', async t => {
     const e = await entorno(t);
     const original = await e.consultar('sesiones/1');
     const otra = await e.consultar('sesiones/2');
@@ -61,7 +62,7 @@ test('Edición completa de sesiones y sincronización con la agenda', async t =>
     assert.equal((await e.consultar('agenda?fecha=2026-10-06')).dias[1].turnos[0].sesionId, 1);
     const otraConexion = abrirBaseDeDatos(e.ruta);
     try {
-      assert.deepEqual(otraConexion.prepare('SELECT * FROM sesiones WHERE id = 1').get(), { id: 1, ...cambios });
+      assert.deepEqual(otraConexion.prepare('SELECT * FROM sesiones WHERE id = 1').get(), { id: 1, usuarioId: 1, ...cambios });
       assert.deepEqual(otraConexion.pragma('foreign_key_check'), []);
     } finally { otraConexion.close(); }
   });
@@ -112,7 +113,7 @@ test('Edición completa de sesiones y sincronización con la agenda', async t =>
     assert.deepEqual(e.db.pragma('foreign_key_check'), []);
   });
 
-  await t.test('un fallo al actualizar la sesión revierte incluso el nuevo día y turno', async t => {
+  await t.test('un fallo al actualizar la sesión revierte incluso el nuevo turno', async t => {
     const e = await entorno(t);
     const anterior = e.snapshot();
     e.db.exec("CREATE TEMP TRIGGER fallo_sesion BEFORE UPDATE ON sesiones BEGIN SELECT RAISE(ABORT, 'fallo de prueba'); END");
@@ -193,9 +194,8 @@ test('Edición completa de sesiones y sincronización con la agenda', async t =>
 test('Consulta de semanas anteriores con fechas de las sesiones y límites de lunes a domingo', async t => {
   const e = await entorno(t, '2027-01-04T15:00:00Z');
   function insertar(fecha, horario, estado = 'Realizada') {
-    e.db.prepare('INSERT OR IGNORE INTO dias_agenda (fecha, nombre, semanaId) VALUES (?, ?, 1)').run(fecha, nombreDia(fecha));
-    e.db.prepare("INSERT INTO turnos (fecha, horario, codigoPaciente, modalidad, estado) VALUES (?, ?, 'P-001', 'Virtual', 'Programado')").run(fecha, horario);
-    e.db.prepare("INSERT INTO sesiones (fecha, horario, codigoPaciente, modalidad, estado, importeCentavos) VALUES (?, ?, 'P-001', 'Virtual', ?, 10000)").run(fecha, horario, estado);
+    e.db.prepare("INSERT INTO turnos (usuarioId, fecha, horario, codigoPaciente, modalidad, estado) VALUES (1, ?, ?, 'P-001', 'Virtual', 'Programado')").run(fecha, horario);
+    e.db.prepare("INSERT INTO sesiones (usuarioId, fecha, horario, codigoPaciente, modalidad, estado, importeCentavos) VALUES (1, ?, ?, 'P-001', 'Virtual', ?, 10000)").run(fecha, horario, estado);
   }
   insertar('2026-12-27', '23:59');
   insertar('2026-12-28', '00:00');

@@ -1,5 +1,5 @@
 import { AsyncPipe, CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, inject, ViewChild } from '@angular/core';
+import { Component, ElementRef, inject, OnDestroy, ViewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { IonContent, IonIcon, IonModal, NavController } from '@ionic/angular';
 import {
@@ -13,6 +13,7 @@ import { ResumenDashboard } from '../models/dashboard';
 import { DisponibilidadSemanal, HorarioDisponible, Sesion } from '../models/sesion';
 import { DashboardService } from '../services/dashboard.service';
 import { SesionesService } from '../services/sesiones.service';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-inicio',
@@ -21,11 +22,13 @@ import { SesionesService } from '../services/sesiones.service';
   templateUrl: './inicio.page.html',
   styleUrl: './inicio.page.scss',
 })
-export class InicioPage {
+export class InicioPage implements OnDestroy {
+  readonly auth = inject(AuthService);
   private readonly dashboard = inject(DashboardService);
   private readonly sesiones = inject(SesionesService);
   private readonly navegacion = inject(NavController);
   @ViewChild(IonModal) private modal?: IonModal;
+  @ViewChild(IonModal, { read: ElementRef }) private elementoModal?: ElementRef<HTMLElement>;
 
   cargando = true;
   errorCarga = false;
@@ -37,6 +40,13 @@ export class InicioPage {
   horarios$?: Observable<DisponibilidadSemanal>;
 
   ionViewWillEnter(): void { this.cargarResumen(); }
+
+  ngOnDestroy(): void {
+    // Ionic mueve el modal abierto al body. Al cerrar o vencer la sesión debemos
+    // quitar también ese elemento, sin dejar datos privados sobre la pantalla Login.
+    // Su desconexión permite que Ionic retire el bloqueo de foco y aria-hidden.
+    this.elementoModal?.nativeElement.remove();
+  }
 
   cargarResumen(): void {
     this.resumen$ = defer(() => {

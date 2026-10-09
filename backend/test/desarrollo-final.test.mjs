@@ -1,3 +1,4 @@
+import { crearUsuarioFixture, fetchAutenticado, SECRETO_PRUEBA } from './fixtures.mjs';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { mkdtempSync, readdirSync, rmdirSync, unlinkSync } from 'node:fs';
@@ -5,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { crearApp } from '../dist/app.js';
-import { abrirBaseDeDatos, migrarBaseDeDatos } from '../dist/db/database.js';
+import { abrirBaseDeDatos, prepararBaseDeDatos } from '../dist/db/database.js';
 import { cargarDatosIniciales, PACIENTES_INICIALES } from '../dist/db/seed.js';
 import { instanteLocal, semanaDe } from '../dist/calendario.js';
 
@@ -17,8 +18,10 @@ async function entorno(t, fecha = '2026-10-05T12:00:00Z') {
   const carpeta = mkdtempSync(join(tmpdir(), 'psique-final-'));
   const ruta = join(carpeta, 'prueba.sqlite');
   const db = abrirBaseDeDatos(ruta);
+  crearUsuarioFixture(db);
   let ahora = new Date(fecha);
-  const servidor = crearApp(db, 'http://127.0.0.1:4200', () => ahora).listen(0, '127.0.0.1');
+  const fetch = fetchAutenticado(() => ahora);
+  const servidor = crearApp(db, 'http://127.0.0.1:4200', () => ahora, SECRETO_PRUEBA).listen(0, '127.0.0.1');
   await once(servidor, 'listening');
   const base = `http://127.0.0.1:${servidor.address().port}/api`;
   t.after(async () => {
@@ -36,30 +39,21 @@ async function entorno(t, fecha = '2026-10-05T12:00:00Z') {
   return { db, ruta, base, pedir, avanzar: valor => { ahora = new Date(valor); } };
 }
 
-test('Migración de archivos anteriores sin pérdida de datos ni carga automática', async t => {
+test('El esquema profesional comienza vacío y conserva sus datos al reabrirse', async t => {
   const e = await entorno(t);
-  assert.equal(e.db.pragma('user_version', { simple: true }), 1);
-  for (const tabla of ['pacientes', 'turnos', 'dias_agenda', 'semana_agenda', 'dashboard', 'sesiones']) {
+  assert.equal(e.db.pragma('user_version', { simple: true }), 2);
+  for (const tabla of ['pacientes', 'turnos', 'sesiones']) {
     assert.equal(e.db.prepare(`SELECT COUNT(*) AS n FROM ${tabla}`).get().n, 0);
   }
-  cargarDatosIniciales(e.db);
-  e.db.exec('DROP TABLE sesiones; PRAGMA user_version = 0;');
-  const anteriores = Object.fromEntries(['pacientes', 'turnos', 'dias_agenda', 'semana_agenda', 'dashboard']
+  cargarDatosIniciales(e.db, 1);
+  const anteriores = Object.fromEntries(['usuarios', 'pacientes', 'turnos', 'sesiones']
     .map(tabla => [tabla, e.db.prepare(`SELECT * FROM ${tabla}`).all()]));
-  migrarBaseDeDatos(e.db);
-  for (const [tabla, filas] of Object.entries(anteriores)) {
-    assert.deepEqual(e.db.prepare(`SELECT * FROM ${tabla}`).all(), filas);
-  }
-  const sesiones = e.db.prepare('SELECT * FROM sesiones ORDER BY fecha, horario').all();
-  assert.equal(sesiones.length, 2);
-  assert.deepEqual(sesiones.map(s => [s.fecha, s.horario, s.codigoPaciente, s.importeCentavos, s.pagadoCentavos, s.estado]), [
-    ['2026-09-07', '15:00', 'P-001', 0, 0, 'Programada'],
-    ['2026-09-09', '10:30', 'P-002', 0, 0, 'Programada'],
-  ]);
-  migrarBaseDeDatos(e.db);
+  prepararBaseDeDatos(e.db);
   const segundaConexion = abrirBaseDeDatos(e.ruta);
   try {
-    assert.deepEqual(segundaConexion.prepare('SELECT * FROM sesiones ORDER BY fecha, horario').all(), sesiones);
+    for (const [tabla, filas] of Object.entries(anteriores)) {
+      assert.deepEqual(segundaConexion.prepare(`SELECT * FROM ${tabla}`).all(), filas);
+    }
     assert.deepEqual(segundaConexion.pragma('foreign_key_check'), []);
   } finally { segundaConexion.close(); }
   assert.deepEqual((await e.pedir('sesiones/semana')).body.sesiones, []);
@@ -265,7 +259,7 @@ test('Creación de pacientes, agenda, sesiones y cobros reales', async t => {
       assert.equal(guardada.estado, 'Realizada');
       assert.equal(guardada.pagadoCentavos, 123456);
       assert.equal(guardada.codigoPaciente, 'Cambio');
-      assert.equal(otra.pragma('user_version', { simple: true }), 1);
+      assert.equal(otra.pragma('user_version', { simple: true }), 2);
     } finally { otra.close(); }
   });
 

@@ -1,18 +1,13 @@
 import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
-import { IonApp, IonFooter, IonIcon, IonRouterLinkWithHref, IonRouterOutlet } from '@ionic/angular';
-import { calendarOutline, homeOutline, peopleOutline } from 'ionicons/icons';
+import { RouterOutlet } from '@angular/router';
+import { IonApp } from '@ionic/angular';
 
-// IonApp organiza la aplicación y el outlet muestra la pantalla de la ruta actual.
+// Angular destruye el contenedor privado y su caché de Ionic al ir a Login.
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [IonApp, IonFooter, IonIcon, IonRouterLinkWithHref, IonRouterOutlet, RouterLink, RouterLinkActive],
+  imports: [IonApp, RouterOutlet],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
-export class AppComponent {
-  readonly iconoInicio = homeOutline;
-  readonly iconoPacientes = peopleOutline;
-  readonly iconoAgenda = calendarOutline;
-}
+export class AppComponent {}

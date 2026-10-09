@@ -1,0 +1,20 @@
+@use '../shared/pagina';
+
+:host { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.pagina-acceso { width: min(100%, 560px); padding-top: clamp(32px, 7vh, 76px); padding-bottom: 40px; }
+.marca { margin-bottom: 44px; }
+.presentacion { padding-bottom: 20px; }
+h1 { font-size: clamp(34px, 6vw, 43px); }
+.introduccion { font-size: 16px; }
+.tarjeta { margin-top: 8px; }
+.campos { grid-template-columns: 1fr; gap: 22px; }
+.error-campo { margin: 6px 0 0; color: #8a402d; font-size: 13px; line-height: 1.5; }
+.error-campo:empty { display: none; }
+.boton-acceso { width: 100%; margin-top: 26px; }
+.alternativa { color: var(--texto-secundario); font-size: 14px; text-align: center; line-height: 1.8; }
+.alternativa a { color: var(--verde-oscuro); font-weight: 600; text-underline-offset: 3px; }
+@media (max-width: 640px) {
+  .pagina-acceso { padding: 30px 22px; }
+  .marca { margin-bottom: 36px; }
+  .tarjeta { padding: 22px 18px; }
+}

@@ -1,0 +1,53 @@
+<ion-content>
+  <main class="pagina pagina-acceso">
+    <header class="marca">
+      <span class="marca-simbolo" aria-hidden="true">Ψ</span>
+      <div>
+        <p class="marca-nombre">PSIQUE</p>
+        <p class="marca-descripcion">Seguimiento psicoterapéutico</p>
+      </div>
+    </header>
+
+    <section class="presentacion" aria-labelledby="titulo-registro">
+      <p class="etiqueta">Tu espacio profesional</p>
+      <h1 id="titulo-registro">Crear cuenta</h1>
+      <p class="introduccion">Un lugar para organizar tus pacientes, tu agenda y tus sesiones.</p>
+    </section>
+
+    <form class="tarjeta" [formGroup]="formulario" (ngSubmit)="registrarse()" novalidate aria-labelledby="titulo-registro">
+      <fieldset [disabled]="cargando">
+        <div class="campos">
+          <div class="campo">
+            <label for="registro-email">Email</label>
+            <input id="registro-email" type="email" formControlName="email" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="254" required [attr.aria-invalid]="formulario.controls.email.touched && formulario.controls.email.invalid" aria-describedby="registro-email-error">
+            <p id="registro-email-error" class="error-campo">
+              @if (formulario.controls.email.touched && formulario.controls.email.invalid) { Ingresá un email válido. }
+            </p>
+          </div>
+          <div class="campo">
+            <label for="registro-password">Contraseña</label>
+            <input id="registro-password" type="password" formControlName="password" autocomplete="new-password" required [attr.aria-invalid]="formulario.controls.password.touched && formulario.controls.password.invalid" aria-describedby="registro-password-ayuda registro-password-error">
+            <p class="ayuda" id="registro-password-ayuda">Entre 12 y 128 caracteres. Podés usar una frase larga que puedas recordar.</p>
+            <p id="registro-password-error" class="error-campo">
+              @if (formulario.controls.password.touched && formulario.controls.password.invalid) { La contraseña debe tener entre 12 y 128 caracteres. }
+            </p>
+          </div>
+          <div class="campo">
+            <label for="registro-repetir">Repetir contraseña</label>
+            <input id="registro-repetir" type="password" formControlName="repetirPassword" autocomplete="new-password" required [attr.aria-invalid]="formulario.controls.repetirPassword.touched && (formulario.controls.repetirPassword.invalid || formulario.hasError('passwordsDistintos'))" aria-describedby="registro-repetir-error">
+            <p id="registro-repetir-error" class="error-campo">
+              @if (formulario.controls.repetirPassword.touched && formulario.controls.repetirPassword.invalid) {
+                Repetí tu contraseña.
+              } @else if (formulario.controls.repetirPassword.touched && formulario.hasError('passwordsDistintos')) {
+                Las contraseñas no coinciden.
+              }
+            </p>
+          </div>
+        </div>
+      </fieldset>
+      @if (error) { <p class="error" role="alert">{{ error }}</p> }
+      <button class="boton boton-acceso" type="submit" [disabled]="cargando">{{ cargando ? 'Creando cuenta...' : 'Crear cuenta' }}</button>
+    </form>
+    <p class="alternativa">¿Ya tenés una cuenta? <a routerLink="/login">Iniciar sesión</a></p>
+  </main>
+</ion-content>

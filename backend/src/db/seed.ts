@@ -1,7 +1,7 @@
 import type Database from 'better-sqlite3';
-import type { Paciente, ResumenDashboard, SemanaAgenda } from '../models.ts';
+import type { Paciente, SemanaAgenda } from '../models.ts';
 
-// Fixture histórica conservada para pruebas explícitas de migración.
+// Datos ficticios cargados explícitamente para las pruebas de un profesional.
 // La aplicación no importa ni ejecuta esta carga al iniciar.
 export const PACIENTES_INICIALES: Paciente[] = [
   {
@@ -97,63 +97,30 @@ export const SEMANA_INICIAL: SemanaAgenda = {
   ],
 };
 
-// Conservamos los indicadores independientes: todavía no se calculan estadísticas.
-export const DASHBOARD_INICIAL: ResumenDashboard = {
-  pacientesActivos: 3,
-  sesionesSemana: 8,
-  pendientesCobro: 2,
-  horariosDisponibles: 4,
-};
-
-export function cargarDatosIniciales(db: Database.Database): void {
-  // La transacción carga todo o revierte todo ante un error. El modo immediate
-  // evita que dos inicios simultáneos intenten inicializar la misma base vacía.
-  const inicializar = db.transaction(() => {
-    const registro = db.prepare<[], { cantidad: number }>(`
-      SELECT
-        (SELECT COUNT(*) FROM pacientes) +
-        (SELECT COUNT(*) FROM semana_agenda) +
-        (SELECT COUNT(*) FROM dias_agenda) +
-        (SELECT COUNT(*) FROM turnos) +
-        (SELECT COUNT(*) FROM dashboard) AS cantidad
-    `).get();
-
-    // Si ya existe cualquier dato, no restauramos ni sobreescribimos la base.
-    if (registro && registro.cantidad > 0) {
-      return;
-    }
-
+// El profesional se crea en la fixture de test, nunca en el servidor real.
+export function cargarDatosIniciales(db: Database.Database, usuarioId: number): void {
+  db.transaction(() => {
     const insertarPaciente = db.prepare(`
-      INSERT INTO pacientes (
-        codigo, modalidad, estado, proximaSesion, frecuencia, diaHabitual,
-        horarioHabitual, fechaCreacion, fechaInicioTratamiento, motivoConsulta, postIt
-      ) VALUES (
-        @codigo, @modalidad, @estado, @proximaSesion, @frecuencia, @diaHabitual,
-        @horarioHabitual, @fechaCreacion, @fechaInicioTratamiento, @motivoConsulta, @postIt
-      )
+      INSERT INTO pacientes (usuarioId, codigo, modalidad, estado, proximaSesion, frecuencia, diaHabitual,
+        horarioHabitual, fechaCreacion, fechaInicioTratamiento, motivoConsulta, postIt)
+      VALUES (@usuarioId, @codigo, @modalidad, @estado, @proximaSesion, @frecuencia, @diaHabitual,
+        @horarioHabitual, @fechaCreacion, @fechaInicioTratamiento, @motivoConsulta, @postIt)
     `);
-    for (const paciente of PACIENTES_INICIALES) {
-      insertarPaciente.run(paciente);
-    }
-
-    db.prepare('INSERT INTO semana_agenda (id, titulo) VALUES (1, ?)').run(SEMANA_INICIAL.titulo);
-    const insertarDia = db.prepare('INSERT INTO dias_agenda (fecha, nombre, semanaId) VALUES (?, ?, 1)');
+    for (const paciente of PACIENTES_INICIALES) insertarPaciente.run({ ...paciente, usuarioId });
     const insertarTurno = db.prepare(`
-      INSERT INTO turnos (fecha, horario, codigoPaciente, modalidad, estado)
-      VALUES (@fecha, @horario, @codigoPaciente, @modalidad, @estado)
+      INSERT INTO turnos (usuarioId, fecha, horario, codigoPaciente, modalidad, estado)
+      VALUES (@usuarioId, @fecha, @horario, @codigoPaciente, @modalidad, @estado)
+    `);
+    const insertarSesion = db.prepare(`
+      INSERT INTO sesiones (usuarioId, fecha, horario, codigoPaciente, modalidad)
+      VALUES (@usuarioId, @fecha, @horario, @codigoPaciente, @modalidad)
     `);
     for (const dia of SEMANA_INICIAL.dias) {
-      insertarDia.run(dia.fecha, dia.nombre);
       for (const turno of dia.turnos) {
-        insertarTurno.run({ fecha: dia.fecha, ...turno });
+        const datos = { usuarioId, fecha: dia.fecha, ...turno };
+        insertarTurno.run(datos);
+        if (turno.estado === 'Programado') insertarSesion.run(datos);
       }
     }
-
-    db.prepare(`
-      INSERT INTO dashboard (id, pacientesActivos, sesionesSemana, pendientesCobro, horariosDisponibles)
-      VALUES (1, @pacientesActivos, @sesionesSemana, @pendientesCobro, @horariosDisponibles)
-    `).run(DASHBOARD_INICIAL);
-  });
-
-  inicializar.immediate();
+  }).immediate();
 }

@@ -16,9 +16,20 @@ ion-content {
 }
 
 .encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
   padding-bottom: 30px;
   border-bottom: 1px solid #dce1d7;
 }
+
+.cuenta { display: grid; justify-items: end; gap: 5px; max-width: 100%; }
+.cuenta span { color: var(--texto-secundario); font-size: 13px; overflow-wrap: anywhere; }
+.cerrar-sesion { min-height: 38px; padding: 8px 12px; border: 1px solid #cbd6c8; border-radius: 10px; background: transparent; color: var(--verde-oscuro); font: inherit; font-size: 13px; cursor: pointer; }
+.cerrar-sesion:hover { background: #e9eee4; }
+.cerrar-sesion:focus-visible { outline: 3px solid #945f46; outline-offset: 3px; }
 
 .marca {
   display: flex;
@@ -327,6 +338,8 @@ ion-modal {
   .encabezado {
     padding-bottom: 24px;
   }
+
+  .cuenta { justify-items: start; }
 
   .bienvenida {
     padding: 36px 0 28px;

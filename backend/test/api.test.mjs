@@ -1,3 +1,4 @@
+import { crearUsuarioFixture, fetchAutenticado, SECRETO_PRUEBA } from './fixtures.mjs';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { mkdtempSync, rmdirSync, unlinkSync } from 'node:fs';
@@ -7,17 +8,18 @@ import test from 'node:test';
 import { crearApp } from '../dist/app.js';
 import { abrirBaseDeDatos } from '../dist/db/database.js';
 import { PACIENTES_INICIALES } from '../dist/db/seed.js';
-import { abrirFixtureLegacy, AGENDA_LEGACY, DASHBOARD_LEGACY, RELOJ_LEGACY } from './fixtures.mjs';
+import { abrirFixtureProfesional, AGENDA_FIXTURE, DASHBOARD_FIXTURE, RELOJ_FIXTURE } from './fixtures.mjs';
 
 const origenFrontend = 'http://127.0.0.1:4200';
 
 // Las pruebas usan un archivo temporal y un puerto asignado por el sistema.
 // Nunca leen ni modifican backend/data/psique.sqlite.
-test('API REST y persistencia de los datos anteriores', async (t) => {
+test('API REST autenticada y persistencia de datos', async (t) => {
   const carpeta = mkdtempSync(join(tmpdir(), 'psique-api-'));
   const ruta = join(carpeta, 'prueba.sqlite');
-  let db = abrirFixtureLegacy(ruta);
-  const servidor = crearApp(db, origenFrontend, RELOJ_LEGACY).listen(0, '127.0.0.1');
+  let db = abrirFixtureProfesional(ruta);
+  const fetch = fetchAutenticado(RELOJ_FIXTURE);
+  const servidor = crearApp(db, origenFrontend, RELOJ_FIXTURE, SECRETO_PRUEBA).listen(0, '127.0.0.1');
 
   try {
     await once(servidor, 'listening');
@@ -47,7 +49,7 @@ test('API REST y persistencia de los datos anteriores', async (t) => {
       const respuesta = await fetch(`${base}/agenda`);
       assert.equal(respuesta.status, 200);
       const agenda = await respuesta.json();
-      assert.deepEqual(agenda, AGENDA_LEGACY);
+      assert.deepEqual(agenda, AGENDA_FIXTURE);
       assert.equal(agenda.dias.length, 7);
       assert.equal(agenda.dias.flatMap((dia) => dia.turnos).length, 14);
       for (const dia of agenda.dias) {
@@ -59,7 +61,7 @@ test('API REST y persistencia de los datos anteriores', async (t) => {
     await t.test('dashboard calcula los indicadores sin inventar sesiones realizadas ni deudas', async () => {
       const respuesta = await fetch(`${base}/dashboard`);
       assert.equal(respuesta.status, 200);
-      assert.deepEqual(await respuesta.json(), DASHBOARD_LEGACY);
+      assert.deepEqual(await respuesta.json(), DASHBOARD_FIXTURE);
     });
 
     await t.test('CORS habilita el origen local y anuncia GET, POST y PUT', async () => {
@@ -94,7 +96,6 @@ test('API REST y persistencia de los datos anteriores', async (t) => {
     await t.test('las respuestas leen SQLite y no devuelven las constantes de inicialización', async () => {
       db.prepare('UPDATE pacientes SET postIt = ? WHERE codigo = ?')
         .run('Texto ficticio para comprobar persistencia.', 'P-001');
-      db.prepare('UPDATE dashboard SET sesionesSemana = ? WHERE id = 1').run(12);
       const ficha = await (await fetch(`${base}/pacientes/P-001`)).json();
       assert.equal(ficha.postIt, 'Texto ficticio para comprobar persistencia.');
       const dashboard = await (await fetch(`${base}/dashboard`)).json();
@@ -108,12 +109,8 @@ test('API REST y persistencia de los datos anteriores', async (t) => {
       db = abrirBaseDeDatos(ruta);
       assert.equal(db.prepare('SELECT COUNT(*) AS cantidad FROM pacientes').get().cantidad, 3);
       assert.equal(db.prepare('SELECT COUNT(*) AS cantidad FROM turnos').get().cantidad, 14);
-      assert.equal(db.prepare('SELECT COUNT(*) AS cantidad FROM dias_agenda').get().cantidad, 7);
-      assert.equal(db.prepare('SELECT COUNT(*) AS cantidad FROM semana_agenda').get().cantidad, 1);
-      assert.equal(db.prepare('SELECT COUNT(*) AS cantidad FROM dashboard').get().cantidad, 1);
       assert.equal(db.prepare('SELECT postIt FROM pacientes WHERE codigo = ?').get('P-001').postIt,
         'Texto ficticio para comprobar persistencia.');
-      assert.equal(db.prepare('SELECT sesionesSemana FROM dashboard WHERE id = 1').get().sesionesSemana, 12);
 
       // Una base parcialmente modificada tampoco se repuebla automáticamente.
       db.prepare('DELETE FROM turnos WHERE fecha = ? AND horario = ?').run('2026-09-07', '09:00');

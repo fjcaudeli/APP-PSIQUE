@@ -1,3 +1,4 @@
+import { crearUsuarioFixture, fetchAutenticado, SECRETO_PRUEBA } from './fixtures.mjs';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { mkdtempSync, rmdirSync, unlinkSync } from 'node:fs';
@@ -7,14 +8,15 @@ import test from 'node:test';
 import { crearApp } from '../dist/app.js';
 import { abrirBaseDeDatos } from '../dist/db/database.js';
 import { PACIENTES_INICIALES } from '../dist/db/seed.js';
-import { abrirFixtureLegacy, AGENDA_LEGACY, DASHBOARD_LEGACY, RELOJ_LEGACY } from './fixtures.mjs';
+import { abrirFixtureProfesional, AGENDA_FIXTURE, DASHBOARD_FIXTURE, RELOJ_FIXTURE } from './fixtures.mjs';
 
 // Se prueba la edición contra un archivo aislado: la base usada por la demo no se toca.
 test('Edición completa de pacientes y conservación de sus turnos', async (t) => {
   const carpeta = mkdtempSync(join(tmpdir(), 'psique-edicion-'));
   const ruta = join(carpeta, 'edicion.sqlite');
-  let db = abrirFixtureLegacy(ruta);
-  const servidor = crearApp(db, 'http://127.0.0.1:4200', RELOJ_LEGACY).listen(0, '127.0.0.1');
+  let db = abrirFixtureProfesional(ruta);
+  const fetch = fetchAutenticado(RELOJ_FIXTURE);
+  const servidor = crearApp(db, 'http://127.0.0.1:4200', RELOJ_FIXTURE, SECRETO_PRUEBA).listen(0, '127.0.0.1');
   const original = PACIENTES_INICIALES[0];
   const editado = {
     codigo: 'Fx_01',
@@ -74,7 +76,7 @@ test('Edición completa de pacientes y conservación de sus turnos', async (t) =
         assert.equal(typeof (await respuesta.json()).mensaje, 'string');
       }
       assert.deepEqual(await consultar('pacientes'), PACIENTES_INICIALES);
-      assert.deepEqual(await consultar('agenda'), AGENDA_LEGACY);
+      assert.deepEqual(await consultar('agenda'), AGENDA_FIXTURE);
     });
 
     await t.test('informa 404 para el código original inexistente sin crear pacientes', async () => {
@@ -93,7 +95,7 @@ test('Edición completa de pacientes y conservación de sus turnos', async (t) =
         assert.deepEqual(await respuesta.json(), { mensaje: 'Ya existe un paciente con ese código.' });
       }
       assert.deepEqual(await consultar('pacientes'), PACIENTES_INICIALES);
-      assert.deepEqual(await consultar('agenda'), AGENDA_LEGACY);
+      assert.deepEqual(await consultar('agenda'), AGENDA_FIXTURE);
     });
 
     await t.test('responde 400 ante JSON malformado y 413 cuando se superan 32 KB', async () => {
@@ -119,7 +121,7 @@ test('Edición completa de pacientes y conservación de sus turnos', async (t) =
         assert.equal(respuesta.status, 500);
         assert.deepEqual(await respuesta.json(), { mensaje: 'No se pudo completar la operación' });
         assert.deepEqual(await consultar('pacientes'), PACIENTES_INICIALES);
-        assert.deepEqual(await consultar('agenda'), AGENDA_LEGACY);
+        assert.deepEqual(await consultar('agenda'), AGENDA_FIXTURE);
         assert.deepEqual(db.pragma('foreign_key_check'), []);
         assert.equal(db.pragma('defer_foreign_keys', { simple: true }), 0);
       } finally {
@@ -139,10 +141,10 @@ test('Edición completa de pacientes y conservación de sus turnos', async (t) =
       assert.deepEqual(listado.find((paciente) => paciente.codigo === editado.codigo), editado);
       assert.deepEqual(listado.filter((paciente) => paciente.codigo !== editado.codigo), PACIENTES_INICIALES.slice(1));
 
-      const agendaEsperada = structuredClone(AGENDA_LEGACY);
+      const agendaEsperada = structuredClone(AGENDA_FIXTURE);
       agendaEsperada.dias[0].turnos[2].codigoPaciente = editado.codigo;
       assert.deepEqual(await consultar('agenda'), agendaEsperada);
-      assert.deepEqual(await consultar('dashboard'), { ...DASHBOARD_LEGACY, pacientesActivos: 2 });
+      assert.deepEqual(await consultar('dashboard'), { ...DASHBOARD_FIXTURE, pacientesActivos: 2 });
       assert.equal((await consultar('sesiones/1')).codigoPaciente, editado.codigo);
       assert.deepEqual(db.pragma('foreign_key_check'), []);
       assert.equal(db.pragma('defer_foreign_keys', { simple: true }), 0);
@@ -190,7 +192,7 @@ test('Edición completa de pacientes y conservación de sus turnos', async (t) =
     await t.test('los cambios persisten después de cerrar y volver a abrir el archivo SQLite', () => {
       db.close();
       db = abrirBaseDeDatos(ruta);
-      assert.deepEqual(db.prepare('SELECT * FROM pacientes WHERE codigo = ?').get(editado.codigo), editado);
+      assert.deepEqual(db.prepare('SELECT * FROM pacientes WHERE codigo = ?').get(editado.codigo), { ...editado, usuarioId: 1 });
       assert.equal(db.prepare('SELECT COUNT(*) AS cantidad FROM pacientes').get().cantidad, 3);
       assert.equal(db.prepare('SELECT codigoPaciente FROM turnos WHERE fecha = ? AND horario = ?')
         .get('2026-09-07', '15:00').codigoPaciente, editado.codigo);

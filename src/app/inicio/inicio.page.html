@@ -8,6 +8,10 @@
           <p class="marca-descripcion">Seguimiento psicoterapéutico</p>
         </div>
       </div>
+      <div class="cuenta">
+        <span>{{ auth.usuario()?.email }}</span>
+        <button class="cerrar-sesion" type="button" (click)="auth.cerrarSesion()">Cerrar sesión</button>
+      </div>
     </header>
 
     <main>

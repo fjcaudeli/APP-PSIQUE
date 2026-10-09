@@ -4,7 +4,7 @@ Aplicación de seguimiento psicoterapéutico y administración de consultorio. S
 
 Esta etapa permite crear y editar pacientes, cargar horarios, agendar sesiones, confirmar que se realizaron y registrar sus honorarios y cobros. Las cuatro tarjetas de Inicio son accesos a estos recorridos y muestran cantidades calculadas a partir de la base de datos.
 
-La interfaz puede usarse en el navegador de una PC y se adapta a pantallas pequeñas. El desarrollo continúa: todavía no incluye autenticación, permisos de usuarios ni despliegue para uso clínico en producción.
+La interfaz puede usarse en el navegador de una PC y se adapta a pantallas pequeñas. Cada profesional se registra e inicia sesión para acceder a sus propios pacientes, horarios, sesiones y estadísticas. El desarrollo y la ejecución continúan siendo locales; el despliegue se abordará en otra etapa.
 
 ## Ejecutar la aplicación
 
@@ -17,10 +17,11 @@ Desde la raíz de `APP-PSIQUE`:
 ```powershell
 Set-Location .\backend
 npm.cmd install
+# La primera vez, completar la configuración local indicada más abajo.
 npm.cmd run dev
 ```
 
-La API queda disponible en **http://127.0.0.1:3000/api**. Al iniciar, crea `backend/data/psique.sqlite` si falta y ejecuta las migraciones pendientes. **Una base nueva comienza vacía**: no se cargan pacientes, horarios, sesiones ni importes de ejemplo automáticamente. Una base de una versión anterior conserva sus registros.
+La API queda disponible en **http://127.0.0.1:3000/api**. Al iniciar, crea `backend/data/psique-profesionales.sqlite` si falta, con el esquema de usuarios y propietarios. **Una base nueva comienza vacía**: primero se registra el profesional y luego carga sus datos. No se crean cuentas ni contraseñas predeterminadas. Una base anterior sin propietarios no se transforma automáticamente: el servidor rechaza su apertura sin modificarla.
 
 `dev` ejecuta Node con `--watch` y reinicia el backend al cambiar el código. La comprobación completa de tipos se realiza mediante `build`.
 
@@ -33,7 +34,7 @@ npm.cmd install
 npm.cmd start
 ```
 
-Abrí **http://127.0.0.1:4200**. Ambas terminales deben permanecer activas. `Ctrl+C` detiene el proceso de su terminal. Las instalaciones son necesarias la primera vez o al cambiar dependencias; la raíz y `backend` tienen paquetes y carpetas `node_modules` separados. `npm.cmd` evita las restricciones de ejecución de scripts de PowerShell.
+Abrí **http://127.0.0.1:4200**. Sin sesión se muestra Login; desde allí se puede crear una cuenta. Ambas terminales deben permanecer activas. `Ctrl+C` detiene el proceso de su terminal. Las instalaciones son necesarias la primera vez o al cambiar dependencias; la raíz y `backend` tienen paquetes y carpetas `node_modules` separados. `npm.cmd` evita las restricciones de ejecución de scripts de PowerShell.
 
 ### Compilación y pruebas
 
@@ -64,25 +65,42 @@ El comando compila y ejecuta `test/*.test.mjs` con el ejecutor de Node. Las prue
 
 ### Configuración local
 
-El backend funciona sin un archivo `.env`. Para personalizar los valores, desde `backend` se puede crear una copia de `.env.example`:
+El backend necesita `JWT_SECRET`. Para configurarlo localmente, desde `backend` creá una copia de `.env.example` **solo si aún no tenés `.env`**:
 
 ```powershell
 Copy-Item -LiteralPath .env.example -Destination .env
 ```
 
-Hacé la copia solo si todavía no existe un `.env` personalizado. Los comandos de inicio cargan ese archivo opcional con `--env-file-if-exists=.env`.
+En `.env`, completá el valor vacío de `JWT_SECRET` con un secreto aleatorio. Este comando genera 32 bytes aleatorios, representados por 64 caracteres hexadecimales; pegá el resultado únicamente en tu `.env` local:
+
+```powershell
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+No compartas ni subas ese valor. Los comandos de inicio cargan `.env` mediante `--env-file-if-exists=.env`; también se pueden definir las variables en el entorno del proceso. Si falta el secreto, es demasiado corto o contiene solamente espacios, el servidor se detiene antes de abrir SQLite. No hay una clave predeterminada en el código. Cambiar el secreto invalida los tokens firmados con el anterior.
 
 | Variable | Valor predeterminado | Uso |
 | --- | --- | --- |
 | `PORT` | `3000` | Puerto de Express. |
-| `DB_PATH` | `data/psique.sqlite` | Archivo SQLite; las rutas relativas se resuelven desde `backend`. |
+| `DB_PATH` | `data/psique-profesionales.sqlite` | Base con usuarios; las rutas relativas se resuelven desde `backend`. |
 | `FRONTEND_ORIGIN` | `http://127.0.0.1:4200` | Origen del navegador permitido por CORS. |
+| `JWT_SECRET` | Sin valor predeterminado; obligatorio | Secreto para firmar y verificar JWT. Generar al menos 32 bytes aleatorios. |
 
 La API se limita a `127.0.0.1`. Su URL en el frontend está centralizada en `src/app/api.config.ts`. Si cambiás el puerto del backend, actualizá esa constante. `localhost` y `127.0.0.1` son orígenes distintos para el navegador: con la configuración inicial usá las direcciones indicadas arriba.
 
 La base local, sus archivos auxiliares, los archivos `.env`, las dependencias y las compilaciones no se versionan. `.env.example` contiene únicamente valores de ejemplo. La primera instalación requiere descargar dependencias; luego la aplicación puede ejecutarse localmente con ambos procesos.
 
 ## Recorridos de la aplicación
+
+### Registro, login y logout
+
+**Crear cuenta** solicita email, contraseña y repetición. El email se normaliza a minúsculas y sin espacios externos; no puede repetirse. La contraseña tiene entre 12 y 128 caracteres y ambas entradas deben coincidir. Las contraseñas no se recortan ni cambian a minúsculas. Angular ayuda a completar el formulario y Express vuelve a comprobar todos los campos.
+
+Después del registro se vuelve a Login. **Iniciar sesión** verifica las credenciales y abre Inicio. Allí se muestra el email de la cuenta y **Cerrar sesión**. Una cuenta nueva comienza con todos sus contadores en cero; los datos de otra cuenta no se importan ni aparecen por compartir el navegador.
+
+La sesión dura **una hora**. El token se guarda en `sessionStorage`, por pestaña: sobrevive a recargas y se elimina al cerrar sesión. El cierre habitual de la pestaña descarta ese almacenamiento, aunque un navegador puede restaurarlo al recuperar una sesión. No se guardan contraseñas. Al vencer el token o recibir un 401 de una solicitud privada se vuelve a Login. No hay renovación automática ni refresh tokens.
+
+Cerrar sesión elimina las credenciales locales y destruye el contenedor de pantallas privadas, incluida la caché de navegación de Ionic. La próxima cuenta vuelve a consultar sus datos. El logout es local: un token que hubiera sido copiado sigue siendo válido ante la API hasta su vencimiento. Esta etapa no incorpora una lista de revocación.
 
 ### Inicio
 
@@ -115,7 +133,7 @@ Los formularios trabajan sobre un borrador. Guardar envía los datos a la API; C
 
 Agenda abre la semana actual y permite recorrer **Anterior**, **Esta semana** y **Siguiente**. Cada día muestra sus horarios. Un día sin registros no significa que tenga horarios ofrecidos: primero se agregan mediante **Agregar horario disponible**, indicando una fecha y hora futuras.
 
-Un horario disponible puede abrirse desde Agenda o desde la tarjeta de Inicio. **Agendar sesión** permite elegir un paciente existente, la modalidad de esa sesión y sus honorarios en ARS. Guardar ocupa el horario y abre el detalle de la sesión creada. No pueden coexistir dos sesiones para la misma fecha y hora.
+Un horario disponible puede abrirse desde Agenda o desde la tarjeta de Inicio. **Agendar sesión** permite elegir un paciente existente, la modalidad de esa sesión y sus honorarios en ARS. Guardar ocupa el horario y abre el detalle de la sesión creada. No pueden coexistir dos sesiones del mismo profesional para la misma fecha y hora.
 
 Si el paciente aún no existe, **Crear paciente** dentro de Agendar sesión conserva la fecha, hora, modalidad e importe elegidos. El formulario muestra ese contexto y su botón pasa a ser **Crear paciente y agendar**. El backend realiza ambas operaciones en una misma transacción: si el horario se ocupó o algún dato no es válido, no queda un paciente creado sin la reserva solicitada. Cancelar vuelve al agendamiento con el contexto conservado.
 
@@ -151,7 +169,7 @@ No se inventan montos ni se generan sesiones por el paso del tiempo. Los honorar
 
 | Campo del paciente | Regla |
 | --- | --- |
-| `codigo` | Entre 1 y 12 caracteres; comienza con letra ASCII o número y admite luego letras ASCII, números, guion y guion bajo. Único sin distinguir mayúsculas. `nuevo` está reservado, también con otra capitalización. En el alta puede omitirse o estar vacío para generación automática. |
+| `codigo` | Entre 1 y 12 caracteres; comienza con letra ASCII o número y admite luego letras ASCII, números, guion y guion bajo. Único dentro de la cuenta del profesional, sin distinguir mayúsculas. `nuevo` está reservado, también con otra capitalización. En el alta puede omitirse o estar vacío para generación automática. |
 | `modalidad` | `Presencial` o `Virtual`. |
 | `estado` y `frecuencia` | Textos obligatorios de hasta 40 caracteres cada uno. |
 | `proximaSesion` | `null` o texto de hasta 30 caracteres. Es la etiqueta breve de la tarjeta. |
@@ -162,7 +180,7 @@ No se inventan montos ni se generan sesiones por el paso del tiempo. Los honorar
 | `motivoConsulta` | Texto de hasta 3000 caracteres; puede quedar vacío. |
 | `postIt` | Texto de hasta 300 caracteres; puede quedar vacío. |
 
-Usá alias o códigos y evitá nombres reales como identificador. El código aparece en las fichas, listados, agenda y URLs. `PA-01` y `ab_2` cumplen el formato; `Ana Pérez`, `-P001` y `nuevo` no. `PA-01` y `pa-01` no pueden identificar a pacientes diferentes.
+Usá alias o códigos y evitá nombres reales como identificador. El código aparece en las fichas, listados, agenda y URLs. `PA-01` y `ab_2` cumplen el formato; `Ana Pérez`, `-P001` y `nuevo` no. `PA-01` y `pa-01` no pueden identificar a pacientes diferentes dentro de una cuenta. Dos profesionales sí pueden usar el mismo código para sus respectivos pacientes.
 
 El backend valida nuevamente todas las solicitudes: tipos, campos permitidos, longitudes, fechas reales, importes y relaciones entre registros. Recorta espacios externos de los textos, pero no trunca contenido para hacerlo entrar en un límite. Las respuestas de error usan `{ "mensaje": "..." }`.
 
@@ -188,12 +206,14 @@ APP-PSIQUE/
 │   ├── main.ts                   Inicio de Angular
 │   ├── global.scss               Estilos globales e Ionic
 │   └── app/
-│       ├── app.component.*       Contenedor y navegación inferior
+│       ├── app.component.*       Contenedor raíz con RouterOutlet
 │       ├── app.config.ts         Proveedores y configuración regional
 │       ├── app.routes.ts         Rutas con carga de pantallas por demanda
 │       ├── api.config.ts         URL base de la API
 │       ├── models/               Paciente, turno, sesión y resumen
 │       ├── services/             Acceso HTTP a la API
+│       ├── auth/                 Login, Registro, guard e interceptor
+│       ├── espacio-privado/      Pantallas internas y navegación inferior
 │       ├── shared/               Estilos y funciones compartidas
 │       ├── inicio/               Cuatro tarjetas y modales
 │       ├── pacientes/            Listado y acceso al alta
@@ -201,20 +221,21 @@ APP-PSIQUE/
 │       ├── paciente-detalle/     Ficha y edición
 │       ├── agenda/               Semana, días y alta de horarios
 │       ├── agendar/              Asignación de un horario
-│       ├── sesiones/             Histórico de la semana actual
+│       ├── sesiones/             Histórico por semanas
 │       └── sesion-detalle/       Datos, realización y cobros
 ├── backend/
 │   ├── src/
 │   │   ├── server.ts             Configuración e inicio del servidor
 │   │   ├── app.ts                Endpoints y operaciones de negocio
+│   │   ├── auth.ts               Registro, hashing, JWT y middleware
 │   │   ├── models.ts             Contratos JSON de la API
 │   │   ├── validar-paciente.ts   Validación de fichas
 │   │   ├── calendario.ts         Fechas, semana y reloj de Buenos Aires
 │   │   └── db/
-│   │       ├── database.ts       Apertura, tablas y migraciones
-│   │       └── seed.ts           Ejemplos históricos solo para pruebas
+│   │       ├── database.ts       Apertura y esquema con propietarios
+│   │       └── seed.ts           Ejemplos explícitos solo para pruebas
 │   ├── test/                     Pruebas y fixtures temporales
-│   ├── data/psique.sqlite        Base local generada; no se versiona
+│   ├── data/psique-profesionales.sqlite  Base local de cuentas; no se versiona
 │   ├── dist/                     JavaScript compilado del backend
 │   ├── package.json
 │   ├── package-lock.json
@@ -227,10 +248,16 @@ APP-PSIQUE/
 
 Los componentes son `standalone`: cada pantalla declara las dependencias que usa. `app.routes.ts` registra `/inicio`, `/pacientes`, `/pacientes/nuevo`, `/pacientes/:codigo`, `/agenda`, `/agenda/agendar`, `/sesiones` y `/sesiones/:id`. La ruta estática `pacientes/nuevo` se declara antes de `pacientes/:codigo`.
 
+Esas rutas son hijas de `espacio-privado`, protegido con `canActivate` y `canActivateChild`. `/login` y `/registro` son públicas y quedan fuera del contenedor privado. El guard de acceso las redirige a Inicio cuando ya hay sesión.
+
 La barra inferior mantiene Inicio, Pacientes y Agenda, con espacio propio para no cubrir el contenido. Las pantallas se organizan mediante `ion-router-outlet`, `RouterLink` y `NavController`. Ionic puede conservar una pantalla en memoria; `ionViewWillEnter` permite actualizar sus datos al regresar.
 
 | Archivo o grupo | Responsabilidad |
 | --- | --- |
+| `services/auth.service.ts` | Registro, login, logout, token en sessionStorage y vencimiento. |
+| `auth/auth.interceptor.ts` | Agregar el Bearer a la API privada y tratar 401; descartar respuestas tardías de una sesión anterior. |
+| `auth/auth.guard.ts` | Decidir la navegación entre pantallas públicas y privadas. |
+| `espacio-privado/` | Conservar la navegación habitual de Ionic mientras hay sesión; destruirla al salir. |
 | `services/pacientes.service.ts` | Consultar, sugerir códigos, crear pacientes y actualizar fichas. Solo transforma el 404 de una consulta individual en paciente inexistente. |
 | `services/agenda.service.ts` | Consultar la semana que contiene una fecha. |
 | `services/dashboard.service.ts` | Consultar cantidades calculadas por el backend. |
@@ -249,19 +276,105 @@ Los formularios utilizan **Reactive Forms** con validadores y estados de carga/g
 
 `server.ts` carga la configuración, abre la base e inicia Express. `app.ts` configura JSON y CORS, define las rutas, valida los cuerpos y ejecuta operaciones SQL parametrizadas. `calendario.ts` centraliza el calendario de Buenos Aires; el reloj es inyectable para probar semanas y límites horarios sin depender del momento de ejecución.
 
-La base contiene pacientes, días y horarios, y la tabla `sesiones`, que guarda paciente, fecha, hora, modalidad, estado, honorarios y total cobrado. Cada sesión corresponde a un horario único. `pendienteCentavos` se calcula al consultar como honorarios menos total cobrado.
+El esquema actual, versión **2** en `PRAGMA user_version`, tiene cuatro tablas: `usuarios`, `pacientes`, `turnos` y `sesiones`. La API deriva los días y semanas del calendario; ya no necesita tablas de semana ni contadores almacenados. `pendienteCentavos` se calcula al consultar como honorarios menos total cobrado.
 
-`database.ts` activa claves foráneas y aplica migraciones con `PRAGMA user_version`. La **migración 1** conserva los pacientes y horarios existentes y agrega una sesión por cada turno previamente programado. Esas sesiones se importan como `Programada`, con honorarios y total cobrado en cero porque esos importes no existían en la base anterior. No se presume que ocurrieron: se confirman desde el detalle cuando corresponde. Reabrir la base no duplica esa migración.
+`database.ts` activa las claves foráneas y crea el esquema completo dentro de una transacción. Cada paciente, horario y sesión tiene un `usuarioId` obligatorio. Las relaciones compuestas impiden que una sesión o un horario apunten al paciente de otro profesional, incluso si se intenta insertar directamente en SQLite.
 
-Las tablas antiguas `semana_agenda` y `dias_agenda` se conservan para los horarios; la API arma semanas de siete días a partir de la fecha consultada. La tabla histórica `dashboard` puede seguir en la base por compatibilidad, pero sus números almacenados ya no alimentan Inicio.
-
-`db/seed.ts` conserva ejemplos de la etapa anterior para pruebas explícitas de migración. El servidor no lo importa ni ejecuta al iniciar. `test/fixtures.mjs` prepara bases temporales con esos datos cuando una prueba los necesita. Una instalación vacía permanece vacía hasta que se crean registros desde la aplicación o la API.
+`db/seed.ts` conserva ejemplos para pruebas explícitas, asociados a un usuario de prueba. El servidor no lo importa ni ejecuta al iniciar. `test/fixtures.mjs` prepara bases temporales cuando una prueba necesita datos. Una instalación vacía permanece vacía hasta que se crean registros desde la aplicación o la API.
 
 Las operaciones que deben guardarse juntas usan transacciones inmediatas: alta con reserva, asignación de horario y cambio de identificador. En el renombrado se difiere la verificación de claves foráneas hasta finalizar la transacción, de modo que paciente, turnos y sesiones cambian de referencia como una sola operación.
 
+### Transición desde la base sin usuarios
+
+Para esta etapa se eligió **comenzar con una base vacía y conservar la anterior**, sin asignar registros a una cuenta arbitraria. `data/psique.sqlite` se mantiene como archivo de la etapa anterior; la aplicación usa `data/psique-profesionales.sqlite`. Antes del cambio se guarda un respaldo adicional fuera del repositorio, en la carpeta local `PSIQUE/respaldos` del usuario de Windows, y se verifica su integridad.
+
+No se importan cuentas ni datos automáticamente, ni siquiera al registrar al primer profesional. Apuntar `DB_PATH` a un archivo de esquema anterior produce un error explicativo y deja ese archivo intacto. Abrir esos registros en la versión nueva requeriría una importación futura con un propietario elegido expresamente. Conservar el archivo anterior y su respaldo permite revisar o recuperar la información sin mezclarla con las cuentas nuevas.
+
+## Autenticación y separación por profesional
+
+**Autenticación** responde «¿Quién sos?»: el login comprueba la contraseña y el middleware verifica el token de cada solicitud. **Autorización** responde «¿A qué datos tenés permiso de acceder?»: las consultas SQL usan la identidad verificada para leer o modificar únicamente sus registros. El guard de Angular mejora la navegación; no puede reemplazar ninguno de esos controles del servidor.
+
+### Usuarios y hashing de contraseñas
+
+| Columna de `usuarios` | Propósito |
+| --- | --- |
+| `id` | Identificador interno numérico, generado por SQLite. |
+| `email` | Email normalizado, único sin distinguir mayúsculas. |
+| `passwordHash` | Resultado de Argon2id; nunca se devuelve en la API. |
+| `fechaCreacion` | Fecha de alta asignada por el servidor. |
+
+Hashear una contraseña significa obtener una representación para verificarla sin guardar el texto original. Se utiliza **Argon2id**, mediante la biblioteca `argon2`, con una sal aleatoria generada por la biblioteca y sus parámetros de costo predeterminados. El hash incluye algoritmo, parámetros y sal necesarios para verificarlo: la sal no es una contraseña ni necesita ser secreta.
+
+Un hash no es un cifrado reversible: no hay una clave que permita recuperar la contraseña original. En el login, `argon2.verify` comprueba la candidata contra el hash almacenado. Quien obtuviera los hashes podría intentar adivinar contraseñas; el costo de Argon2 dificulta cada intento y las contraseñas largas siguen siendo necesarias. El JWT usa un secreto diferente: ese secreto firma tokens, no descifra contraseñas.
+
+Antes de elegir la dependencia se comprobó el entorno **Node 24.14.1 / Windows x64**, el rango `engines` publicado y el soporte de la biblioteca; también se ejecuta una prueba real de hash y verificación en ese entorno. `argon2` publica binarios para Windows x64 y documenta el uso de Argon2id. La firma y verificación JWT se delegan en `jose`, compatible con los módulos ESM del backend. Las versiones exactas quedan fijadas en `backend/package-lock.json`. Referencias: [node-argon2](https://github.com/ranisalt/node-argon2), [jose](https://github.com/panva/jose).
+
+El registro acepta únicamente `email`, `password` y `repetirPassword`. Devuelve los datos públicos de la cuenta, sin iniciar sesión automáticamente. El login acepta `email` y `password`; un email inexistente y una contraseña incorrecta reciben el mismo mensaje. Ni las contraseñas, ni los hashes, ni los tokens se escriben en los logs de la aplicación.
+
+### JWT y middleware de Express
+
+Un **JWT** es un conjunto de datos JSON firmado. Express lo genera después de verificar las credenciales. Incluye `sub` (ID del profesional), `iat` (emisión), `exp` (vencimiento), `iss` (emisor) y `aud` (destinatario). No incluye historias clínicas, pacientes ni contraseñas. Está firmado con **HS256** y vence a los **3600 segundos**. La firma detecta modificaciones; no cifra su contenido, que se puede leer.
+
+El cliente recibe `{ token, usuario, expiraEn }`. En cada solicitud privada envía `Authorization: Bearer <token>`. El middleware restringe el algoritmo a HS256 y verifica firma, emisor, destinatario, vencimiento y sujeto, además de comprobar que el usuario sigue existiendo. Solo entonces deja su ID en `res.locals.usuarioId` y permite continuar al endpoint. Un token ausente, inválido o vencido produce **401**.
+
+Las rutas de registro y login se montan antes del middleware; el resto de `/api` queda detrás de él. El secreto proviene de `JWT_SECRET` y se valida al iniciar. El navegador jamás recibe ese secreto. Se conserva CORS para el origen local configurado; CORS no autentica ni aísla profesionales.
+
+### AuthService, interceptor y guard de Angular
+
+`AuthService` reúne registro, login, logout, almacenamiento y vencimiento del token. Los servicios existentes siguen usando `HttpClient` sin construir headers manualmente. El interceptor reconoce las solicitudes a la URL de nuestra API y les agrega el Bearer cuando son privadas; no envía el token a otros destinos ni a registro/login. Un 401 invalida la sesión correspondiente y redirige a Login.
+
+El guard protege Inicio, Pacientes, altas, fichas, Agenda, Agendar sesión, histórico y detalles. Abrir una URL privada o usar Atrás sin una sesión vigente conduce a Login. Decodificar el vencimiento en Angular sirve para la experiencia de uso: **el cliente no valida la firma ni decide el propietario**. Express realiza la comprobación real en cada llamada.
+
+La raíz usa un `RouterOutlet` de Angular para separar pantallas públicas y el contenedor privado. Dentro de ese contenedor se mantiene el `ion-router-outlet` y la barra inferior. Al salir se destruye el contenedor, evitando reutilizar fichas, formularios o listados de una cuenta anterior.
+
+### Propiedad de los registros
+
+| Tabla | Clave y relación con el profesional |
+| --- | --- |
+| `pacientes` | Clave compuesta por `usuarioId` y `codigo`; un código solo debe ser único dentro de esa cuenta. |
+| `turnos` | Clave compuesta por `usuarioId`, `fecha` y `horario`; referencia al paciente del mismo profesional si está asignado. |
+| `sesiones` | ID interno y `usuarioId`; horario único por profesional y claves foráneas compuestas hacia su paciente y horario. |
+
+Dos profesionales pueden usar `P-001` o atender el mismo día a las 15:00 sin conflicto. El ID de sesión no concede acceso: al buscarlo también se exige el `usuarioId` del token. Las consultas individuales, listados, códigos sugeridos, uniones SQL, validaciones de disponibilidad, cambios de código, reprogramaciones, cobros y estadísticas aplican ese mismo criterio.
+
+Un recurso ajeno se trata como inexistente y responde **404**, sin confirmar que otra cuenta lo tiene. El backend no toma el propietario del formulario, la URL ni un parámetro `userId`: lo obtiene exclusivamente del JWT validado. Los cuerpos con campos desconocidos se rechazan. Los errores por código duplicado u horario ocupado se evalúan dentro de la propia cuenta.
+
+### RECORRIDO COMPLETO DEL LOGIN
+
+```text
+Login de Angular: email y contraseña
+    ↓ POST /api/auth/login
+Express valida el formato y busca el email normalizado
+    ↓
+argon2.verify compara la contraseña con passwordHash
+    ↓ si es correcta
+jose firma un JWT con el ID y vencimiento de una hora
+    ↓ respuesta sin hash ni contraseña
+AuthService guarda token y usuario en sessionStorage
+    ↓ guard permite entrar a Inicio
+HttpClient solicita /api/dashboard
+    ↓ interceptor agrega Authorization: Bearer <token>
+Middleware de Express verifica JWT y existencia del usuario
+    ↓ res.locals.usuarioId
+SQL cuenta únicamente los registros de ese profesional
+    ↓ JSON con sus cantidades
+Angular muestra el Dashboard
+```
+
+Para defenderlo oralmente: **el login acredita la identidad una vez; el middleware comprueba el token en cada llamada; el filtro por propietario limita los datos en cada operación**. Cambiar una URL o quitar el guard del navegador no elimina los controles de Express y SQLite.
+
 ## API HTTP
 
-Todas las rutas parten de `/api`. Las consultas correctas y las actualizaciones devuelven `200`; las altas, `201`. Los errores usan `400` para datos inválidos, `404` para un recurso inexistente, `409` para conflictos como código duplicado u horario ocupado, `413` para un JSON que supera 32 KB, y `500` para un fallo interno.
+Todas las rutas parten de `/api`. Las consultas correctas, el login y las actualizaciones devuelven `200`; las altas y el registro, `201`. Los errores usan `400` para datos inválidos, `401` para credenciales incorrectas o token ausente/inválido/vencido, `404` para un recurso inexistente o ajeno, `409` para email o código duplicado u horario ocupado, `413` para un JSON que supera 32 KB, y `500` para un fallo interno.
+
+Solo estos endpoints son **públicos**:
+
+| Método y ruta | Cuerpo y respuesta |
+| --- | --- |
+| `POST /auth/registro` | `{ email, password, repetirPassword }` → `{ usuario: { id, email, fechaCreacion } }`. |
+| `POST /auth/login` | `{ email, password }` → `{ token, usuario: { id, email, fechaCreacion }, expiraEn: 3600 }`. |
+
+Los siguientes endpoints son **privados** y requieren el Bearer; todos operan dentro de la cuenta autenticada:
 
 | Método y ruta | Datos o comportamiento |
 | --- | --- |
@@ -307,7 +420,7 @@ CORS permite los métodos GET, POST y PUT para el origen configurado. Controla e
 
 ## Alcance pendiente
 
-La aplicación funciona localmente y tiene persistencia, pero todavía requiere trabajo antes de un uso clínico real: autenticación, control de acceso, protección y copias de seguridad de datos, y configuración de despliegue. Tampoco incluye múltiples profesionales, cancelaciones, recurrencia automática ni un historial individual de movimientos de pago. El destino móvil y la distribución instalable continúan como pasos posteriores.
+La aplicación funciona localmente con autenticación y datos separados por profesional. Quedan para otras etapas el despliegue con HTTPS, la operación de copias de seguridad, la recuperación de contraseña y la verificación de email. No se incorporaron Google Sign-In, MFA, roles, refresh tokens, biometría ni bloqueo por inactividad. Tampoco incluye cancelaciones, recurrencia automática ni movimientos individuales de pago. SQLite, el destino móvil y la distribución instalable se mantienen dentro del plan de desarrollo, sin cambios de plataforma en esta etapa.
 
 ## Archivos de configuración de la raíz
 
@@ -440,6 +553,21 @@ cargarse por HTTP y resolver correctamente sus rutas y módulos.
 
 ## Verificación y recorrido de prueba
 
+### Demostrar el aislamiento con dos profesionales
+
+Usá emails ficticios como `profesional.a@example.test` y `profesional.b@example.test`, y elegí contraseñas de prueba de al menos 12 caracteres. No hay cuentas precargadas. Para la demostración, trabajá en la misma pestaña cerrando sesión entre cuentas, o en dos ventanas independientes.
+
+1. Registrá A e iniciá sesión. Creá el paciente `SOLO-A`, agregá un horario futuro y agendalo. Anotá la URL del detalle de esa sesión. Revisá sus cantidades en Inicio.
+2. Cerrá sesión. Intentá volver a una ficha usando Atrás o escribiendo `/pacientes/SOLO-A`: debe mostrarse Login, sin el contenido anterior.
+3. Registrá B e iniciá sesión. Su listado, Agenda, histórico y Dashboard deben estar vacíos. Abrir la ficha de A o la URL de su sesión debe mostrar recurso no encontrado, sin detalles ajenos.
+4. En B, creá su propio paciente `P-001` y un horario con la misma fecha y hora que usó A. Deben guardarse porque pertenecen a otra cuenta. Agendá ese paciente y observá los contadores de B.
+5. Volvé a A y verificá que sus datos siguen iguales, sin el paciente ni la sesión de B. A también puede usar `P-001` sin conflictos con el código de B.
+6. Para mostrar el control del backend, consultá `/api/pacientes` desde una herramienta HTTP sin Bearer: devuelve 401. Con el token de A, cambiar un ID por el de la sesión de B devuelve 404. Mandar `usuarioId` en el cuerpo no cambia el propietario: los campos extra se rechazan.
+
+El mismo recorrido se puede usar para demostrar cobros: una sesión solo entra al histórico y a pendientes después de marcarla realizada cuando su horario ya pasó. Al editar el total cobrado cambian únicamente los saldos e indicadores de esa cuenta.
+
+### Comprobaciones de etapas anteriores
+
 Verificación completada el **05/10/2026**:
 
 - Compilación del frontend y del backend correcta; frontend sin advertencias.
@@ -449,9 +577,11 @@ Verificación completada el **05/10/2026**:
 
 La ampliación del **06/10/2026** se comprobó con compilaciones correctas, **47 casos efectivos del backend** (51 resultados con cuatro contenedores) y **36 comprobaciones en navegador**. Cubren semanas anteriores y conservación de la selección, edición completa y cancelación, reprogramación atómica y conflictos, sincronización de saldos y estado, errores con borrador conservado y Quincenal en alta y edición. Las pantallas se revisaron en PC y anchos de 320 y 360 píxeles. Las pruebas automatizadas utilizaron bases temporales.
 
-Por pedido del usuario se agregó una sesión de ejemplo a la base local el 06/10/2026, después de respaldarla: paciente **P-001**, fecha **05/10/2026**, hora **10:00**, estado **Realizada**, honorarios **ARS 25.000** y total cobrado **ARS 0**. Se puede consultar desde el histórico de esa semana o Pendientes de cobro. Es una carga puntual: reiniciar la aplicación no la vuelve a crear.
+En la base anterior se agregó una sesión de ejemplo el 06/10/2026, después de respaldarla: paciente **P-001**, fecha **05/10/2026**, hora **10:00**, estado **Realizada**, honorarios **ARS 25.000** y total cobrado **ARS 0**. Ese registro permanece en el archivo conservado de la etapa anterior; no se importó a las cuentas nuevas. Reiniciar la aplicación no lo recrea.
 
 Para recorrer la aplicación con datos propios de prueba:
+
+Primero registrá una cuenta e iniciá sesión.
 
 1. Abrí Pacientes y creá un paciente con un alias. Confirmá que aparece en el listado y que su ficha muestra la fecha de creación sin permitir editarla.
 2. Editá algún dato, cancelá y comprobá que conserva su valor. Después guardá un cambio de código y revisá la ficha actualizada.

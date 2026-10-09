@@ -1,10 +1,11 @@
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { registerLocaleData } from '@angular/common';
 import localeEsAr from '@angular/common/locales/es-AR';
 import { ApplicationConfig, LOCALE_ID, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter, RouteReuseStrategy } from '@angular/router';
 import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular';
 import { routes } from './app.routes';
+import { authInterceptor } from './auth/auth.interceptor';
 
 registerLocaleData(localeEsAr);
 
@@ -15,7 +16,7 @@ export const appConfig: ApplicationConfig = {
     { provide: LOCALE_ID, useValue: 'es-AR' },
     provideZoneChangeDetection({ eventCoalescing: true }),
     // Habilita las consultas HTTP que realizan los servicios de datos.
-    provideHttpClient(),
+    provideHttpClient(withInterceptors([authInterceptor])),
     provideIonicAngular({ mode: 'md' }),
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     provideRouter(routes),

@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 import { crearApp } from './app.ts';
+import { validarSecretoJwt } from './auth.ts';
 import { abrirBaseDeDatos } from './db/database.ts';
 
 const puerto = Number(process.env['PORT'] ?? 3000);
@@ -10,10 +11,11 @@ if (!Number.isInteger(puerto) || puerto < 1 || puerto > 65535) {
 // La ruta queda anclada a backend tanto desde src como desde dist. Node carga
 // el archivo .env opcional mediante los comandos definidos en package.json.
 const carpetaBackend = resolve(import.meta.dirname, '..');
-const rutaBase = resolve(carpetaBackend, process.env['DB_PATH'] ?? 'data/psique.sqlite');
+const rutaBase = resolve(carpetaBackend, process.env['DB_PATH'] ?? 'data/psique-profesionales.sqlite');
 const origenFrontend = process.env['FRONTEND_ORIGIN'] ?? 'http://127.0.0.1:4200';
+const secretoJwt = validarSecretoJwt(process.env['JWT_SECRET']);
 const db = abrirBaseDeDatos(rutaBase);
-const app = crearApp(db, origenFrontend);
+const app = crearApp(db, origenFrontend, () => new Date(), secretoJwt);
 
 // Esta etapa se ejecuta únicamente en la propia PC, sin publicar el servidor en la red.
 const servidor = app.listen(puerto, '127.0.0.1', () => {
