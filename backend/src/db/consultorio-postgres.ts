@@ -17,7 +17,7 @@ const columnasPaciente = `codigo, modalidad, estado, "proximaSesion", frecuencia
   to_char("fechaInicioTratamiento", 'YYYY-MM-DD') AS "fechaInicioTratamiento", "motivoConsulta", "postIt"`;
 const columnasSesion = `id, to_char(fecha, 'YYYY-MM-DD') AS fecha, to_char(horario, 'HH24:MI') AS horario,
   "codigoPaciente", modalidad, estado, "importeCentavos", "pagadoCentavos",
-  "importeCentavos" - "pagadoCentavos" AS "pendienteCentavos"`;
+  "importeCentavos" - "pagadoCentavos" AS "pendienteCentavos", resumen`;
 const columnasTurno = `to_char(t.fecha, 'YYYY-MM-DD') AS fecha, to_char(t.horario, 'HH24:MI') AS horario,
   t.estado, t."codigoPaciente", t.modalidad, s.id AS "sesionId"`;
 const unionTurnos = `FROM public.turnos t LEFT JOIN public.sesiones s
@@ -191,7 +191,7 @@ export function crearConsultorioPostgres(pool: Pool, reloj: () => Date): Consult
     }),
     actualizarSesion: (usuarioId, id, cuerpo) => transaccion(usuarioId, async cliente => {
       const sesion = await sesionPorId(usuarioId, id, cliente);
-      const datos = validarSesion(cuerpo);
+      const datos = validarSesion(cuerpo, sesion.resumen);
       if (!await buscarPaciente(usuarioId, datos.codigoPaciente, cliente)) throw new ErrorApi(404, 'Paciente no encontrado');
       const ahora = instanteLocal(reloj()).instante;
       comprobarRealizacion(datos.estado, datos.fecha, datos.horario, ahora);
@@ -213,8 +213,8 @@ export function crearConsultorioPostgres(pool: Pool, reloj: () => Date): Consult
         await cliente.query('UPDATE public.turnos SET "codigoPaciente" = $1, modalidad = $2 WHERE "usuarioId" = $3 AND fecha = $4 AND horario = $5', [datos.codigoPaciente, datos.modalidad, usuarioId, datos.fecha, datos.horario]);
       }
       await cliente.query(`UPDATE public.sesiones SET fecha = $1, horario = $2, "codigoPaciente" = $3, modalidad = $4, estado = $5,
-        "importeCentavos" = $6, "pagadoCentavos" = $7 WHERE "usuarioId" = $8 AND id = $9`,
-      [datos.fecha, datos.horario, datos.codigoPaciente, datos.modalidad, datos.estado, datos.importeCentavos, datos.pagadoCentavos, usuarioId, sesion.id]);
+        "importeCentavos" = $6, "pagadoCentavos" = $7, resumen = $8 WHERE "usuarioId" = $9 AND id = $10`,
+      [datos.fecha, datos.horario, datos.codigoPaciente, datos.modalidad, datos.estado, datos.importeCentavos, datos.pagadoCentavos, datos.resumen, usuarioId, sesion.id]);
       if (cambiaHorario) await cliente.query(`UPDATE public.turnos SET "codigoPaciente" = NULL, modalidad = NULL, estado = 'Liberado'
         WHERE "usuarioId" = $1 AND fecha = $2 AND horario = $3`, [usuarioId, sesion.fecha, sesion.horario]);
       for (const codigo of new Set([sesion.codigoPaciente, datos.codigoPaciente])) await actualizarProximaSesion(usuarioId, codigo, ahora, cliente);

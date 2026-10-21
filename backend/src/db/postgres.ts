@@ -90,7 +90,7 @@ export async function abrirPoolPostgres(opciones: OpcionesPool = {}): Promise<Po
       "horarioHabitual", "fechaCreacion", "fechaInicioTratamiento", "motivoConsulta", "postIt" FROM public.pacientes LIMIT 0`);
     await pool.query('SELECT "usuarioId", fecha, horario, "codigoPaciente", modalidad, estado FROM public.turnos LIMIT 0');
     await pool.query(`SELECT id, "usuarioId", fecha, horario, "codigoPaciente", modalidad, estado,
-      "importeCentavos", "pagadoCentavos" FROM public.sesiones LIMIT 0`);
+      "importeCentavos", "pagadoCentavos", resumen FROM public.sesiones LIMIT 0`);
     return pool;
   } catch (error) {
     // Un inicio fallido tampoco deja sockets ni temporizadores abiertos.

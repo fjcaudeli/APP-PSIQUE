@@ -41,7 +41,7 @@ async function entorno(t, fecha = '2026-10-05T12:00:00Z') {
 
 test('El esquema profesional comienza vacío y conserva sus datos al reabrirse', async t => {
   const e = await entorno(t);
-  assert.equal(e.db.pragma('user_version', { simple: true }), 2);
+  assert.equal(e.db.pragma('user_version', { simple: true }), 3);
   for (const tabla of ['pacientes', 'turnos', 'sesiones']) {
     assert.equal(e.db.prepare(`SELECT COUNT(*) AS n FROM ${tabla}`).get().n, 0);
   }
@@ -259,7 +259,7 @@ test('Creación de pacientes, agenda, sesiones y cobros reales', async t => {
       assert.equal(guardada.estado, 'Realizada');
       assert.equal(guardada.pagadoCentavos, 123456);
       assert.equal(guardada.codigoPaciente, 'Cambio');
-      assert.equal(otra.pragma('user_version', { simple: true }), 2);
+      assert.equal(otra.pragma('user_version', { simple: true }), 3);
     } finally { otra.close(); }
   });
 

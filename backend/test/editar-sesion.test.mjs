@@ -49,7 +49,7 @@ test('Edición completa de sesiones y sincronización con la agenda', async t =>
       estado: 'Programada', importeCentavos: 350050, pagadoCentavos: 120025 };
     const respuesta = await e.guardar(1, cambios);
     assert.equal(respuesta.status, 200);
-    assert.deepEqual(respuesta.body, { id: 1, ...cambios, pendienteCentavos: 230025 });
+    assert.deepEqual(respuesta.body, { id: 1, ...cambios, pendienteCentavos: 230025, resumen: '' });
     assert.deepEqual(await e.consultar(`horarios/${original.fecha}/${original.horario}`), {
       fecha: original.fecha, horario: original.horario, estado: 'Liberado', codigoPaciente: null, modalidad: null, sesionId: null,
     });
@@ -62,7 +62,7 @@ test('Edición completa de sesiones y sincronización con la agenda', async t =>
     assert.equal((await e.consultar('agenda?fecha=2026-10-06')).dias[1].turnos[0].sesionId, 1);
     const otraConexion = abrirBaseDeDatos(e.ruta);
     try {
-      assert.deepEqual(otraConexion.prepare('SELECT * FROM sesiones WHERE id = 1').get(), { id: 1, usuarioId: 1, ...cambios });
+      assert.deepEqual(otraConexion.prepare('SELECT * FROM sesiones WHERE id = 1').get(), { id: 1, usuarioId: 1, ...cambios, resumen: '' });
       assert.deepEqual(otraConexion.pragma('foreign_key_check'), []);
     } finally { otraConexion.close(); }
   });
@@ -170,7 +170,7 @@ test('Edición completa de sesiones y sincronización con la agenda', async t =>
       assert.equal((await e.pedir('sesiones/1', 'PUT', { ...datos, ...cambios })).status, 400, JSON.stringify(cambios));
       assert.deepEqual(e.snapshot(), anterior);
     }
-    for (const campo of Object.keys(datos)) {
+    for (const campo of Object.keys(datos).filter(campo => campo !== 'resumen')) {
       const incompleto = { ...datos };
       delete incompleto[campo];
       assert.equal((await e.pedir('sesiones/1', 'PUT', incompleto)).status, 400, campo);

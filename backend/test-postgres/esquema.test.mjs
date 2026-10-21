@@ -33,10 +33,22 @@ test('existen las cuatro tablas, sus claves primarias y los tipos previstos', as
       ['usuarios', 'fechaCreacion', 'timestamp with time zone'], ['pacientes', 'fechaCreacion', 'date'],
       ['pacientes', 'fechaInicioTratamiento', 'date'], ['pacientes', 'horarioHabitual', 'time without time zone'],
       ['turnos', 'fecha', 'date'], ['turnos', 'horario', 'time without time zone'],
-      ['sesiones', 'importeCentavos', 'integer'], ['sesiones', 'pagadoCentavos', 'integer'],
+      ['sesiones', 'importeCentavos', 'integer'], ['sesiones', 'pagadoCentavos', 'integer'], ['sesiones', 'resumen', 'text'],
     ]) assert.equal(columnas.find(r => r.table_name === tabla && r.column_name === campo).data_type, tipo);
     const opcionales = columnas.filter(r => r.is_nullable === 'YES').map(r => r.table_name + '.' + r.column_name).sort();
     assert.deepEqual(opcionales, ['pacientes.diaHabitual', 'pacientes.horarioHabitual', 'pacientes.proximaSesion', 'turnos.codigoPaciente', 'turnos.modalidad']);
+  });
+});
+
+test('el resumen es opcional y PostgreSQL limita su longitud sin cambiar los importes', async () => {
+  await conTransaccion(async c => {
+    const { sesionId } = await casoDosProfesionales(c);
+    assert.equal((await c.query('SELECT resumen FROM public.sesiones WHERE id=$1', [sesionId])).rows[0].resumen, '');
+    await c.query('UPDATE public.sesiones SET resumen=$1 WHERE id=$2', ['x'.repeat(100), sesionId]);
+    await rechazaSql(c, 'UPDATE public.sesiones SET resumen=$1 WHERE id=$2', ['x'.repeat(101), sesionId], '23514');
+    await rechazaSql(c, 'UPDATE public.sesiones SET resumen=NULL WHERE id=$1', [sesionId], '23502');
+    assert.deepEqual((await c.query('SELECT resumen,"importeCentavos","pagadoCentavos" FROM public.sesiones WHERE id=$1', [sesionId])).rows[0],
+      { resumen: 'x'.repeat(100), importeCentavos: 2500000, pagadoCentavos: 1000000 });
   });
 });
 

@@ -10,6 +10,7 @@ export interface Sesion {
   pagadoCentavos: number;
   pendienteCentavos: number;
   estado: 'Programada' | 'Realizada';
+  resumen: string;
 }
 
 export type EdicionSesion = Omit<Sesion, 'id' | 'pendienteCentavos'>;

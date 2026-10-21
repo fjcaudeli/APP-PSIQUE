@@ -32,6 +32,7 @@ export interface Sesion {
   pagadoCentavos: number;
   pendienteCentavos: number;
   estado: 'Programada' | 'Realizada';
+  resumen: string;
 }
 
 export interface HorarioDisponible {

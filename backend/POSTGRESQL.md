@@ -10,6 +10,32 @@ autenticación y negocio; SQLite, su código y sus respaldos se conservan.
 
 No hay fallback, doble escritura ni migración automática de datos o esquema.
 
+## Resumen opcional de sesión — 21/10/2026
+
+`migrations/002_resumen_sesion.sql` agrega `sesiones.resumen`, un `TEXT NOT NULL`
+con valor predeterminado vacío y un `CHECK` de hasta 100 caracteres. No se modifica
+la migración 001. Los registros existentes conservan sus datos y reciben una cadena
+vacía. Se aplica con los comandos habituales `db:migrate` y `db:migrate:test`.
+
+Las respuestas de sesión incluyen `resumen`. El PUT de edición admite ese campo
+opcional: omitirlo conserva el anterior, una cadena vacía lo borra y un tipo distinto
+de texto o más de 100 caracteres recibe 400. Angular muestra contador y recomendación
+de evitar datos sensibles. Se conserva el filtrado por profesional y la transacción
+de edición completa. No se registra el contenido en logs.
+
+El adaptador SQLite histórico conserva el mismo contrato mediante su versión 3,
+que agrega la columna al abrir explícitamente una base de versión 2. Las pruebas
+usan archivos temporales; el backend habitual no abre ni migra los SQLite archivados.
+
+Verificación del 21/10/2026: 126 resultados PostgreSQL y 75 SQLite aprobados;
+compilaciones de backend y Angular correctas. Se comprobaron límite 100/101,
+tipos inválidos, guardado, borrado, omisión que conserva el valor y aislamiento.
+En Chrome se verificaron el campo opcional, la ayuda, el contador y el rechazo
+del carácter 101; cancelar descartó el borrador. La sesión de demostración conserva
+fecha, estado e importes. La migración 002 se aplicó en desarrollo y pruebas mediante
+el migrador, después de respaldar desarrollo fuera del proyecto. La 001 y los
+archivos SQLite y respaldos anteriores permanecen sin modificaciones.
+
 ## Etapa 4B: configuración local y preparación de Render
 
 Verificación del **19/10/2026**. Sin infraestructura ni despliegue remotos.

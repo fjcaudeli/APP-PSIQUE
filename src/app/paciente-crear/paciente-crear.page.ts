@@ -63,6 +63,8 @@ export class PacienteCrearPage {
     this.errorContexto = '';
     this.errorGuardado = '';
     this.avisoCodigo = '';
+    // Ionic puede reutilizar la pantalla: el alta independiente vuelve a permitir editar la hora.
+    this.formulario.controls.horarioHabitual.enable({ emitEvent: false });
     this.formulario.reset({
       codigo: '', modalidad: 'Presencial', estado: 'Activo', proximaSesion: '',
       frecuencia: 'Semanal', diaHabitual: '', horarioHabitual: '',
@@ -85,6 +87,9 @@ export class PacienteCrearPage {
       } else {
         this.turno = { fecha, horario, modalidad, importeCentavos };
         this.formulario.controls.modalidad.setValue(modalidad);
+        // El turno elegido fija el horario habitual. getRawValue() lo incluye al guardar aunque esté deshabilitado.
+        this.formulario.controls.horarioHabitual.setValue(horario);
+        this.formulario.controls.horarioHabitual.disable({ emitEvent: false });
         if (yaTranscurrio(fecha, horario)) {
           this.errorContexto = 'Este horario ya pasó. Volvé al agendamiento para elegir uno futuro.';
         } else {

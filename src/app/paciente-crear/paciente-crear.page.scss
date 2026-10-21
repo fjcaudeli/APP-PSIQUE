@@ -20,6 +20,7 @@
 .contexto-turno { margin: 0 0 24px; padding: 22px; border: 1px solid #cbd6c8; border-radius: 18px; background: #e9eee4; }
 .contexto-turno p { margin: 12px 0 0; line-height: 1.5; }
 .error-contexto { margin: 0 0 22px; padding: 18px; border: 1px solid #e4d6cb; border-radius: 12px; background: #f3eae2; color: #8a402d; line-height: 1.5; }
+#nuevo-horarioHabitual:disabled { background: #eceee8; color: #6b7168; border-color: #d1d6cd; opacity: 1; cursor: not-allowed; }
 
 @media (max-width: 640px) {
   .introduccion { font-size: 17px; }

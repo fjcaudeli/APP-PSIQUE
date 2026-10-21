@@ -307,6 +307,8 @@ Un horario disponible puede abrirse desde Agenda o desde la tarjeta de Inicio. *
 
 Si el paciente aún no existe, **Crear paciente** dentro de Agendar sesión conserva la fecha, hora, modalidad e importe elegidos. El formulario muestra ese contexto y su botón pasa a ser **Crear paciente y agendar**. El backend realiza ambas operaciones en una misma transacción: si el horario se ocupó o algún dato no es válido, no queda un paciente creado sin la reserva solicitada. Cancelar vuelve al agendamiento con el contexto conservado.
 
+En ese recorrido el **horario habitual** del paciente se completa con la hora seleccionada y queda grisado, sin permitir editarla durante el alta. Se incluye igualmente al guardar la ficha. Al crear un paciente directamente desde Pacientes, el horario habitual sigue siendo opcional y editable.
+
 Al agendar se actualiza la etiqueta de próxima sesión del paciente con su primera sesión programada futura. Cambiar los datos habituales desde la ficha no modifica las fechas, horarios ni modalidades de las sesiones que ya se agendaron. La modalidad habitual del tratamiento y la modalidad de una sesión son datos distintos.
 
 Los horarios ya pasados no pueden reservarse desde Agendar sesión. En cambio, la edición permite corregir la fecha de una sesión ya registrada, incluso en el pasado. Al cambiarla de fecha u hora, el horario anterior queda `Liberado`; puede volver a reservarse si es futuro. Todavía no hay un recorrido de cancelación.
@@ -322,6 +324,8 @@ La pantalla **Sesiones de la semana** abre las realizadas de lunes a domingo de 
 ### Edición completa de una sesión
 
 El detalle se presenta inicialmente en modo lectura. **Editar sesión** abre un borrador con paciente, fecha, horario, modalidad, estado, honorarios y total cobrado. **Guardar cambios** confirma todo junto y **Cancelar** descarta el borrador sin escribir en la base. El identificador interno de la sesión se conserva y el saldo se calcula a partir de los importes.
+
+También permite escribir un **Resumen de la sesión** opcional, de hasta **100 caracteres**, sobre lo tratado. El formulario muestra un contador y recomienda evitar nombres reales y datos sensibles. El texto se guarda con la sesión y se muestra en su detalle. Dejarlo vacío permite retirarlo; cancelar conserva lo anterior. El límite se verifica en Angular, Express y PostgreSQL. Las sesiones anteriores comienzan sin resumen, conservando sus fechas, honorarios y cobros.
 
 Al reprogramar, el backend utiliza el horario de destino si está libre o lo crea si no existía. Si otra sesión lo ocupa, muestra un conflicto y mantiene intactos los registros y el borrador. Sesión, turno de destino, liberación del anterior y etiquetas de próxima sesión de los pacientes afectados se actualizan dentro de la misma transacción. No se puede guardar una sesión futura como realizada; cambiar su estado a Programada la retira del histórico y de pendientes de cobro.
 
@@ -458,7 +462,7 @@ y cierra el pool. `api.ts` define rutas y respuestas; `reglas-api.ts` comparte
 validaciones. `db/consultorio-postgres.ts` contiene SQL parametrizado y transacciones.
 `calendario.ts` mantiene Buenos Aires y un reloj inyectable para pruebas de negocio.
 
-El esquema se gestiona mediante `migrations/001_esquema_inicial.sql`. Sus tablas
+El esquema se gestiona mediante los archivos versionados de `migrations/` (001 inicial y 002 para el resumen de sesión). Sus tablas
 funcionales son `usuarios`, `pacientes`, `turnos` y `sesiones`.
 `pendienteCentavos` se calcula al consultar. `psique_app` tiene SELECT, INSERT
 y UPDATE; no tiene permisos para crear, alterar o eliminar tablas.
@@ -579,7 +583,7 @@ Los siguientes endpoints son **privados** y requieren el Bearer; todos operan de
 | `GET /sesiones/:id` | Datos e importes de una sesión. |
 | `POST /sesiones` | Recibe `{ fecha, horario, codigoPaciente, modalidad, importeCentavos }` y reserva un horario existente futuro. Devuelve la sesión. |
 | `POST /sesiones/:id/realizar` | Confirma que ocurrió una sesión cuyo horario ya llegó. Devuelve la sesión realizada. |
-| `PUT /sesiones/:id` | Recibe `{ fecha, horario, codigoPaciente, modalidad, estado, importeCentavos, pagadoCentavos }`, actualiza la sesión y sus horarios atómicamente y devuelve el mismo ID con saldo calculado. |
+| `PUT /sesiones/:id` | Recibe `{ fecha, horario, codigoPaciente, modalidad, estado, importeCentavos, pagadoCentavos }` y `resumen` opcional, actualiza la sesión y sus horarios atómicamente y devuelve el mismo ID con saldo calculado. Omitir `resumen` conserva el anterior; enviarlo vacío lo borra. |
 | `GET /horarios/disponibles?fecha=YYYY-MM-DD` | `{ desde, hasta, horarios }` futuros de la semana que contiene esa fecha. Sin fecha usa la semana actual. |
 | `GET /horarios/:fecha/:horario` | Horario individual, estado, paciente, modalidad y `sesionId`, si tiene sesión. |
 | `POST /horarios` | Recibe `{ fecha, horario }` y crea un horario disponible futuro. |

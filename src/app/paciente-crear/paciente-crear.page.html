@@ -84,8 +84,8 @@
               </div>
               <div class="campo">
                 <label for="nuevo-horarioHabitual">Horario habitual</label>
-                <input id="nuevo-horarioHabitual" type="time" formControlName="horarioHabitual" />
-                <p class="ayuda-campo">Podés dejarlo vacío si todavía no está definido.</p>
+                <input id="nuevo-horarioHabitual" type="time" formControlName="horarioHabitual" aria-describedby="nuevo-ayuda-horario" />
+                <p id="nuevo-ayuda-horario" class="ayuda-campo">{{ turno ? 'Se completa con el horario disponible que seleccionaste.' : 'Podés dejarlo vacío si todavía no está definido.' }}</p>
               </div>
               <div class="campo">
                 <label for="nuevo-proximaSesion">Próxima sesión</label>

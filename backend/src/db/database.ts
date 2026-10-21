@@ -21,7 +21,12 @@ export function abrirBaseDeDatos(ruta: string): Database.Database {
 export function prepararBaseDeDatos(db: Database.Database): void {
   db.transaction(() => {
     const version = db.pragma('user_version', { simple: true }) as number;
-    if (version === 2) return;
+    if (version === 3) return;
+    if (version === 2) {
+      // Compatibilidad del adaptador histórico; el servidor habitual solo abre PostgreSQL.
+      db.exec("ALTER TABLE sesiones ADD COLUMN resumen TEXT NOT NULL DEFAULT '' CHECK (typeof(resumen) = 'text' AND length(resumen) <= 100); PRAGMA user_version = 3;");
+      return;
+    }
     const tablas = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'").all();
     if (version !== 0 || tablas.length > 0) {
       throw new Error('La base anterior se conserva sin cambios. Configurá DB_PATH con un archivo nuevo para las cuentas profesionales.');
@@ -74,6 +79,7 @@ export function prepararBaseDeDatos(db: Database.Database): void {
         codigoPaciente TEXT NOT NULL,
         modalidad TEXT NOT NULL CHECK (modalidad IN ('Presencial', 'Virtual')),
         estado TEXT NOT NULL DEFAULT 'Programada' CHECK (estado IN ('Programada', 'Realizada')),
+        resumen TEXT NOT NULL DEFAULT '' CHECK (typeof(resumen) = 'text' AND length(resumen) <= 100),
         importeCentavos INTEGER NOT NULL DEFAULT 0 CHECK (
           typeof(importeCentavos) = 'integer' AND importeCentavos BETWEEN 0 AND 999999999
         ),
@@ -85,7 +91,7 @@ export function prepararBaseDeDatos(db: Database.Database): void {
         FOREIGN KEY (usuarioId, fecha, horario) REFERENCES turnos(usuarioId, fecha, horario)
       );
       CREATE INDEX sesiones_paciente ON sesiones(usuarioId, codigoPaciente);
-      PRAGMA user_version = 2;
+      PRAGMA user_version = 3;
     `);
   }).immediate();
 }

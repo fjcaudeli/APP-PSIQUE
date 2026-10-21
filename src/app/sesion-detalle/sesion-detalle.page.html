@@ -74,6 +74,19 @@
                 <p class="ayuda" id="ayuda-importes">Ingresá el total acumulado que recibiste por esta sesión, incluidos pagos anteriores. El saldo pendiente se calcula automáticamente.</p>
               </fieldset>
             </section>
+            <section class="tarjeta">
+              <h2>Resumen de la sesión</h2>
+              <fieldset [disabled]="guardando || cargandoPacientes || !!errorPacientes">
+                <legend class="solo-lectores">Nota breve opcional</legend>
+                <div class="campo">
+                  <label for="resumen">Sobre lo tratado (opcional)</label>
+                  <textarea id="resumen" formControlName="resumen" rows="3" maxlength="100" placeholder="Una idea breve sobre lo trabajado." [attr.aria-invalid]="campoInvalido('resumen')" [attr.aria-describedby]="campoInvalido('resumen') ? 'ayuda-resumen contador-resumen error-resumen' : 'ayuda-resumen contador-resumen'"></textarea>
+                  <p class="ayuda" id="ayuda-resumen">Evitá nombres reales y datos sensibles.</p>
+                  <p class="ayuda contador" id="contador-resumen">{{ formulario.controls.resumen.value.length }} / 100 caracteres</p>
+                  @if (campoInvalido('resumen')) { <p class="error error-campo" id="error-resumen">El resumen puede tener hasta 100 caracteres.</p> }
+                </div>
+              </fieldset>
+            </section>
             <div class="acciones acciones-edicion" [attr.aria-busy]="guardando">
               <button type="submit" class="boton" [disabled]="guardando || cargandoPacientes || !!errorPacientes">{{ guardando ? 'Guardando...' : 'Guardar cambios' }}</button>
               <button type="button" class="boton boton-secundario" [disabled]="guardando" (click)="cancelarEdicion()">Cancelar</button>
@@ -92,6 +105,11 @@
             <div class="acciones"><button class="boton" type="button" [disabled]="guardando || !puedeRealizar" (click)="realizar()">Marcar como realizada</button></div>
             <p class="ayuda">{{ puedeRealizar ? 'Confirmá que la sesión se realizó para incluirla en el histórico y, si tiene saldo, en pendientes de cobro.' : 'Podrás confirmar que se realizó cuando haya pasado su horario.' }}</p>
           }
+          </section>
+          <section class="tarjeta">
+            <h2>Resumen de la sesión</h2>
+            @if (sesion.resumen) { <p class="resumen">{{ sesion.resumen }}</p> }
+            @else { <p class="ayuda">Sin resumen registrado. Podés agregarlo desde Editar sesión.</p> }
           </section>
           <section class="tarjeta tarjeta-destacada" aria-label="Resumen de cobro"><dl class="datos">
             <div><dt>Honorarios</dt><dd>{{ sesion.importeCentavos / 100 | currency:'ARS':'symbol-narrow':'1.2-2' }}</dd></div>

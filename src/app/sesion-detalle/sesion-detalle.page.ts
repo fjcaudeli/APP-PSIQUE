@@ -43,6 +43,7 @@ export class SesionDetallePage {
     estado: ['Programada' as Sesion['estado'], [Validators.required, Validators.pattern(/^(Programada|Realizada)$/)]],
     importe: ['0.00', importeValido],
     pagado: ['0.00', importeValido],
+    resumen: ['', Validators.maxLength(100)],
   });
   sesion?: Sesion;
   pacientes: Paciente[] = [];
@@ -133,7 +134,7 @@ export class SesionDetallePage {
   private restaurarFormulario(): void {
     if (!this.sesion) return;
     const { codigoPaciente, fecha, horario, modalidad, estado, importeCentavos, pagadoCentavos } = this.sesion;
-    this.formulario.reset({ codigoPaciente, fecha, horario, modalidad, estado,
+    this.formulario.reset({ codigoPaciente, fecha, horario, modalidad, estado, resumen: this.sesion.resumen ?? '',
       importe: aPesos(importeCentavos), pagado: aPesos(pagadoCentavos) });
   }
 
@@ -143,7 +144,7 @@ export class SesionDetallePage {
     this.formulario.markAllAsTouched();
     if (this.formulario.invalid) { this.errorGuardado = 'Revisá los campos marcados antes de guardar.'; return; }
     if (this.realizadaEnFuturo) { this.errorGuardado = 'Una sesión futura debe permanecer programada. Podrás marcarla como realizada cuando haya pasado su horario.'; return; }
-    const { codigoPaciente, fecha, horario, modalidad, estado, importe, pagado } = this.formulario.getRawValue();
+    const { codigoPaciente, fecha, horario, modalidad, estado, importe, pagado, resumen } = this.formulario.getRawValue();
     const importeCentavos = aCentavos(importe);
     const pagadoCentavos = aCentavos(pagado);
     if (importeCentavos === null || pagadoCentavos === null) return;
@@ -152,7 +153,7 @@ export class SesionDetallePage {
       this.errorGuardado = 'Elegí un paciente de la lista antes de guardar.';
       return;
     }
-    const datos: EdicionSesion = { codigoPaciente, fecha, horario, modalidad, estado, importeCentavos, pagadoCentavos };
+    const datos: EdicionSesion = { codigoPaciente, fecha, horario, modalidad, estado, importeCentavos, pagadoCentavos, resumen };
     this.guardando = true;
     this.mensaje = '';
     this.sesionesService.actualizar(this.sesion.id, datos).pipe(takeUntilDestroyed(this.destroyRef), finalize(() => { this.guardando = false; }))

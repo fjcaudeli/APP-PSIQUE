@@ -59,9 +59,9 @@ export function validarReserva(valor: unknown, incluyePaciente: boolean): Reserv
 
 type DatosSesion = Omit<Sesion, 'id' | 'pendienteCentavos'>;
 
-export function validarSesion(valor: unknown): DatosSesion {
+export function validarSesion(valor: unknown, resumenActual = ''): DatosSesion {
   const datos = objeto(valor);
-  campos(datos, ['fecha', 'horario', 'codigoPaciente', 'modalidad', 'estado', 'importeCentavos', 'pagadoCentavos']);
+  campos(datos, ['fecha', 'horario', 'codigoPaciente', 'modalidad', 'estado', 'importeCentavos', 'pagadoCentavos'], ['resumen']);
   const reserva = validarReserva({
     fecha: datos['fecha'], horario: datos['horario'], codigoPaciente: datos['codigoPaciente'],
     modalidad: datos['modalidad'], importeCentavos: datos['importeCentavos'],
@@ -72,7 +72,12 @@ export function validarSesion(valor: unknown): DatosSesion {
   if (!centavos(datos['pagadoCentavos']) || datos['pagadoCentavos'] > reserva.importeCentavos) {
     throw new ErrorApi(400, 'Usá importes enteros en centavos: el total cobrado no puede superar los honorarios.');
   }
-  return { ...reserva, codigoPaciente: reserva.codigoPaciente!, estado: datos['estado'], pagadoCentavos: datos['pagadoCentavos'] };
+  // Omitir el campo conserva la nota; enviarlo vacío permite borrarla explícitamente.
+  const resumen = Object.hasOwn(datos, 'resumen') ? datos['resumen'] : resumenActual;
+  if (typeof resumen !== 'string' || resumen.length > 100) {
+    throw new ErrorApi(400, 'El resumen debe ser un texto de hasta 100 caracteres. Podés dejarlo vacío.');
+  }
+  return { ...reserva, codigoPaciente: reserva.codigoPaciente!, estado: datos['estado'], pagadoCentavos: datos['pagadoCentavos'], resumen: resumen.trim() };
 }
 
 

@@ -16,7 +16,7 @@ export function crearApp(db: Database.Database, origenFrontend: string, reloj: (
   const columnasPaciente = `codigo, modalidad, estado, proximaSesion, frecuencia, diaHabitual,
     horarioHabitual, fechaCreacion, fechaInicioTratamiento, motivoConsulta, postIt`;
   const columnasSesion = `id, fecha, horario, codigoPaciente, modalidad, estado,
-    importeCentavos, pagadoCentavos, importeCentavos - pagadoCentavos AS pendienteCentavos`;
+    importeCentavos, pagadoCentavos, importeCentavos - pagadoCentavos AS pendienteCentavos, resumen`;
   const buscarPaciente = db.prepare<[number, string], Paciente>(`SELECT ${columnasPaciente} FROM pacientes WHERE usuarioId = ? AND codigo = ?`);
   const buscarSesion = db.prepare<[number, number], Sesion>(`SELECT ${columnasSesion} FROM sesiones WHERE usuarioId = ? AND id = ?`);
   const insertarPaciente = db.prepare(`INSERT INTO pacientes (usuarioId, ${columnasPaciente}) VALUES (
@@ -139,7 +139,7 @@ export function crearApp(db: Database.Database, origenFrontend: string, reloj: (
   });
   const actualizarSesion = db.transaction((usuarioId: number, id: string, cuerpo: unknown) => {
     const sesion = sesionPorId(usuarioId, id);
-    const datos = validarSesion(cuerpo);
+    const datos = validarSesion(cuerpo, sesion.resumen);
     if (!buscarPaciente.get(usuarioId, datos.codigoPaciente)) throw new ErrorApi(404, 'Paciente no encontrado');
     const ahora = instanteLocal(reloj()).instante;
     comprobarRealizacion(datos.estado, datos.fecha, datos.horario, ahora);
@@ -167,7 +167,7 @@ export function crearApp(db: Database.Database, origenFrontend: string, reloj: (
     }
     db.prepare(`UPDATE sesiones SET fecha = @fecha, horario = @horario, codigoPaciente = @codigoPaciente,
       modalidad = @modalidad, estado = @estado, importeCentavos = @importeCentavos,
-      pagadoCentavos = @pagadoCentavos WHERE usuarioId = @usuarioId AND id = @id`).run({ ...datos, usuarioId, id: sesion.id });
+      pagadoCentavos = @pagadoCentavos, resumen = @resumen WHERE usuarioId = @usuarioId AND id = @id`).run({ ...datos, usuarioId, id: sesion.id });
     if (cambiaHorario) {
       db.prepare("UPDATE turnos SET codigoPaciente = NULL, modalidad = NULL, estado = 'Liberado' WHERE usuarioId = ? AND fecha = ? AND horario = ?")
         .run(usuarioId, sesion.fecha, sesion.horario);

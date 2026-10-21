@@ -91,7 +91,7 @@ export async function comprobarContrato(t, e) {
   await t.test('reserva sesión, importes numéricos y próxima sesión; conflictos y referencias ajenas', async () => {
     s = await pedir('sesiones', 'POST', reserva(), 201);
     assert.equal(typeof s.id, 'number');
-    assert.deepEqual({ ...s, id: 0 }, { id: 0, ...reserva(), estado: 'Programada', pagadoCentavos: 0, pendienteCentavos: 123456 });
+    assert.deepEqual({ ...s, id: 0 }, { id: 0, ...reserva(), estado: 'Programada', pagadoCentavos: 0, pendienteCentavos: 123456, resumen: '' });
     assert.equal((await pedir('pacientes/P-001')).proximaSesion, 'LUN 10:00 HS');
     assert.equal((await pedir('horarios/2026-10-05/10:00')).sesionId, s.id);
     assert.equal((await pedir('agenda')).dias[0].turnos[0].sesionId, s.id);
@@ -130,6 +130,25 @@ export async function comprobarContrato(t, e) {
     assert.deepEqual((await pedir('sesiones/semana')).sesiones, [s]);
     assert.deepEqual(await pedir('sesiones/pendientes'), [s]);
     assert.deepEqual(await pedir('dashboard'), { pacientesActivos: 5, sesionesSemana: 1, pendientesCobro: 1, horariosDisponibles: 3 });
+  });
+  await t.test('resumen opcional: límite, persistencia, borrado y aislamiento', async () => {
+    assert.equal(s.resumen, '');
+    await guardar({ resumen: 'x'.repeat(100) });
+    assert.equal((await pedir(`sesiones/${s.id}`)).resumen, 'x'.repeat(100));
+    assert.equal((await pedir('sesiones/semana')).sesiones.find(sesion => sesion.id === s.id).resumen, s.resumen);
+    for (const resumen of ['x'.repeat(101), null, 100, [], {}]) await guardar({ resumen }, 400);
+    assert.equal((await pedir(`sesiones/${s.id}`)).resumen, 'x'.repeat(100));
+    // Los clientes que todavía omiten el campo no borran una nota ya guardada.
+    const { resumen: _resumen, ...sinResumen } = editable(s);
+    s = await pedir(`sesiones/${s.id}`, 'PUT', sinResumen);
+    assert.equal(s.resumen, 'x'.repeat(100));
+    await pedir(`sesiones/${s.id}`, 'GET', undefined, 404, 1);
+    await pedir(`sesiones/${s.id}`, 'PUT', { ...editable(s), resumen: 'Otra cuenta' }, 404, 1);
+    assert.equal((await pedir(`sesiones/${s.id}`)).resumen, 'x'.repeat(100));
+    await guardar({ resumen: '  Se retomaron objetivos.  ' });
+    assert.equal(s.resumen, 'Se retomaron objetivos.');
+    await guardar({ resumen: '' });
+    assert.equal((await pedir(`sesiones/${s.id}`)).resumen, '');
   });
   await t.test('sesiones y cobros ajenos 404; referencias y contadores filtrados por JWT', async () => {
     const ajena = await pedir('sesiones', 'POST', reserva('P-001', '10:00'), 400, 1); // Ya pasó; el horario no habilita reservas retroactivas.
