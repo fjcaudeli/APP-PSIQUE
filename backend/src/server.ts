@@ -1,38 +1,77 @@
 import { resolve } from 'node:path';
-import { crearApp } from './app.ts';
+import { pathToFileURL } from 'node:url';
+import { once } from 'node:events';
+import { crearAppPostgres } from './app-postgres.ts';
 import { validarSecretoJwt } from './auth.ts';
-import { abrirBaseDeDatos } from './db/database.ts';
+import { abrirPoolPostgres, ErrorConfiguracionPostgres, ErrorPostgresNoDisponible } from './db/postgres.ts';
+import { configuracionServidor } from './configuracion.ts';
 
-const puerto = Number(process.env['PORT'] ?? 3000);
-if (!Number.isInteger(puerto) || puerto < 1 || puerto > 65535) {
-  throw new Error('PORT debe ser un número entero entre 1 y 65535.');
+interface OpcionesServidor {
+  entorno?: NodeJS.ProcessEnv;
+  // Solo las pruebas importan esta función con pruebas:true. La entrada normal
+  // no lee ninguna variable ni argumento que permita seleccionar psique_test.
+  pruebas?: boolean;
 }
 
-// La ruta queda anclada a backend tanto desde src como desde dist. Node carga
-// el archivo .env opcional mediante los comandos definidos en package.json.
-const carpetaBackend = resolve(import.meta.dirname, '..');
-const rutaBase = resolve(carpetaBackend, process.env['DB_PATH'] ?? 'data/psique-profesionales.sqlite');
-const origenFrontend = process.env['FRONTEND_ORIGIN'] ?? 'http://127.0.0.1:4200';
-const secretoJwt = validarSecretoJwt(process.env['JWT_SECRET']);
-const db = abrirBaseDeDatos(rutaBase);
-const app = crearApp(db, origenFrontend, () => new Date(), secretoJwt);
+export async function iniciarServidorPostgres({ entorno = process.env, pruebas = false }: OpcionesServidor = {}) {
+  let secretoJwt: string;
+  try { secretoJwt = validarSecretoJwt(entorno['JWT_SECRET']); }
+  catch { throw new ErrorConfiguracionPostgres('Configurá JWT_SECRET con un secreto aleatorio de al menos 32 bytes antes de iniciar la API.'); }
+  const configuracion = configuracionServidor(entorno);
 
-// Esta etapa se ejecuta únicamente en la propia PC, sin publicar el servidor en la red.
-const servidor = app.listen(puerto, '127.0.0.1', () => {
-  console.log(`API de PSIQUE disponible en http://127.0.0.1:${puerto}/api`);
-});
-
-servidor.on('error', () => {
-  console.error('No se pudo iniciar la API. Revisá que el puerto esté disponible.');
-  db.close();
-  process.exitCode = 1;
-});
-
-// Al detener el proceso dejamos de aceptar consultas y cerramos el archivo SQLite.
-function detenerServidor(): void {
-  servidor.close(() => {
-    db.close();
-  });
+  // El pool comprueba destino, rol y las cuatro tablas antes de montar Express.
+  // No hay apertura de SQLite, migraciones automáticas ni cuentas precargadas.
+  const pool = await abrirPoolPostgres({ entorno, pruebas });
+  try {
+    let cerrando = false;
+    const app = crearAppPostgres(pool, configuracion.origen, () => new Date(), secretoJwt, { ...configuracion, cerrando: () => cerrando });
+    const servidor = app.listen(configuracion.puerto, configuracion.host);
+    await once(servidor, 'listening');
+    let cierre: Promise<void> | undefined;
+    function detener(): Promise<void> {
+      cierre ??= (async () => {
+        cerrando = true;
+        // Dejamos terminar las solicitudes antes de cerrar sus conexiones SQL.
+        const limite = setTimeout(() => servidor.closeAllConnections(), 10000);
+        limite.unref();
+        try {
+          await new Promise<void>((resolver, rechazar) => servidor.close(error => error ? rechazar(error) : resolver()));
+        } finally { clearTimeout(limite); await pool.end(); }
+      })();
+      return cierre;
+    }
+    return { servidor, pool, detener };
+  } catch (error) {
+    await pool.end();
+    throw error;
+  }
 }
-process.once('SIGINT', detenerServidor);
-process.once('SIGTERM', detenerServidor);
+
+// Importar el módulo permite probar el mismo ciclo de vida sin abrir otro servidor
+// permanente. npm run dev/start ejecutan esta entrada siempre en psique/psique_app.
+if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
+  let instancia: Awaited<ReturnType<typeof iniciarServidorPostgres>> | undefined;
+  let interrumpido = false;
+  async function detener(): Promise<void> {
+    interrumpido = true;
+    try { await instancia?.detener(); }
+    catch { console.error('No se pudo completar el cierre de la API de PSIQUE.'); process.exitCode = 1; }
+  }
+  process.once('SIGINT', detener);
+  process.once('SIGTERM', detener);
+  try {
+    instancia = await iniciarServidorPostgres();
+    if (interrumpido) await instancia.detener();
+    else console.log('API de PSIQUE iniciada correctamente con PostgreSQL.');
+  } catch (error) {
+    // Solo mensajes propios o fijos: nunca el error original, URL o contraseña.
+    const detalle = error instanceof ErrorConfiguracionPostgres ? error.message
+      : error instanceof ErrorPostgresNoDisponible ? 'PostgreSQL no está disponible. Revisá el servicio y la conexión.'
+      : (error as NodeJS.ErrnoException)?.code === 'EADDRINUSE' ? 'El puerto HTTP está ocupado.'
+      : 'Revisá configuración, permisos, esquema y puerto.';
+    console.error(`No se pudo iniciar la API de PSIQUE. ${detalle}`);
+    process.exitCode = 1;
+    process.removeListener('SIGINT', detener);
+    process.removeListener('SIGTERM', detener);
+  }
+}

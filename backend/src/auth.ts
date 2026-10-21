@@ -3,16 +3,29 @@ import * as argon2 from 'argon2';
 import type Database from 'better-sqlite3';
 import type { Express } from 'express';
 import { jwtVerify, SignJWT } from 'jose';
+import { limitarAutenticacion } from './seguridad-http.ts';
 
 const DURACION_TOKEN_SEGUNDOS = 60 * 60;
 const EMISOR = 'psique';
 const DESTINATARIO = 'psique-app';
 const CREDENCIALES_INCORRECTAS = 'El email o la contraseña son incorrectos.';
 
-interface UsuarioPublico {
+export interface UsuarioPublico {
   id: number;
   email: string;
   fechaCreacion: string;
+}
+
+export interface UsuarioAutenticable extends UsuarioPublico {
+  passwordHash: string;
+}
+
+// Solo estas tres consultas cambian de motor; validaciones, hashing y JWT se comparten.
+export interface AlmacenUsuarios {
+  buscarPorEmail(email: string): UsuarioAutenticable | undefined | Promise<UsuarioAutenticable | undefined>;
+  crearUsuario(email: string, passwordHash: string, fechaCreacion: string): UsuarioPublico | Promise<UsuarioPublico>;
+  existeUsuario(id: number): boolean | Promise<boolean>;
+  esEmailDuplicado(error: unknown): boolean;
 }
 
 interface Credenciales {
@@ -20,7 +33,7 @@ interface Credenciales {
   password: string;
 }
 
-// El servidor debe fallar antes de abrir SQLite si no recibió un secreto propio.
+// El servidor debe fallar antes de abrir la base si no recibió un secreto propio.
 // La longitud es una comprobación mínima; el README explica cómo generarlo al azar.
 export function validarSecretoJwt(valor: string | undefined): string {
   if (!valor || Buffer.byteLength(valor, 'utf8') < 32 || !valor.trim()) {
@@ -63,16 +76,36 @@ export function configurarAutenticacion(
   secretoJwt: string,
   reloj: () => Date,
 ): void {
+  // Adaptador SQLite histórico, conservado para sus pruebas y referencias.
+  configurarAutenticacionConAlmacen(app, {
+    buscarPorEmail: email => db.prepare('SELECT id, email, passwordHash, fechaCreacion FROM usuarios WHERE email = ? COLLATE NOCASE')
+      .get(email) as UsuarioAutenticable | undefined,
+    crearUsuario: (email, passwordHash, fechaCreacion) => {
+      const resultado = db.prepare('INSERT INTO usuarios (email, passwordHash, fechaCreacion) VALUES (?, ?, ?)')
+        .run(email, passwordHash, fechaCreacion);
+      return { id: Number(resultado.lastInsertRowid), email, fechaCreacion };
+    },
+    existeUsuario: id => Boolean(db.prepare('SELECT id FROM usuarios WHERE id = ?').get(id)),
+    esEmailDuplicado: error => error instanceof Error && 'code' in error && error.code === 'SQLITE_CONSTRAINT_UNIQUE',
+  }, secretoJwt, reloj);
+}
+
+export function configurarAutenticacionConAlmacen(
+  app: Express,
+  usuarios: AlmacenUsuarios,
+  secretoJwt: string,
+  reloj: () => Date,
+): void {
   const clave = new TextEncoder().encode(validarSecretoJwt(secretoJwt));
   let hashParaUsuarioInexistente: Promise<string> | undefined;
 
-  app.post('/api/auth/registro', async (req, res) => {
+  app.post('/api/auth/registro', limitarAutenticacion(10, 60 * 60 * 1000), async (req, res) => {
     const datos = validarCredenciales(req.body, true);
     if ('mensaje' in datos) {
       res.status(400).json(datos);
       return;
     }
-    if (db.prepare('SELECT id FROM usuarios WHERE email = ? COLLATE NOCASE').get(datos.email)) {
+    if (await usuarios.buscarPorEmail(datos.email)) {
       res.status(409).json({ mensaje: 'Ya existe una cuenta con ese email.' });
       return;
     }
@@ -81,13 +114,11 @@ export function configurarAutenticacion(
     const passwordHash = await argon2.hash(datos.password, { type: argon2.argon2id });
     const fechaCreacion = reloj().toISOString();
     try {
-      const resultado = db.prepare('INSERT INTO usuarios (email, passwordHash, fechaCreacion) VALUES (?, ?, ?)')
-        .run(datos.email, passwordHash, fechaCreacion);
-      const usuario: UsuarioPublico = { id: Number(resultado.lastInsertRowid), email: datos.email, fechaCreacion };
+      const usuario = await usuarios.crearUsuario(datos.email, passwordHash, fechaCreacion);
       res.status(201).json({ usuario });
     } catch (error) {
       // La restricción UNIQUE también cubre dos registros simultáneos del mismo email.
-      if (error instanceof Error && 'code' in error && error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      if (usuarios.esEmailDuplicado(error)) {
         res.status(409).json({ mensaje: 'Ya existe una cuenta con ese email.' });
         return;
       }
@@ -95,14 +126,13 @@ export function configurarAutenticacion(
     }
   });
 
-  app.post('/api/auth/login', async (req, res) => {
+  app.post('/api/auth/login', limitarAutenticacion(30, 15 * 60 * 1000), async (req, res) => {
     const datos = validarCredenciales(req.body, false);
     if ('mensaje' in datos) {
       res.status(400).json(datos);
       return;
     }
-    const almacenado = db.prepare('SELECT id, email, passwordHash, fechaCreacion FROM usuarios WHERE email = ? COLLATE NOCASE')
-      .get(datos.email) as (UsuarioPublico & { passwordHash: string }) | undefined;
+    const almacenado = await usuarios.buscarPorEmail(datos.email);
     // Para cuentas inexistentes también verificamos un hash, sin revelar por el
     // mensaje si falló el email o la contraseña. El hash auxiliar vive solo en memoria.
     if (!almacenado) {
@@ -146,7 +176,8 @@ export function configurarAutenticacion(
       res.status(401).json({ mensaje: 'Iniciá sesión para acceder a PSIQUE.' });
       return;
     }
-    if (!db.prepare('SELECT id FROM usuarios WHERE id = ?').get(usuarioId)) {
+    // La consulta queda fuera del catch de JWT: una caída de la base no es un token inválido.
+    if (!await usuarios.existeUsuario(usuarioId)) {
       res.status(401).json({ mensaje: 'Iniciá sesión para acceder a PSIQUE.' });
       return;
     }

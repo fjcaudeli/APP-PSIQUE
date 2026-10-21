@@ -25,6 +25,9 @@
           },
           "configurations": {
             "production": {
+              "fileReplacements": [
+                { "replace": "src/environments/environment.ts", "with": "src/environments/environment.production.ts" }
+              ],
               "budgets": [
                 { "type": "initial", "maximumWarning": "750kB", "maximumError": "1MB" },
                 { "type": "anyComponentStyle", "maximumWarning": "6kB", "maximumError": "8kB" }
@@ -37,7 +40,7 @@
               "sourceMap": true
             }
           },
-          "defaultConfiguration": "production"
+          "defaultConfiguration": "development"
         },
         "serve": {
           "builder": "@angular/build:dev-server",

@@ -1,14 +1,33 @@
 # PSIQUE
 
-Aplicación de seguimiento psicoterapéutico y administración de consultorio. Se desarrolla con **Ionic y Angular** en el frontend, **Node.js, Express y TypeScript** en la API, y **SQLite** para la persistencia local.
+Aplicación de seguimiento psicoterapéutico y administración de consultorio. Se desarrolla con **Ionic y Angular** en el frontend, **Node.js, Express y TypeScript** en la API, y **PostgreSQL 18.6** para la persistencia local.
 
 Esta etapa permite crear y editar pacientes, cargar horarios, agendar sesiones, confirmar que se realizaron y registrar sus honorarios y cobros. Las cuatro tarjetas de Inicio son accesos a estos recorridos y muestran cantidades calculadas a partir de la base de datos.
 
-La interfaz puede usarse en el navegador de una PC y se adapta a pantallas pequeñas. Cada profesional se registra e inicia sesión para acceder a sus propios pacientes, horarios, sesiones y estadísticas. El desarrollo y la ejecución continúan siendo locales; el despliegue se abordará en otra etapa.
+La interfaz puede usarse en el navegador de una PC y se adapta a pantallas pequeñas. Cada profesional se registra e inicia sesión para acceder a sus propios pacientes, horarios, sesiones y estadísticas. La etapa 4B prepara configuración y seguridad para Render; la ejecución continúa siendo local. No hay servicios remotos creados ni despliegue realizado.
+
+## PostgreSQL: base activa
+
+**PostgreSQL es la única base habitual de Express desde la etapa 3C.**
+
+El backend utiliza un pool de `pg` y el rol `psique_app` sobre `psique`, en
+`127.0.0.1:5432`. Registro, login y todas las operaciones de consultorio consultan
+PostgreSQL. No hay retorno automático a SQLite ni doble escritura.
+
+Las bases `psique` y `psique_test` tienen las tablas `usuarios`, `pacientes`,
+`turnos` y `sesiones`, además del historial técnico `migraciones`. Las migraciones
+se ejecutan con un comando independiente y el rol migrador; Express comprueba
+el esquema existente sin crear ni modificar tablas. No se importaron datos
+desde SQLite ni se crean cuentas o ejemplos al iniciar.
+
+Los archivos, código y pruebas SQLite se conservan como referencia histórica.
+Las pruebas PostgreSQL escriben exclusivamente en `psique_test`, separada de
+desarrollo. Consultá [POSTGRESQL.md](backend/POSTGRESQL.md) para conocer conexión,
+permisos, pruebas y el procedimiento de recuperación del servidor anterior.
 
 ## Ejecutar la aplicación
 
-Se necesitan dos terminales, una para cada proceso. El entorno de desarrollo utiliza **Node.js 24.14.1 y npm 11.11.0 en Windows x64**. El backend requiere Node 24.x desde 24.14.1 y utiliza `better-sqlite3` para abrir SQLite; no hace falta instalar un servidor de base de datos separado ni Angular CLI o Ionic globalmente.
+Se necesitan dos terminales, una para cada proceso. El entorno de desarrollo utiliza **Node.js 24.14.1 y npm 11.11.0 en Windows x64**. El backend requiere Node 24.x desde 24.14.1 y el servicio PostgreSQL iniciado, con su esquema aplicado. No hacen falta Angular CLI o Ionic globalmente.
 
 ### Terminal 1: backend
 
@@ -17,13 +36,20 @@ Desde la raíz de `APP-PSIQUE`:
 ```powershell
 Set-Location .\backend
 npm.cmd install
-# La primera vez, completar la configuración local indicada más abajo.
-npm.cmd run dev
+# El lanzador privado suministra DATABASE_URL solo al proceso.
+& "$env:LOCALAPPDATA\PSIQUE\postgresql-local\Herramientas-PostgreSQL.ps1" -Tarea dev
 ```
 
-La API queda disponible en **http://127.0.0.1:3000/api**. Al iniciar, crea `backend/data/psique-profesionales.sqlite` si falta, con el esquema de usuarios y propietarios. **Una base nueva comienza vacía**: primero se registra el profesional y luego carga sus datos. No se crean cuentas ni contraseñas predeterminadas. Una base anterior sin propietarios no se transforma automáticamente: el servidor rechaza su apertura sin modificarla.
+La API queda disponible en **http://127.0.0.1:3000/api**. Antes de escuchar,
+verifica `JWT_SECRET`, conexión, rol y columnas de las cuatro tablas. Si falta
+`DATABASE_URL`, PostgreSQL está caído o el esquema no está disponible, informa
+el fallo y no abre HTTP ni crea archivos SQLite.
 
-`dev` ejecuta Node con `--watch` y reinicia el backend al cambiar el código. La comprobación completa de tipos se realiza mediante `build`.
+El lanzador descifra las credenciales locales en memoria y ejecuta
+`npm.cmd run dev` con `DATABASE_URL` en el entorno. El secreto JWT actual se carga
+desde `backend/.env` y no se modifica. Con la conexión ya suministrada de forma
+privada también puede ejecutarse directamente `npm.cmd run dev`.
+`dev` usa `--watch`; la comprobación completa de tipos corresponde a `build`.
 
 ### Terminal 2: frontend
 
@@ -44,16 +70,19 @@ Frontend, desde la raíz:
 npm.cmd run build
 ```
 
-Genera la aplicación web en `www/browser`; no inicia ni incluye Express o SQLite.
+Genera la aplicación web **local** en `www/browser`; no inicia ni incluye Express o PostgreSQL. Desde la etapa 4B el build predeterminado es `development`, para conservar un resultado utilizable sin conocer todavía los dominios remotos. Para producción se usa `npm.cmd run build:production` y se exige `PSIQUE_API_URL` HTTPS; ver [preparación para Render](#preparación-local-para-render--etapa-4b).
 
 Backend, desde `backend`:
 
 ```powershell
 npm.cmd run build
-npm.cmd start
+& "$env:LOCALAPPDATA\PSIQUE\postgresql-local\Herramientas-PostgreSQL.ps1" -Tarea iniciar
 ```
 
-`build` comprueba los tipos y genera `backend/dist`; `start` ejecuta `dist/server.js`. Usá `dev` o `start`, uno por vez para el mismo puerto. Compilar o iniciar el servidor no restaura los datos.
+El lanzador ejecuta `npm.cmd start` con la conexión privada; con `DATABASE_URL`
+ya suministrada puede usarse `npm.cmd start` directamente. `build` comprueba los
+tipos y genera `backend/dist`; `start` ejecuta `dist/server.js`. Usá `dev` o `start`,
+uno por vez para el mismo puerto. Compilar o iniciar no restaura los datos.
 
 Para ejecutar las pruebas del backend:
 
@@ -61,7 +90,10 @@ Para ejecutar las pruebas del backend:
 npm.cmd test
 ```
 
-El comando compila y ejecuta `test/*.test.mjs` con el ejecutor de Node. Las pruebas usan bases temporales, relojes controlados y datos explícitos de prueba; no necesitan reemplazar la base de desarrollo.
+Ese comando conserva la suite histórica SQLite. Para PostgreSQL usá el lanzador
+privado con `-Tarea probar`, o `npm.cmd run test:postgres` con solo
+`TEST_DATABASE_URL`. Todas las pruebas usan datos y entornos aislados;
+no se ejecutan sobre `psique` de desarrollo.
 
 ### Configuración local
 
@@ -77,18 +109,154 @@ En `.env`, completá el valor vacío de `JWT_SECRET` con un secreto aleatorio. E
 node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 ```
 
-No compartas ni subas ese valor. Los comandos de inicio cargan `.env` mediante `--env-file-if-exists=.env`; también se pueden definir las variables en el entorno del proceso. Si falta el secreto, es demasiado corto o contiene solamente espacios, el servidor se detiene antes de abrir SQLite. No hay una clave predeterminada en el código. Cambiar el secreto invalida los tokens firmados con el anterior.
+No compartas ni subas ese valor. Los comandos de inicio cargan `.env` mediante `--env-file-if-exists=.env`; también se pueden definir las variables en el entorno del proceso. Si falta el secreto, es demasiado corto o contiene solamente espacios, el servidor se detiene antes de abrir el pool PostgreSQL. No hay una clave predeterminada en el código. Cambiar el secreto invalida los tokens firmados con el anterior.
 
 | Variable | Valor predeterminado | Uso |
 | --- | --- | --- |
-| `PORT` | `3000` | Puerto de Express. |
-| `DB_PATH` | `data/psique-profesionales.sqlite` | Base con usuarios; las rutas relativas se resuelven desde `backend`. |
-| `FRONTEND_ORIGIN` | `http://127.0.0.1:4200` | Origen del navegador permitido por CORS. |
+| `NODE_ENV` | `development` | Admite `development`, `test` o `production`. |
+| `PORT` | `3000` local; obligatorio en producción | Puerto de Express; Render lo suministrará. |
+| `HOST` | `127.0.0.1` local; `0.0.0.0` producción | La escucha pública se rechaza fuera de producción. |
+| `DATABASE_URL` | Sin valor predeterminado; obligatoria | Conexión de `psique_app` a `psique`, suministrada de forma privada. |
+| `FRONTEND_ORIGIN` | `http://127.0.0.1:4200` local | Origen CORS exacto; obligatorio y HTTPS en producción. |
 | `JWT_SECRET` | Sin valor predeterminado; obligatorio | Secreto para firmar y verificar JWT. Generar al menos 32 bytes aleatorios. |
+| `DATABASE_SSL_MODE` | `disable` local; `verify-full` producción | Producción exige certificado y nombre de servidor válidos. |
+| `DATABASE_SSL_CA_FILE` | Sin valor | Opcional: ruta al certificado público de una CA confiable. |
+| `TRUSTED_PROXY_CIDRS` | Vacío | IP/redes del proxy verificadas, separadas por coma; vacío ignora encabezados de IP. |
 
-La API se limita a `127.0.0.1`. Su URL en el frontend está centralizada en `src/app/api.config.ts`. Si cambiás el puerto del backend, actualizá esa constante. `localhost` y `127.0.0.1` son orígenes distintos para el navegador: con la configuración inicial usá las direcciones indicadas arriba.
+La API local se limita a `127.0.0.1`. `src/app/api.config.ts` obtiene el destino de `src/environments/environment.ts`; producción reemplaza ese entorno mediante Angular. `localhost` y `127.0.0.1` son orígenes distintos: en desarrollo usá las direcciones indicadas arriba. `PSIQUE_API_URL` es una variable pública de compilación del frontend, nunca una credencial; las demás variables de la tabla pertenecen al backend.
 
-La base local, sus archivos auxiliares, los archivos `.env`, las dependencias y las compilaciones no se versionan. `.env.example` contiene únicamente valores de ejemplo. La primera instalación requiere descargar dependencias; luego la aplicación puede ejecutarse localmente con ambos procesos.
+Las credenciales y archivos `.env`, las bases SQLite conservadas, las dependencias y las compilaciones no se versionan. `.env.example` contiene únicamente valores de ejemplo. `DB_PATH` ya no se lee en el servidor habitual. La primera instalación requiere descargar dependencias; luego la aplicación puede ejecutarse localmente con ambos procesos y PostgreSQL iniciado.
+
+## Preparación local para Render — etapa 4B
+
+La arquitectura prevista es **Angular estático → HTTPS → Express permanente →
+PostgreSQL administrado**. No se creó infraestructura ni se publicó ningún servicio.
+El primer ensayo remoto utilizará datos ficticios. Esta preparación local no
+certifica un despliegue ni habilita el uso de datos clínicos reales.
+
+### Angular y Express por entorno
+
+`src/environments/environment.ts` conserva `http://127.0.0.1:3000/api`.
+Angular utiliza `fileReplacements` para seleccionar `environment.production.ts`
+en producción. Servicios e interceptor comparten el destino validado.
+Desde la raíz:
+
+```powershell
+npm.cmd start             # Desarrollo local
+npm.cmd run build         # Archivos para uso local
+npm.cmd run test:config   # Configuración e interceptor Angular real
+# Cuando exista el dominio remoto, suministrar PSIQUE_API_URL y ejecutar:
+npm.cmd run build:production
+```
+
+`PSIQUE_API_URL` es una variable **pública de compilación**: debe contener la URL
+HTTPS de Express terminada en `/api`, sin credenciales, parámetros o fragmentos.
+El build de producción falla si falta o es inválida; tampoco admite localhost.
+La URL se incorpora al JavaScript mediante `define` de Angular: cambiarla requiere
+recompilar, no editar servicios ni pantallas. La carpeta publicable será `www/browser`,
+con reescritura SPA a `index.html` que aún debe configurarse en Render.
+
+En esta etapa se probó el build con `https://api.example.test/api`, un dominio
+reservado exclusivamente para verificar compilación, sin conectarse a él. Se
+comprobó la ausencia de la API local en ese resultado y después se regeneró `www`
+para desarrollo. No es una dirección de PSIQUE.
+
+Express conserva el lanzador DPAPI, `.env` y puertos locales. Producción requiere
+`NODE_ENV=production`, `PORT` del hosting y `FRONTEND_ORIGIN` HTTPS exacto;
+selecciona `HOST=0.0.0.0`. La escucha pública se rechaza fuera de producción.
+Se comprueban JWT, conexión, rol y esquema antes de abrir HTTP. SIGINT/SIGTERM
+cierran HTTP y después el pool; tras 10 s se cierran conexiones HTTP que no terminaron.
+No se modifican las transacciones ni las respuestas clínicas.
+
+### Protecciones incorporadas
+
+- CORS permite un origen exacto y GET/POST/PUT; el preflight acepta solamente
+  Authorization y Content-Type. Lo no autorizado recibe 403. Sin cookies ni `*`.
+- `express-rate-limit` 8 limita login a **30 solicitudes/15 minutos** y registro a
+  **10/hora**, por IP o subred IPv6 /56, antes de SQL/Argon2. Cuenta solicitudes
+  inválidas y correctas; el exceso recibe 429 genérico y Retry-After.
+- `helmet` 8 aplica nosniff, protección de marcos, referrer-policy y CSP restrictiva
+  a la API JSON. HSTS se activa en producción. No se cambió la CSP del sitio Angular.
+- Todas las respuestas de Express, incluidos errores, tienen no-store, sin ETag
+  ni X-Powered-By. Se conserva el límite JSON de 32 KB.
+- `/health/live` responde sin SQL. `/health/ready` hace SELECT 1 y devuelve 200 o
+  503 con un estado genérico, sin información personal o de infraestructura.
+  Comparte el resultado 5 s y una sola consulta en vuelo; responde en aproximadamente
+  1,5 s aun si PostgreSQL sigue esperando. El futuro health check será `/health/ready`.
+
+Los contadores están en memoria: reiniciar Node los borra, no se comparten entre
+réplicas y usuarios detrás de una misma IP comparten cupo. No resuelven ataques
+distribuidos. El login y el 429 no distinguen si existe una cuenta. Se conserva el
+409 previo del registro por email duplicado; no se rediseñó autenticación.
+
+`TRUSTED_PROXY_CIDRS` admite solo IP/redes explícitas, nunca `true`, cantidad de
+saltos ni `/0`. Vacío ignora encabezados de IP; detrás de Render varios clientes
+podrían compartir el cupo del proxy. Antes de publicar hay que verificar su cadena
+y encabezados saneados, y configurar las redes comprobadas. No se asumió un número
+de saltos. Ver [Express detrás de proxies](https://expressjs.com/en/guide/behind-proxies/).
+
+TLS PostgreSQL utiliza la misma política en el pool y los scripts. Producción exige
+`verify-full`: certificado confiable, nombre correcto y TLS 1.2 como mínimo.
+Se usan las CA de Node o `DATABASE_SSL_CA_FILE` si hay una CA propia confiable.
+No se permiten excepciones de certificado ni parámetros SSL en la URL que puedan
+sobrescribir esta política. Localmente se conserva `disable`.
+Ver [produccion.env.example](backend/produccion.env.example) y [TLS en pg](https://node-postgres.com/features/ssl).
+
+La [documentación de Render](https://render.com/docs/postgresql-creating-connecting)
+distingue certificados internos autofirmados y externos administrados. La ruta
+definitiva requiere comprobar la instancia real: evaluar la externa con acceso
+de red restringido o una CA verificable si está disponible. No se desactivará la
+validación para aceptar un certificado interno.
+
+### Verificación local del 19/10/2026
+
+| Comprobación | Resultado |
+| --- | --- |
+| Backend TypeScript | Compilación correcta. |
+| Angular local y producción | Compilan; producción ensayada con dominio reservado, sin API local. |
+| PostgreSQL | 123 resultados aprobados, incluidos 15 nuevos de seguridad/configuración. |
+| SQLite histórico | 74 resultados aprobados; pruebas históricas sin modificaciones. |
+| Configuración/interceptor Angular | 4 casos aprobados con el interceptor real local y producción. |
+| Contratos clínicos | 186 respuestas HTTP por motor, sin diferencias. |
+| TLS | Handshake local real rechazó certificado autofirmado y nombre incorrecto. |
+| Arranque habitual | `start` y `dev` usan psique_app/psique; salud 200 y rutas sin JWT 401. |
+| Desarrollo | Cero usuarios, pacientes, turnos y sesiones; sin ejemplos permanentes. |
+| Navegador | No disponible en esta sesión; no se repitió el recorrido visual de 3C. |
+
+La suite nueva se incluye en el lanzador `-Tarea probar`. El caso TLS usa OpenSSL
+(el incluido con Git para Windows en esta PC), genera claves ficticias temporales
+y las elimina al terminar. Las pruebas Angular usan Node y herramientas ya instaladas
+por Angular, sin incorporar otro framework.
+
+Se preservan `.env`, DPAPI, credenciales, pantallas, formularios, estilos, modelos,
+navegación, criptografía de autenticación, lógica clínica, esquema, migración 001,
+SQLite y respaldos. Dentro de `src/app` solo cambia `api.config.ts`.
+Se comprobaron 61 archivos protegidos: 60 idénticos y únicamente ese cambio previsto.
+La revisión de 119 archivos no encontró las tres contraseñas PostgreSQL reales ni
+el secreto JWT. No se imprimieron sus valores para realizar la comprobación.
+
+Quedan pendientes de Render: URLs, región, roles/permisos y compatibilidad del
+esquema con el entorno administrado, ruta TLS y acceso de red PostgreSQL, proxy,
+HTTPS real, cabeceras del sitio estático, SPA, señales/reinicios, backups operativos
+y recorrido visual completo. No se creó Blueprint ni workflows de despliegue.
+Los detalles técnicos están en [POSTGRESQL.md](backend/POSTGRESQL.md#etapa-4b-configuración-local-y-preparación-de-render).
+
+### Conceptos para la defensa oral
+
+| Concepto | Aplicación en PSIQUE |
+| --- | --- |
+| Desarrollo / producción | Local permite programar; producción necesita dominios, HTTPS y configuración explícita. |
+| Desplegar | Ejecutar permanentemente la API en el proveedor con sus variables privadas. |
+| Variable de entorno | Valor externo al código; la URL Angular es pública, una contraseña del backend es secreta. |
+| Interfaz de escucha | 127.0.0.1 recibe desde esta PC; 0.0.0.0 permite que llegue el proxy del hosting. |
+| HTTPS / TLS | HTTPS protege HTTP mediante TLS; PostgreSQL también usa TLS en su propia conexión. |
+| Certificado | Comprobar confianza y nombre del servidor; cifrar sin verificar no alcanza. |
+| CORS | Regula JavaScript del navegador; no sustituye JWT ni controla clientes como curl. |
+| Rate limiting / 429 | Limita solicitudes repetidas; 429 pide esperar antes de reintentar. |
+| Cabeceras | Indican al navegador cómo interpretar, restringir y almacenar respuestas. |
+| Reverse proxy | Recibe HTTPS y reenvía a Express; sus encabezados requieren una confianza verificada. |
+| Liveness / readiness | El proceso responde / el servicio puede atender con su dependencia disponible. |
+| Secretos | DPAPI local y variables privadas futuras del hosting; nunca en el JavaScript Angular. |
 
 ## Recorridos de la aplicación
 
@@ -101,6 +269,8 @@ Después del registro se vuelve a Login. **Iniciar sesión** verifica las creden
 La sesión dura **una hora**. El token se guarda en `sessionStorage`, por pestaña: sobrevive a recargas y se elimina al cerrar sesión. El cierre habitual de la pestaña descarta ese almacenamiento, aunque un navegador puede restaurarlo al recuperar una sesión. No se guardan contraseñas. Al vencer el token o recibir un 401 de una solicitud privada se vuelve a Login. No hay renovación automática ni refresh tokens.
 
 Cerrar sesión elimina las credenciales locales y destruye el contenedor de pantallas privadas, incluida la caché de navegación de Ionic. La próxima cuenta vuelve a consultar sus datos. El logout es local: un token que hubiera sido copiado sigue siendo válido ante la API hasta su vencimiento. Esta etapa no incorpora una lista de revocación.
+
+También se retira cualquier modal abierto de Inicio. Ionic mueve esos elementos fuera del contenedor de la página; por eso Inicio los elimina al destruirse, evitando que un listado de cobros u horarios permanezca visible sobre Login.
 
 ### Inicio
 
@@ -184,21 +354,22 @@ Usá alias o códigos y evitá nombres reales como identificador. El código apa
 
 El backend valida nuevamente todas las solicitudes: tipos, campos permitidos, longitudes, fechas reales, importes y relaciones entre registros. Recorta espacios externos de los textos, pero no trunca contenido para hacerlo entrar en un límite. Las respuestas de error usan `{ "mensaje": "..." }`.
 
-Cambiar un código actualiza al paciente y sus referencias en horarios y sesiones dentro de una transacción. Si algo falla, SQLite revierte el conjunto. La fecha de creación y los datos de las sesiones se conservan. Las pantallas renuevan sus consultas al entrar para mostrar lo guardado.
+Cambiar un código actualiza al paciente y sus referencias en horarios y sesiones dentro de una transacción. Si algo falla, PostgreSQL revierte el conjunto. La fecha de creación y los datos de las sesiones se conservan. Las pantallas renuevan sus consultas al entrar para mostrar lo guardado.
 
 ## Arquitectura y organización
 
 ```text
 Pantalla de Ionic + Angular
         ↓ formulario o consulta
-Servicio de Angular → HttpClient
-        ↓ HTTP: GET / POST / PUT
-Express → validación → consultas y transacciones SQLite
+Servicio de Angular → HttpClient → interceptor
+        ↓ HTTP: GET / POST / PUT + Bearer en rutas privadas
+Express → middleware JWT → validación → SQL filtrado por profesional
+        ↓ pool pg → PostgreSQL (psique)
         ↓ JSON
 Estado del componente / Observable → plantilla
 ```
 
-El navegador muestra la interfaz; el backend aplica las reglas y es el único proceso de la aplicación que accede al archivo SQLite. Una respuesta correcta confirma un guardado persistido. Los componentes muestran errores de carga o guardado y no reemplazan silenciosamente una API caída con datos de ejemplo.
+El navegador muestra la interfaz; el backend aplica las reglas y accede a PostgreSQL mediante el pool. Una respuesta correcta confirma un guardado persistido. Los componentes muestran errores de carga o guardado y no reemplazan silenciosamente una API caída con datos de ejemplo.
 
 ```text
 APP-PSIQUE/
@@ -226,15 +397,22 @@ APP-PSIQUE/
 ├── backend/
 │   ├── src/
 │   │   ├── server.ts             Configuración e inicio del servidor
-│   │   ├── app.ts                Endpoints y operaciones de negocio
+│   │   ├── app.ts                Persistencia SQLite histórica
+│   │   ├── api.ts                Rutas y respuestas HTTP compartidas
+│   │   ├── reglas-api.ts         Validaciones y reglas compartidas
+│   │   ├── app-postgres.ts       API PostgreSQL del servidor habitual
 │   │   ├── auth.ts               Registro, hashing, JWT y middleware
+│   │   ├── auth-postgres.ts      Consultas de autenticación PostgreSQL
 │   │   ├── models.ts             Contratos JSON de la API
 │   │   ├── validar-paciente.ts   Validación de fichas
 │   │   ├── calendario.ts         Fechas, semana y reloj de Buenos Aires
 │   │   └── db/
 │   │       ├── database.ts       Apertura y esquema con propietarios
+│   │       ├── postgres.ts       Pool PostgreSQL y disponibilidad
+│   │       ├── consultorio-postgres.ts  Consultas y transacciones de negocio
 │   │       └── seed.ts           Ejemplos explícitos solo para pruebas
 │   ├── test/                     Pruebas y fixtures temporales
+│   ├── test-postgres/            Esquema, migraciones, autenticación y API
 │   ├── data/psique-profesionales.sqlite  Base local de cuentas; no se versiona
 │   ├── dist/                     JavaScript compilado del backend
 │   ├── package.json
@@ -274,21 +452,34 @@ Los formularios utilizan **Reactive Forms** con validadores y estados de carga/g
 
 ### Backend y persistencia
 
-`server.ts` carga la configuración, abre la base e inicia Express. `app.ts` configura JSON y CORS, define las rutas, valida los cuerpos y ejecuta operaciones SQL parametrizadas. `calendario.ts` centraliza el calendario de Buenos Aires; el reloj es inyectable para probar semanas y límites horarios sin depender del momento de ejecución.
+`server.ts` valida la configuración, espera `abrirPoolPostgres` y monta
+`crearAppPostgres` antes de escuchar HTTP. Al detenerse deja terminar las solicitudes
+y cierra el pool. `api.ts` define rutas y respuestas; `reglas-api.ts` comparte
+validaciones. `db/consultorio-postgres.ts` contiene SQL parametrizado y transacciones.
+`calendario.ts` mantiene Buenos Aires y un reloj inyectable para pruebas de negocio.
 
-El esquema actual, versión **2** en `PRAGMA user_version`, tiene cuatro tablas: `usuarios`, `pacientes`, `turnos` y `sesiones`. La API deriva los días y semanas del calendario; ya no necesita tablas de semana ni contadores almacenados. `pendienteCentavos` se calcula al consultar como honorarios menos total cobrado.
+El esquema se gestiona mediante `migrations/001_esquema_inicial.sql`. Sus tablas
+funcionales son `usuarios`, `pacientes`, `turnos` y `sesiones`.
+`pendienteCentavos` se calcula al consultar. `psique_app` tiene SELECT, INSERT
+y UPDATE; no tiene permisos para crear, alterar o eliminar tablas.
 
-`database.ts` activa las claves foráneas y crea el esquema completo dentro de una transacción. Cada paciente, horario y sesión tiene un `usuarioId` obligatorio. Las relaciones compuestas impiden que una sesión o un horario apunten al paciente de otro profesional, incluso si se intenta insertar directamente en SQLite.
+Las escrituras toman un cliente del pool, ejecutan BEGIN y bloquean la fila del
+profesional mediante SELECT FOR UPDATE. Paciente, turnos y sesiones se confirman
+juntos con COMMIT; ante fallos se ejecuta ROLLBACK y se libera el cliente.
+Al renombrar se difieren las dos referencias al paciente hasta confirmar.
+Las claves compuestas con `usuarioId` conservan el propietario de las relaciones.
 
-`db/seed.ts` conserva ejemplos para pruebas explícitas, asociados a un usuario de prueba. El servidor no lo importa ni ejecuta al iniciar. `test/fixtures.mjs` prepara bases temporales cuando una prueba necesita datos. Una instalación vacía permanece vacía hasta que se crean registros desde la aplicación o la API.
+### SQLite conservado como referencia
 
-Las operaciones que deben guardarse juntas usan transacciones inmediatas: alta con reserva, asignación de horario y cambio de identificador. En el renombrado se difiere la verificación de claves foráneas hasta finalizar la transacción, de modo que paciente, turnos y sesiones cambian de referencia como una sola operación.
+`app.ts`, `db/database.ts`, `db/seed.ts`, las pruebas históricas y las bases
+`data/psique.sqlite` y `data/psique-profesionales.sqlite` se conservan.
+El servidor habitual no los abre ni genera datos a partir de ellos. Los respaldos
+anteriores permanecen fuera del repositorio, en la carpeta local `PSIQUE/respaldos`.
 
-### Transición desde la base sin usuarios
-
-Para esta etapa se eligió **comenzar con una base vacía y conservar la anterior**, sin asignar registros a una cuenta arbitraria. `data/psique.sqlite` se mantiene como archivo de la etapa anterior; la aplicación usa `data/psique-profesionales.sqlite`. Antes del cambio se guarda un respaldo adicional fuera del repositorio, en la carpeta local `PSIQUE/respaldos` del usuario de Windows, y se verifica su integridad.
-
-No se importan cuentas ni datos automáticamente, ni siquiera al registrar al primer profesional. Apuntar `DB_PATH` a un archivo de esquema anterior produce un error explicativo y deja ese archivo intacto. Abrir esos registros en la versión nueva requeriría una importación futura con un propietario elegido expresamente. Conservar el archivo anterior y su respaldo permite revisar o recuperar la información sin mezclarla con las cuentas nuevas.
+Se eligió comenzar PostgreSQL vacío; no hay importador ni asignación automática
+de registros anteriores. Los datos nuevos de PostgreSQL **no aparecen en SQLite**.
+El procedimiento para recuperar el servidor anterior está en
+[POSTGRESQL.md](backend/POSTGRESQL.md#recuperar-el-arranque-sqlite-anterior).
 
 ## Autenticación y separación por profesional
 
@@ -298,7 +489,7 @@ No se importan cuentas ni datos automáticamente, ni siquiera al registrar al pr
 
 | Columna de `usuarios` | Propósito |
 | --- | --- |
-| `id` | Identificador interno numérico, generado por SQLite. |
+| `id` | Identificador interno numérico, generado por PostgreSQL. |
 | `email` | Email normalizado, único sin distinguir mayúsculas. |
 | `passwordHash` | Resultado de Argon2id; nunca se devuelve en la API. |
 | `fechaCreacion` | Fecha de alta asignada por el servidor. |
@@ -361,13 +552,13 @@ SQL cuenta únicamente los registros de ese profesional
 Angular muestra el Dashboard
 ```
 
-Para defenderlo oralmente: **el login acredita la identidad una vez; el middleware comprueba el token en cada llamada; el filtro por propietario limita los datos en cada operación**. Cambiar una URL o quitar el guard del navegador no elimina los controles de Express y SQLite.
+Para defenderlo oralmente: **el login acredita la identidad una vez; el middleware comprueba el token en cada llamada; el filtro por propietario limita los datos en cada operación**. Cambiar una URL o quitar el guard del navegador no elimina los controles de Express y PostgreSQL.
 
 ## API HTTP
 
-Todas las rutas parten de `/api`. Las consultas correctas, el login y las actualizaciones devuelven `200`; las altas y el registro, `201`. Los errores usan `400` para datos inválidos, `401` para credenciales incorrectas o token ausente/inválido/vencido, `404` para un recurso inexistente o ajeno, `409` para email o código duplicado u horario ocupado, `413` para un JSON que supera 32 KB, y `500` para un fallo interno.
+Las rutas funcionales parten de `/api`. Las consultas correctas, el login y las actualizaciones devuelven `200`; las altas y el registro, `201`. Los errores usan `400` para datos inválidos, `401` para credenciales incorrectas o token ausente/inválido/vencido, `403` para CORS rechazado, `404` para un recurso inexistente o ajeno, `409` para email o código duplicado u horario ocupado, `413` para un JSON que supera 32 KB, `429` para exceso de intentos de acceso, `500` para un fallo interno y `503` cuando PostgreSQL no está disponible. Fuera de `/api`, `/health/live` y `/health/ready` son comprobaciones técnicas públicas sin datos personales.
 
-Solo estos endpoints son **públicos**:
+Dentro de `/api`, solo estos endpoints son **públicos** (health está fuera de esa ruta):
 
 | Método y ruta | Cuerpo y respuesta |
 | --- | --- |
@@ -420,7 +611,7 @@ CORS permite los métodos GET, POST y PUT para el origen configurado. Controla e
 
 ## Alcance pendiente
 
-La aplicación funciona localmente con autenticación y datos separados por profesional. Quedan para otras etapas el despliegue con HTTPS, la operación de copias de seguridad, la recuperación de contraseña y la verificación de email. No se incorporaron Google Sign-In, MFA, roles, refresh tokens, biometría ni bloqueo por inactividad. Tampoco incluye cancelaciones, recurrencia automática ni movimientos individuales de pago. SQLite, el destino móvil y la distribución instalable se mantienen dentro del plan de desarrollo, sin cambios de plataforma en esta etapa.
+La aplicación funciona localmente con PostgreSQL, autenticación y datos separados por profesional. Quedan para otras etapas el despliegue con HTTPS, la operación de copias de seguridad, la recuperación de contraseña y la verificación de email. No se incorporaron Google Sign-In, MFA, roles de profesionales, refresh tokens, biometría ni bloqueo por inactividad. Tampoco incluye cancelaciones, recurrencia automática ni movimientos individuales de pago. El destino móvil y la distribución instalable continúan pendientes; SQLite se conserva como referencia histórica.
 
 ## Archivos de configuración de la raíz
 
@@ -433,10 +624,10 @@ los estilos generales y `tsconfig.app.json` para las reglas de TypeScript.
 
 La tarea `build` usa `@angular/build:application` y tiene `outputPath: "www"`:
 por eso los archivos compilados se generan en esa carpeta. Su configuración
-predeterminada es `production`, con nombres de salida que incluyen un identificador
-de contenido (`outputHashing: "all"`) para que el navegador distinga las versiones.
-Los `budgets` avisan o detienen la compilación si el tamaño inicial de la aplicación
-o los estilos de un componente superan los límites configurados.
+predeterminada es `development`. La configuración explícita `production` reemplaza
+el entorno, optimiza y agrega identificadores de contenido (`outputHashing: "all"`).
+Sus `budgets` limitan el tamaño inicial y los estilos. `build:production` valida
+e incorpora la URL pública mediante `define`, una opción del compilador Angular.
 
 La tarea `serve` inicia el servidor de desarrollo. Usa la configuración
 `development`, que desactiva la optimización y activa los mapas de código
@@ -455,8 +646,9 @@ Describe el proyecto y declara los comandos y paquetes que utiliza npm.
 
 - `scripts.start`: ejecuta `ng serve --host 127.0.0.1 --port 4200`; abre el servidor
   local de desarrollo mediante `npm.cmd start`.
-- `scripts.build`: ejecuta `ng build`; genera la versión de producción mediante
-  `npm.cmd run build`.
+- `scripts.build`: ejecuta `ng build`; genera la versión local mediante `npm.cmd run build`.
+- `scripts.build:production`: exige `PSIQUE_API_URL` HTTPS y genera el sitio optimizado.
+- `scripts.test:config`: prueba configuración e interceptor Angular real con Node.
 - `dependencies`: paquetes que usa la aplicación, como Angular, Ionic e Ionicons.
 - `devDependencies`: herramientas para trabajar y compilar, como Angular CLI,
   Angular Build y TypeScript.
@@ -511,9 +703,9 @@ tipos instalados; los tipos de los módulos que importamos siguen disponibles.
 
 ## Qué contiene la carpeta `www`
 
-`www` es el resultado generado al ejecutar `npm.cmd run build`. Angular transforma
+`www` es el resultado generado al ejecutar `npm.cmd run build` o `build:production`. Angular transforma
 TypeScript, las plantillas HTML y los estilos SCSS en archivos que el navegador
-puede cargar. La estructura generada actualmente es:
+puede cargar. La estructura de producción es:
 
 ```text
 www/
@@ -529,6 +721,8 @@ www/
 
 Hay varios archivos `chunk-*.js`; el árbol muestra su patrón de nombre una sola
 vez. Los identificadores y la cantidad de archivos pueden cambiar al compilar.
+En desarrollo `main.js`, `polyfills.js` y `styles.css` no llevan hash; hay mapas de
+código y no se genera el archivo de licencias de producción.
 
 | Archivo o grupo | Qué contiene |
 | --- | --- |
@@ -552,6 +746,85 @@ con redirección a `index.html` para rutas como `/pacientes`. No se debe abrir
 cargarse por HTTP y resolver correctamente sus rutas y módulos.
 
 ## Verificación y recorrido de prueba
+
+### Activación PostgreSQL — etapa 3C
+
+El **14/10/2026** se activó PostgreSQL en el servidor habitual. Los comandos
+`dev` y `start` se iniciaron con `psique_app`/`psique`, y se comprobó la conexión
+real de ese proceso a PostgreSQL. Pasaron **108 resultados** de la suite
+PostgreSQL (incluye ocho nuevos de arranque/cierre/persistencia) y **74 resultados**
+de la suite histórica SQLite. Frontend y backend compilaron correctamente.
+
+La persistencia se comprobó creando cuenta, paciente, horario y sesión en
+`psique_test`, reiniciando Express y consultándolos desde una conexión nueva.
+Desarrollo y pruebas quedaron vacíos. Se conservaron frontend, autenticación,
+bases SQLite, respaldos y secreto JWT.
+
+El **15/10/2026** se completó la integración con el frontend Angular real en el
+navegador integrado de Codex, usando exclusivamente datos ficticios en
+`psique_test`: registro, errores de acceso y duplicados, login, pacientes,
+agenda, reserva, edición de sesión, cobro parcial, histórico, Dashboard,
+aislamiento entre dos cuentas y logout. Se comprobó la persistencia tras
+reiniciar Express y recargar el navegador, también desde una conexión SQL nueva.
+Se revisaron escritorio (1280 px) y pantallas de 360 y 320 px, sin desbordamiento
+horizontal en las vistas comprobadas ni errores JavaScript registrados.
+Al terminar se retiraron solo los datos de esta prueba y se restauró el backend
+habitual con `psique_app`/`psique`; ambas bases quedaron vacías. Detalles en
+[POSTGRESQL.md](backend/POSTGRESQL.md#etapa-3c-postgresql-como-base-habitual).
+
+### API PostgreSQL completa — etapa 3B
+
+Verificación del **14/10/2026**: **100 resultados aprobados** en `test:postgres`
+(incluye la comparación con SQLite) y **74 resultados aprobados** en la suite
+SQLite existente. Backend y frontend compilaron correctamente.
+El recorrido compartido comparó **186 respuestas HTTP por motor**: mismos estados,
+mensajes y JSON después de normalizar únicamente IDs autogenerados.
+
+Se comprobaron escrituras simultáneas, aislamiento, persistencia, rollback,
+rechazo de `COMMIT`, espera de bloqueos limitada y recuperación de conexiones.
+El Dashboard PostgreSQL obtiene sus cuatro cantidades desde una sola sentencia.
+Fechas y horarios mantienen `YYYY-MM-DD` y `HH:mm`; centavos y cantidades son números.
+
+Desde `backend`, con solo `TEST_DATABASE_URL` configurada de forma privada:
+
+```powershell
+npm.cmd run test:postgres:api
+npm.cmd run test:postgres
+```
+
+En esta computadora también puede utilizarse el lanzador privado:
+
+```powershell
+& "$env:LOCALAPPDATA\PSIQUE\postgresql-local\Herramientas-PostgreSQL.ps1" -Tarea probar-api
+```
+
+La API de pruebas se cierra automáticamente. No se conecta Angular a ella.
+Desarrollo PostgreSQL permanece vacío y los datos ficticios se limpian únicamente
+en `psique_test`, por instancia. Frontend, autenticación, migración 001, archivos
+SQLite, respaldos y configuración local se conservaron. Los detalles, diferencias
+entre motores y conceptos para la defensa están en [POSTGRESQL.md](backend/POSTGRESQL.md#etapa-3b-api-completa-aislada).
+
+### Autenticación PostgreSQL preparada — etapa 3A
+
+La verificación del **13/10/2026** aprobó **19 pruebas de autenticación PostgreSQL**,
+**42 pruebas PostgreSQL en conjunto** y **74 resultados de la suite SQLite existente**.
+Frontend y backend compilaron correctamente. Se verificaron conexión, recuperación
+del pool, registros simultáneos, JWT y errores 503; desarrollo y pruebas quedaron
+sin registros ficticios permanentes. La aplicación local sigue respondiendo y el
+frontend, las rutas clínicas, las bases SQLite, los respaldos y el secreto JWT
+conservaron sus archivos. Los detalles y comandos están en [POSTGRESQL.md](backend/POSTGRESQL.md).
+
+### Autenticación y cuentas profesionales
+
+La verificación finalizada el **10/10/2026** incluye compilación correcta del frontend y backend, sin advertencias del frontend, y **74 resultados aprobados del ejecutor de pruebas de Node** (69 casos y cinco contenedores). Se conservó la cobertura de pacientes, agenda, sesiones e importes, ahora atravesando el middleware real con JWT de prueba.
+
+Las pruebas usan bases temporales. Cubren registro y email duplicado —incluidos intentos simultáneos—, hashes con sales distintas, login correcto e incorrecto, tokens vencidos o alterados, todos los endpoints privados sin token, aislamiento de listados y operaciones, contadores por profesional, códigos y horarios compartidos entre cuentas, claves foráneas y reversión de operaciones incompletas. Las bases anteriores se rechazan conservando sus bytes, esquema y datos.
+
+La revisión específica de modales comprueba Cobros y Horarios al vencer y al cerrar sesión: Login queda sin contenido privado ni credenciales locales, el foco y Tab funcionan, y se puede volver a ingresar. Los datos de estas pruebas no se cargan en la base local del proyecto.
+
+El recorrido integrado en navegador aprobó **51 comprobaciones** con dos cuentas: registro, duplicados, credenciales incorrectas, login, logout, rutas protegidas, recarga, cambio de cuenta y acceso directo a recursos ajenos. También se comprobaron los flujos existentes de alta y edición de pacientes, horarios, reserva independiente o con paciente nuevo, edición completa y realización manual de sesiones, histórico, saldos y Dashboard. Los formularios de acceso se revisaron en PC y anchos de 360 y 320 píxeles, sin desbordamiento horizontal ni excepciones JavaScript.
+
+La base nueva del proyecto quedó vacía y lista para el registro del usuario. Se comprobó que los pacientes, turnos y sesiones de la base anterior coinciden con su respaldo, cuya integridad SQLite es correcta.
 
 ### Demostrar el aislamiento con dos profesionales
 

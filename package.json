@@ -2,13 +2,16 @@
   "name": "psique",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Prototipo de PSIQUE: seguimiento psicoterapéutico y administración de consultorio.",
   "scripts": {
     "start": "ng serve --host 127.0.0.1 --port 4200",
-    "build": "ng build"
+    "build": "ng build",
+    "build:production": "node scripts/compilar-produccion.mjs",
+    "test:config": "node --test test-config/*.test.mjs"
   },
   "engines": {
-    "node": "^20.19.0 || ^22.12.0 || >=24.0.0"
+    "node": "^24.14.1"
   },
   "dependencies": {
     "@angular/common": "^21.2.0",
