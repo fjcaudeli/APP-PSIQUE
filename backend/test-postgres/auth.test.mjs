@@ -8,7 +8,7 @@ import * as argon2 from 'argon2';
 import { SignJWT, jwtVerify } from 'jose';
 import { abrirPoolPostgres, ErrorConfiguracionPostgres, ErrorPostgresNoDisponible } from '../dist/db/postgres.js';
 import { configurarAutenticacionPostgres, manejarDisponibilidadPostgres } from '../dist/auth-postgres.js';
-import { conexionPruebas } from './fixtures.mjs';
+import { conexionPruebas, buzonPruebas } from './fixtures.mjs';
 
 const password = '  Clave ficticia PostgreSQL 2026  ';
 const fechaInicial = '2026-10-13T15:12:34.123Z';
@@ -35,7 +35,8 @@ async function entorno(t, opciones = {}) {
   const app = express();
   app.disable('x-powered-by');
   app.use(express.json({ limit: '32kb' }));
-  configurarAutenticacionPostgres(app, pool, secreto, reloj);
+  const buzon = buzonPruebas();
+  configurarAutenticacionPostgres(app, pool, secreto, reloj, buzon.correo);
   // Ruta artificial de prueba: comprueba res.locals sin montar pacientes ni agenda.
   app.get('/api/verificacion', (_req, res) => res.json({ usuarioId: res.locals['usuarioId'] }));
   app.use((_req, res) => res.status(404).json({ mensaje: 'Recurso no encontrado' }));
@@ -73,6 +74,7 @@ async function entorno(t, opciones = {}) {
   async function registrar(sufijo = 'a') {
     const resultado = await api('/auth/registro', { metodo: 'POST', datos: { email: email(sufijo), password, repetirPassword: password } });
     assert.equal(resultado.estado, 201);
+    assert.equal((await api('/auth/confirmar-email', { metodo: 'POST', datos: { token: buzon.token(email(sufijo)) } })).estado, 200);
     return resultado.cuerpo.usuario;
   }
   async function login(sufijo = 'a') {
@@ -82,7 +84,7 @@ async function entorno(t, opciones = {}) {
   }
   async function tokenFirmado(id, cambios = {}, omitir = [], alg = 'HS256', clave = secreto) {
     const iat = Math.floor(reloj().getTime() / 1000);
-    const payload = { sub: String(id), iss: 'psique', aud: 'psique-app', iat, exp: iat + 3600, ...cambios };
+    const payload = { sub: String(id), iss: 'psique', aud: 'psique-app', iat, exp: iat + 3600, versionCredenciales: 0, ...cambios };
     for (const claim of omitir) delete payload[claim];
     return new SignJWT(payload).setProtectedHeader({ alg, typ: 'JWT' }).sign(new TextEncoder().encode(clave));
   }
@@ -95,7 +97,8 @@ test('registro PostgreSQL conserva JSON, normaliza email y guarda Argon2id con s
   const resultado = await e.api('/auth/registro', { metodo: 'POST', datos: { email: '  ' + e.email().toUpperCase() + '  ', password, repetirPassword: password } });
   assert.equal(resultado.estado, 201);
   const usuario = resultado.cuerpo.usuario;
-  assert.deepEqual(Object.keys(resultado.cuerpo), ['usuario']);
+  assert.deepEqual(Object.keys(resultado.cuerpo).sort(), ['correoEnviado', 'usuario']);
+  assert.equal(resultado.cuerpo.correoEnviado, true);
   assert.deepEqual(Object.keys(usuario).sort(), ['email', 'fechaCreacion', 'id']);
   assert.equal(typeof usuario.id, 'number');
   assert.equal(usuario.email, e.email()); assert.equal(usuario.fechaCreacion, fechaInicial);
@@ -157,7 +160,7 @@ test('login PostgreSQL conserva JWT HS256, claims, duración e información púb
     algorithms: ['HS256'], issuer: 'psique', audience: 'psique-app', currentDate: new Date(fechaInicial),
   });
   assert.deepEqual(protectedHeader, { alg: 'HS256', typ: 'JWT' });
-  assert.deepEqual(Object.keys(payload).sort(), ['aud', 'exp', 'iat', 'iss', 'sub']);
+  assert.deepEqual(Object.keys(payload).sort(), ['aud', 'exp', 'iat', 'iss', 'sub', 'versionCredenciales']);
   assert.equal(payload.sub, String(usuario.id)); assert.equal(payload.exp - payload.iat, 3600);
   assert.deepEqual(await e.api('/verificacion', { token: sesion.token }), { estado: 200, cuerpo: { usuarioId: usuario.id } });
 });
@@ -193,7 +196,7 @@ test('middleware rechaza firma alterada, otra clave, algoritmo, emisor o audienc
 
 test('middleware rechaza JWT vencidos y todos los claims requeridos ausentes', async t => {
   const e = await entorno(t); const usuario = await e.registrar();
-  for (const claim of ['sub', 'iat', 'exp', 'iss', 'aud']) {
+  for (const claim of ['sub', 'iat', 'exp', 'iss', 'aud', 'versionCredenciales']) {
     const token = await e.tokenFirmado(usuario.id, {}, [claim]);
     assert.equal((await e.api('/verificacion', { token })).estado, 401);
   }

@@ -18,14 +18,19 @@ export interface UsuarioPublico {
 
 export interface UsuarioAutenticable extends UsuarioPublico {
   passwordHash: string;
+  emailConfirmado?: boolean;
+  versionCredenciales?: number;
 }
 
-// Solo estas tres consultas cambian de motor; validaciones, hashing y JWT se comparten.
+// SQLite conserva su adaptador histórico. PostgreSQL agrega confirmación y
+// revocación sin duplicar la validación de credenciales, Argon2id ni firma JWT.
 export interface AlmacenUsuarios {
   buscarPorEmail(email: string): UsuarioAutenticable | undefined | Promise<UsuarioAutenticable | undefined>;
   crearUsuario(email: string, passwordHash: string, fechaCreacion: string): UsuarioPublico | Promise<UsuarioPublico>;
-  existeUsuario(id: number): boolean | Promise<boolean>;
+  existeUsuario(id: number, version?: unknown): boolean | Promise<boolean>;
   esEmailDuplicado(error: unknown): boolean;
+  comprobarRegistro?(): void;
+  enviarConfirmacion?(email: string): Promise<boolean>;
 }
 
 interface Credenciales {
@@ -105,6 +110,7 @@ export function configurarAutenticacionConAlmacen(
       res.status(400).json(datos);
       return;
     }
+    usuarios.comprobarRegistro?.();
     if (await usuarios.buscarPorEmail(datos.email)) {
       res.status(409).json({ mensaje: 'Ya existe una cuenta con ese email.' });
       return;
@@ -115,7 +121,8 @@ export function configurarAutenticacionConAlmacen(
     const fechaCreacion = reloj().toISOString();
     try {
       const usuario = await usuarios.crearUsuario(datos.email, passwordHash, fechaCreacion);
-      res.status(201).json({ usuario });
+      const correoEnviado = usuarios.enviarConfirmacion ? await usuarios.enviarConfirmacion(usuario.email) : undefined;
+      res.status(201).json({ usuario, ...(correoEnviado !== undefined ? { correoEnviado } : {}) });
     } catch (error) {
       // La restricción UNIQUE también cubre dos registros simultáneos del mismo email.
       if (usuarios.esEmailDuplicado(error)) {
@@ -143,8 +150,12 @@ export function configurarAutenticacionConAlmacen(
       res.status(401).json({ mensaje: CREDENCIALES_INCORRECTAS });
       return;
     }
+    if (almacenado.emailConfirmado === false) {
+      res.status(403).json({ mensaje: 'Confirmá tu email antes de iniciar sesión. Podés solicitar otro correo desde Reenviar confirmación.', codigo: 'EMAIL_NO_CONFIRMADO' });
+      return;
+    }
     const emitido = Math.floor(reloj().getTime() / 1000);
-    const token = await new SignJWT({})
+    const token = await new SignJWT(almacenado.versionCredenciales === undefined ? {} : { versionCredenciales: almacenado.versionCredenciales })
       .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
       .setSubject(String(almacenado.id))
       .setIssuer(EMISOR)
@@ -162,6 +173,7 @@ export function configurarAutenticacionConAlmacen(
     const encabezado = req.get('Authorization');
     const token = encabezado?.match(/^Bearer ([^\s]+)$/i)?.[1];
     let usuarioId: number;
+    let versionCredenciales: unknown;
     try {
       if (!token) throw new Error('Sin token');
       const { payload } = await jwtVerify(token, clave, {
@@ -171,13 +183,14 @@ export function configurarAutenticacionConAlmacen(
       });
       if (!payload.sub || !/^[1-9]\d*$/.test(payload.sub)) throw new Error('Identidad inválida');
       usuarioId = Number(payload.sub);
+      versionCredenciales = payload['versionCredenciales'];
       if (!Number.isSafeInteger(usuarioId)) throw new Error('Identidad inválida');
     } catch {
       res.status(401).json({ mensaje: 'Iniciá sesión para acceder a PSIQUE.' });
       return;
     }
     // La consulta queda fuera del catch de JWT: una caída de la base no es un token inválido.
-    if (!await usuarios.existeUsuario(usuarioId)) {
+    if (!await usuarios.existeUsuario(usuarioId, versionCredenciales)) {
       res.status(401).json({ mensaje: 'Iniciá sesión para acceder a PSIQUE.' });
       return;
     }

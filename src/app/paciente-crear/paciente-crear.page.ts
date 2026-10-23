@@ -11,7 +11,7 @@ import { NuevoPaciente, Paciente } from '../models/paciente';
 import { ReservaSesion } from '../models/sesion';
 import { PacientesService } from '../services/pacientes.service';
 import { SesionesService } from '../services/sesiones.service';
-import { ahoraConsultorio, yaTranscurrio } from '../shared/tiempo';
+import { nombreDia, yaTranscurrio } from '../shared/tiempo';
 
 @Component({
   selector: 'app-paciente-crear',
@@ -29,6 +29,8 @@ export class PacienteCrearPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly salida = new Subject<void>();
   private visible = false;
+  private seleccionandoHorario = false;
+  desdeAgendamiento = false;
 
   readonly iconoVolver = arrowBackOutline;
   readonly dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
@@ -47,10 +49,9 @@ export class PacienteCrearPage {
     modalidad: this.formularios.control<Paciente['modalidad']>('Presencial', Validators.required),
     estado: ['Activo', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(40)]],
     proximaSesion: ['', Validators.maxLength(30)],
-    frecuencia: ['Semanal', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(40)]],
+    frecuencia: ['A confirmar', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(40)]],
     diaHabitual: [''],
     horarioHabitual: [''],
-    fechaInicioTratamiento: ['', Validators.required],
     motivoConsulta: ['', Validators.maxLength(3000)],
     postIt: ['', Validators.maxLength(300)],
   });
@@ -59,20 +60,24 @@ export class PacienteCrearPage {
     this.visible = true;
     if (this.guardando) return;
     this.salida.next();
+    const conservarBorrador = this.seleccionandoHorario;
+    this.seleccionandoHorario = false;
     this.turno = null;
     this.errorContexto = '';
     this.errorGuardado = '';
     this.avisoCodigo = '';
-    // Ionic puede reutilizar la pantalla: el alta independiente vuelve a permitir editar la hora.
-    this.formulario.controls.horarioHabitual.enable({ emitEvent: false });
-    this.formulario.reset({
+    // Al volver del selector conservamos todos los datos que ya se habían escrito.
+    if (!conservarBorrador) this.formulario.reset({
       codigo: '', modalidad: 'Presencial', estado: 'Activo', proximaSesion: '',
-      frecuencia: 'Semanal', diaHabitual: '', horarioHabitual: '',
-      fechaInicioTratamiento: ahoraConsultorio().fecha, motivoConsulta: '', postIt: '',
+      frecuencia: 'A confirmar', diaHabitual: '', horarioHabitual: '',
+      motivoConsulta: '', postIt: '',
     });
+    this.formulario.controls.diaHabitual.disable({ emitEvent: false });
+    this.formulario.controls.horarioHabitual.disable({ emitEvent: false });
 
     const parametros = this.route.snapshot.queryParamMap;
     this.contextoSolicitado = ['fecha', 'horario', 'modalidad', 'importeCentavos'].some((campo) => parametros.has(campo));
+    if (!conservarBorrador) this.desdeAgendamiento = this.contextoSolicitado;
     this.cargandoContexto = false;
     if (this.contextoSolicitado) {
       const fecha = parametros.get('fecha') ?? '';
@@ -80,32 +85,31 @@ export class PacienteCrearPage {
       const modalidad = parametros.get('modalidad');
       const importeTexto = parametros.get('importeCentavos') ?? '';
       const importeCentavos = Number(importeTexto);
+      const duracionMinutos = Number(parametros.get('duracionMinutos'));
       if (!this.fechaValida(fecha) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(horario)
         || (modalidad !== 'Presencial' && modalidad !== 'Virtual')
+        || ![30, 40, 50, 60].includes(duracionMinutos)
         || !/^\d+$/.test(importeTexto) || !Number.isSafeInteger(importeCentavos) || importeCentavos > 999999999) {
         this.errorContexto = 'El horario recibido está incompleto o no es válido. Volvé a elegir un horario antes de crear el paciente.';
       } else {
-        this.turno = { fecha, horario, modalidad, importeCentavos };
-        this.formulario.controls.modalidad.setValue(modalidad);
+        this.turno = { fecha, horario, modalidad, importeCentavos, duracionMinutos };
+        if (!conservarBorrador) this.formulario.controls.modalidad.setValue(modalidad);
         // El turno elegido fija el horario habitual. getRawValue() lo incluye al guardar aunque esté deshabilitado.
         this.formulario.controls.horarioHabitual.setValue(horario);
-        this.formulario.controls.horarioHabitual.disable({ emitEvent: false });
+        this.formulario.controls.diaHabitual.setValue(nombreDia(fecha));
         if (yaTranscurrio(fecha, horario)) {
           this.errorContexto = 'Este horario ya pasó. Volvé al agendamiento para elegir uno futuro.';
         } else {
           this.cargandoContexto = true;
-          this.sesionesService.horario(fecha, horario).pipe(
-            takeUntil(this.salida), takeUntilDestroyed(this.destroyRef),
-            finalize(() => { this.cargandoContexto = false; }),
-          ).subscribe({
-            next: (consultado) => {
-              if (consultado.estado === 'Programado') {
-                this.errorContexto = 'Este horario ya está ocupado. Volvé al agendamiento para elegir otro. No se creó ningún paciente.';
-              }
-            },
-            error: (error: HttpErrorResponse) => {
-              this.errorContexto = this.mensajeError(error, 'No se pudo comprobar el horario. Volvé al agendamiento para intentarlo otra vez.');
-            },
+          this.sesionesService.calendario().pipe(takeUntil(this.salida), takeUntilDestroyed(this.destroyRef),
+            finalize(() => { this.cargandoContexto = false; })).subscribe({
+            next: calendario => {
+              const dia = calendario.dias.find(d => d.fecha === fecha);
+              const inicio = Number(horario.slice(0, 2)) * 60 + Number(horario.slice(3));
+              const libre = dia?.habilitado && dia.libres.some(f => horario >= f.desde
+                && inicio + duracionMinutos <= Number(f.hasta.slice(0, 2)) * 60 + Number(f.hasta.slice(3)));
+              if (!libre) this.errorContexto = 'El intervalo ya no está disponible. Elegí otro horario antes de guardar.';
+            }, error: () => { this.errorContexto = 'No se pudo comprobar la disponibilidad. Volvé a elegir el horario.'; },
           });
         }
       }
@@ -117,7 +121,7 @@ export class PacienteCrearPage {
       finalize(() => { this.cargandoCodigo = false; }),
     ).subscribe({
       next: ({ codigo }) => {
-        if (!this.formulario.controls.codigo.dirty && !this.guardando) {
+        if (!this.formulario.controls.codigo.dirty && !this.formulario.controls.codigo.value && !this.guardando) {
           this.formulario.controls.codigo.setValue(codigo);
         }
       },
@@ -133,6 +137,15 @@ export class PacienteCrearPage {
   campoInvalido(campo: keyof typeof this.formulario.controls): boolean {
     const control = this.formulario.controls[campo];
     return control.invalid && (control.touched || control.dirty);
+  }
+
+  asignarHorario(): void {
+    if (this.guardando) return;
+    this.seleccionandoHorario = true;
+    void this.navegacion.navigateForward('/agenda/horarios-disponibles/crear', { queryParams: {
+      modalidad: this.formulario.controls.modalidad.value,
+      importeCentavos: this.turno?.importeCentavos ?? 0, duracionMinutos: this.turno?.duracionMinutos ?? 0,
+    } });
   }
 
   guardar(): void {
@@ -174,9 +187,9 @@ export class PacienteCrearPage {
 
   cancelar(): void {
     if (this.guardando) return;
-    if (this.turno) {
+    if (this.turno && this.desdeAgendamiento) {
       void this.navegacion.navigateBack('/agenda/agendar', { queryParams: { ...this.turno } });
-    } else if (this.contextoSolicitado) {
+    } else if (this.desdeAgendamiento) {
       void this.navegacion.navigateBack('/inicio');
     } else {
       void this.navegacion.navigateBack('/pacientes');

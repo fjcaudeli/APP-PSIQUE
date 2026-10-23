@@ -125,6 +125,7 @@ h1 {
 }
 
 .crear-paciente ion-icon { font-size: 20px; }
+.cambiar-listado { display: block; width: fit-content; min-height: 44px; margin-top: 12px; padding-block: 10px; color: #284b41; }
 .crear-paciente:focus-visible { outline: 3px solid #945f46; outline-offset: 4px; }
 
 .paciente {
@@ -212,6 +213,12 @@ h2 {
   color: var(--texto-secundario);
   font-size: 12px;
   line-height: 1.5;
+}
+
+.proxima-sesion.sin-sesion {
+  color: var(--texto-secundario);
+  font-weight: 400;
+  letter-spacing: normal;
 }
 
 // El lector de pantalla recibe el contexto del horario sin agregar texto visible.

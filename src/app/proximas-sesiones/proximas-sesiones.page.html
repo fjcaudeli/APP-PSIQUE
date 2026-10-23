@@ -1,0 +1,21 @@
+<ion-content><div class="pagina">
+  <header class="encabezado"><div class="marca"><span class="marca-simbolo" aria-hidden="true">Ψ</span><div><p class="marca-nombre">PSIQUE</p><p class="marca-descripcion">Seguimiento psicoterapéutico</p></div></div></header>
+  <main><nav class="navegacion"><a routerLink="/inicio">← Inicio</a></nav><section class="presentacion"><p class="etiqueta">Próximas sesiones</p><h1>Pendientes de agendar</h1><p class="introduccion">Pacientes activos sin una sesión futura o en curso. Cada próxima fecha se confirma manualmente.</p></section>
+    @if (cargando) { <p role="status">Consultando pacientes...</p> }
+    @else if (error) { <p role="alert" class="error">{{ error }}</p><button type="button" class="boton" (click)="cargar()">Reintentar</button> }
+    @else {
+      @for (item of pendientes; track item.paciente.codigo) {
+        <article class="tarjeta"><h2><a [routerLink]="['/pacientes', item.paciente.codigo]" routerDirection="forward">{{ item.paciente.codigo }}</a></h2>
+          @if (item.ultimaSesion) { <p>Última sesión: {{ item.ultimaSesion.fecha | date: 'dd/MM/yyyy' }} · {{ item.ultimaSesion.horario }}–{{ item.ultimaSesion.horarioFin }} · {{ item.ultimaSesion.duracionMinutos }} min.</p> }
+          @else { <p>Primera sesión pendiente de agendar.</p> }
+          <div class="acciones">
+            @if (item.ultimaSesion) { <button type="button" class="boton" (click)="agendar(item.paciente, item.ultimaSesion, true)">Mantener horario la próxima semana</button> }
+            <button type="button" class="boton boton-secundario" (click)="agendar(item.paciente, item.ultimaSesion)">Elegir fecha</button>
+            <button type="button" class="boton boton-secundario" [disabled]="suspendiendo" (click)="confirmarSuspension = item.paciente.codigo; errorEstado = ''">Dejar sin próxima fecha / marcar como no pendiente</button>
+          </div>
+          @if (confirmarSuspension === item.paciente.codigo) { <div class="confirmacion" role="region" aria-label="Confirmar suspensión"><p>El paciente pasará a <strong>Suspendido</strong>, dejará de estar pendiente de agendar y aparecerá en Pacientes no activos. Podés reactivarlo desde su ficha.</p>@if (errorEstado) { <p role="alert" class="error">{{ errorEstado }}</p> }<div class="acciones"><button type="button" class="boton" [disabled]="suspendiendo" (click)="suspender(item.paciente.codigo)">{{ suspendiendo ? 'Guardando...' : 'Suspender paciente' }}</button><button type="button" class="boton boton-secundario" [disabled]="suspendiendo" (click)="confirmarSuspension = ''">Cancelar</button></div></div> }
+        </article>
+      } @empty { <section class="tarjeta"><p>No hay pacientes pendientes de agendamiento.</p></section> }
+      <a routerLink="/pacientes/estado/no-activos">Ver pacientes no activos</a>
+    }
+  </main></div></ion-content>

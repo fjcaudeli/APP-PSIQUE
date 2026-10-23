@@ -2,7 +2,7 @@
   <div class="pagina">
     <header class="encabezado"><div class="marca"><span class="marca-simbolo" aria-hidden="true">Ψ</span><div><p class="marca-nombre">PSIQUE</p><p class="marca-descripcion">Seguimiento psicoterapéutico</p></div></div></header>
     <main>
-      <nav class="navegacion" aria-label="Volver"><ion-back-button defaultHref="/agenda" text="Volver" [icon]="iconoVolver"></ion-back-button></nav>
+      <nav class="navegacion" aria-label="Volver"><ion-back-button [defaultHref]="desdeNotas ? '/notas' : '/agenda'" text="Volver" [icon]="iconoVolver"></ion-back-button></nav>
       <section class="presentacion"><p class="etiqueta">Registro del consultorio</p><h1>{{ editando ? 'Editar sesión' : 'Detalle de sesión' }}</h1></section>
       @if (cargando) { <p role="status">Cargando sesión...</p> }
       @else if (errorCarga) { <p role="alert" class="error">{{ errorCarga }}</p><button class="boton" (click)="cargar()">Reintentar</button> }
@@ -11,6 +11,13 @@
         @if (errorGuardado) { <p class="error" role="alert">{{ errorGuardado }}</p> }
         @if (editando) {
           <form [formGroup]="formulario" (ngSubmit)="guardar()" aria-label="Editar datos de la sesión">
+            @if (cargandoNota || errorNota || puedeEditarNota) {
+              <section class="tarjeta tarjeta-nota" aria-labelledby="titulo-nota-edicion"><h2 id="titulo-nota-edicion">Nota para la próxima sesión</h2>
+                @if (cargandoNota) { <p role="status">Cargando Nota...</p> }
+                @else if (errorNota) { <p class="error" role="alert">{{ errorNota }}</p><button class="boton boton-secundario" type="button" (click)="cargarNota()">Reintentar</button> }
+                @else { <label for="nota-sesion">Nota (opcional)</label><textarea id="nota-sesion" formControlName="postIt" rows="3" maxlength="300" [readonly]="guardando" [attr.aria-invalid]="campoInvalido('postIt')" aria-describedby="ayuda-nota-sesion"></textarea><p id="ayuda-nota-sesion" class="ayuda">{{ formulario.controls.postIt.value.length }}/300 caracteres. Evitá nombres reales y datos sensibles. Se comparte con la Nota de la ficha.</p> }
+              </section>
+            }
             <section class="tarjeta">
               <h2>Datos de la sesión</h2>
               @if (cargandoPacientes) { <p role="status">Cargando pacientes...</p> }
@@ -23,10 +30,11 @@
                 <div class="campos">
                   <div class="campo campo-completo">
                     <label for="codigoPaciente">Paciente</label>
-                    <select id="codigoPaciente" formControlName="codigoPaciente" [attr.aria-invalid]="campoInvalido('codigoPaciente')" [attr.aria-describedby]="campoInvalido('codigoPaciente') ? 'error-paciente' : null">
+                    <select id="codigoPaciente" formControlName="codigoPaciente" [attr.aria-invalid]="campoInvalido('codigoPaciente')" [attr.aria-describedby]="campoInvalido('codigoPaciente') ? 'error-paciente' : pacienteBloqueado ? 'ayuda-paciente' : null">
                       <option value="" disabled>Seleccioná un paciente</option>
                       @for (paciente of pacientes; track paciente.codigo) { <option [value]="paciente.codigo">{{ paciente.codigo }}</option> }
                     </select>
+                    @if (pacienteBloqueado) { <p class="ayuda" id="ayuda-paciente">El paciente no se puede cambiar porque el horario de esta sesión ya pasó.</p> }
                     @if (campoInvalido('codigoPaciente')) { <p class="error error-campo" id="error-paciente">Seleccioná un paciente.</p> }
                   </div>
                   <div class="campo">
@@ -39,6 +47,9 @@
                     <input id="horario" type="time" formControlName="horario" [attr.aria-invalid]="campoInvalido('horario')" [attr.aria-describedby]="campoInvalido('horario') ? 'ayuda-horario error-horario' : 'ayuda-horario'" />
                     @if (campoInvalido('horario')) { <p class="error error-campo" id="error-horario">Ingresá un horario válido.</p> }
                   </div>
+                  <div class="campo"><label for="duracion">Duración</label><select id="duracion" formControlName="duracionMinutos"><option [ngValue]="30">30 minutos</option><option [ngValue]="40">40 minutos</option><option [ngValue]="50">50 minutos</option><option [ngValue]="60">60 minutos</option></select></div>
+                  @if (!yaTranscurrio(sesion.fecha, sesion.horario) && sesion.estado !== 'Cancelada') { <div class="campo"><button type="button" class="boton boton-secundario" (click)="elegirHorario()">Elegir fecha y horario en calendario</button></div> }
+                  @if (errorReserva) { <p class="error campo-completo" role="alert">{{ errorReserva }}</p> }
                   <p class="ayuda campo-completo ayuda-reprogramacion" id="ayuda-horario">Al cambiar la fecha o el horario, se libera el anterior. El nuevo horario debe estar libre.</p>
                   <div class="campo">
                     <label for="modalidad">Modalidad</label>
@@ -47,7 +58,7 @@
                   </div>
                   <div class="campo">
                     <label for="estado">Estado</label>
-                    <select id="estado" formControlName="estado" [attr.aria-invalid]="campoInvalido('estado') || realizadaEnFuturo" aria-describedby="ayuda-estado"><option value="Programada">Programada</option><option value="Realizada">Realizada</option></select>
+                    <select id="estado" formControlName="estado" [attr.aria-invalid]="campoInvalido('estado') || realizadaEnFuturo" aria-describedby="ayuda-estado"><option value="Programada">Programada</option><option value="Realizada">Realizada</option>@if (sesion.estado === 'Cancelada') { <option value="Cancelada">Cancelada</option> }</select>
                     <p id="ayuda-estado" [class]="realizadaEnFuturo ? 'error error-campo' : 'ayuda'">{{ realizadaEnFuturo ? 'Una sesión futura debe permanecer programada hasta que pase su horario.' : 'Marcá Realizada cuando confirmes que la sesión se llevó a cabo.' }}</p>
                     @if (campoInvalido('estado')) { <p class="error error-campo">Seleccioná un estado.</p> }
                   </div>
@@ -88,7 +99,7 @@
               </fieldset>
             </section>
             <div class="acciones acciones-edicion" [attr.aria-busy]="guardando">
-              <button type="submit" class="boton" [disabled]="guardando || cargandoPacientes || !!errorPacientes">{{ guardando ? 'Guardando...' : 'Guardar cambios' }}</button>
+              <button type="submit" class="boton" [disabled]="guardando || cargandoPacientes || cargandoNota || !!errorPacientes || !!errorReserva">{{ guardando ? 'Guardando...' : 'Guardar cambios' }}</button>
               <button type="button" class="boton boton-secundario" [disabled]="guardando" (click)="cancelarEdicion()">Cancelar</button>
             </div>
           </form>
@@ -98,9 +109,11 @@
             <div><dt>Paciente</dt><dd><a [routerLink]="['/pacientes', sesion.codigoPaciente]" routerDirection="forward">{{ sesion.codigoPaciente }}</a></dd></div>
             <div><dt>Estado</dt><dd><span class="estado">{{ sesion.estado }}</span></dd></div>
             <div><dt>Fecha</dt><dd>{{ sesion.fecha | date:'dd/MM/yyyy' }}</dd></div>
-            <div><dt>Horario</dt><dd>{{ sesion.horario }} hs</dd></div>
+            <div><dt>Horario</dt><dd>{{ sesion.horario }}–{{ sesion.horarioFin }} hs · {{ sesion.duracionMinutos }} minutos</dd></div>
             <div><dt>Modalidad</dt><dd>{{ sesion.modalidad }}</dd></div>
           </dl>
+          @if (sesion.estado === 'Programada' && !puedeRealizar) { <div class="acciones"><button type="button" class="boton boton-secundario" [disabled]="guardando" (click)="confirmandoCancelacion = true">Desagendar sesión</button></div> }
+          @if (confirmandoCancelacion) { <p>Se conservarán la sesión y los cobros registrados. El horario quedará libre.</p><div class="acciones"><button type="button" class="boton" [disabled]="guardando" (click)="desagendar()">Confirmar desagendamiento</button><button type="button" class="boton boton-secundario" (click)="confirmandoCancelacion = false">Volver</button></div> }
           @if (sesion.estado === 'Programada') {
             <div class="acciones"><button class="boton" type="button" [disabled]="guardando || !puedeRealizar" (click)="realizar()">Marcar como realizada</button></div>
             <p class="ayuda">{{ puedeRealizar ? 'Confirmá que la sesión se realizó para incluirla en el histórico y, si tiene saldo, en pendientes de cobro.' : 'Podrás confirmar que se realizó cuando haya pasado su horario.' }}</p>

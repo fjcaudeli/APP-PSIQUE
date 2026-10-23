@@ -1,0 +1,28 @@
+<ion-content><main class="pagina pagina-acceso">
+  <header class="marca"><span class="marca-simbolo" aria-hidden="true">Ψ</span><div><p class="marca-nombre">PSIQUE</p><p class="marca-descripcion">Seguimiento psicoterapéutico</p></div></header>
+  <section class="presentacion" aria-labelledby="titulo-enlace"><p class="etiqueta">Tu espacio profesional</p><h1 id="titulo-enlace">{{ confirmacion ? 'Confirmar email' : 'Nueva contraseña' }}</h1>
+    <p class="introduccion">{{ confirmacion ? 'Confirmá tu dirección para habilitar el acceso a PSIQUE.' : 'Elegí una nueva contraseña para tu cuenta.' }}</p>
+  </section>
+  @if (!enlaceValido) {
+    <p class="error" role="alert">El enlace no es válido o está incompleto. Solicitá uno nuevo.</p>
+  } @else if (completado) {
+    <p class="confirmacion" role="status">{{ mensaje }}</p>
+  } @else {
+    <form class="tarjeta" [formGroup]="formulario" (ngSubmit)="enviar()" novalidate aria-labelledby="titulo-enlace">
+      @if (!confirmacion) {
+        <fieldset [disabled]="cargando"><div class="campos">
+          <div class="campo"><label for="nueva-password">Nueva contraseña</label><input id="nueva-password" type="password" formControlName="password" autocomplete="new-password" required maxlength="128" aria-describedby="password-ayuda"><p id="password-ayuda" class="ayuda">Entre 12 y 128 caracteres. Podés usar una frase larga.</p>
+            @if (formulario.controls.password.touched && formulario.controls.password.invalid) { <p class="error-campo">La contraseña debe tener entre 12 y 128 caracteres.</p> }
+          </div>
+          <div class="campo"><label for="nueva-repetir">Repetir contraseña</label><input id="nueva-repetir" type="password" formControlName="repetirPassword" autocomplete="new-password" required maxlength="128">
+            @if (formulario.controls.repetirPassword.touched && (formulario.controls.repetirPassword.invalid || formulario.hasError('passwordsDistintos'))) { <p class="error-campo">Repetí la misma contraseña.</p> }
+          </div>
+        </div></fieldset>
+      }
+      @if (error) { <p class="error" role="alert">{{ error }}</p> }
+      <button class="boton boton-acceso" type="submit" [disabled]="cargando">{{ cargando ? 'Procesando...' : confirmacion ? 'Confirmar mi email' : 'Guardar contraseña' }}</button>
+    </form>
+  }
+  @if (!completado) { <p class="alternativa"><a [routerLink]="confirmacion ? '/reenviar-confirmacion' : '/recuperar-contrasenia'">Solicitar otro enlace</a></p> }
+  <p class="alternativa"><a routerLink="/login">Volver a Iniciar sesión</a></p>
+</main></ion-content>

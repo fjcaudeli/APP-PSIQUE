@@ -49,7 +49,8 @@ for (const produccion of [false, true]) {
       const anterior = globalThis.window; globalThis.window = { location: { origin: 'https://frontend.example.test' } };
       try {
         for (const [url, esperado] of [[api + '/pacientes', true], [api + '/sesiones/1', true], [api + '/auth/login', false],
-          [api + '/auth/registro', false], ['https://otro.example.test/api/pacientes', false],
+          [api + '/auth/registro', false], [api + '/auth/recuperar', false], [api + '/auth/reenviar-confirmacion', false],
+          [api + '/auth/confirmar-email', false], [api + '/auth/restablecer', false], ['https://otro.example.test/api/pacientes', false],
           [api.replace('/api', '/api-extra') + '/pacientes', false], [api.replace('://', '://usuario:clave@') + '/auth/login', false],
           ['https://api.example.test.ajeno.test/api/pacientes', false], ['/assets/imagen.svg', false]]) {
           let recibido;

@@ -11,10 +11,11 @@ export interface Paciente {
   horarioHabitual: string | null;
   // Usamos fechas ISO para conservar el dato separado de su presentación dd/MM/yyyy.
   fechaCreacion: string;
-  fechaInicioTratamiento: string;
+  fechaInicioTratamiento: string | null;
   motivoConsulta: string;
   postIt: string;
 }
 
-// La fecha de creación la asigna el servidor. Un código vacío solicita uno automático.
-export type NuevoPaciente = Omit<Paciente, 'fechaCreacion' | 'codigo'> & { codigo?: string };
+// El servidor asigna creación e inicio (este último, al confirmar la primera sesión).
+// Un código vacío solicita uno automático.
+export type NuevoPaciente = Omit<Paciente, 'fechaCreacion' | 'fechaInicioTratamiento' | 'codigo'> & { codigo?: string };

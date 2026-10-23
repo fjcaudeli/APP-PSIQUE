@@ -9,11 +9,18 @@ export interface Sesion {
   importeCentavos: number;
   pagadoCentavos: number;
   pendienteCentavos: number;
-  estado: 'Programada' | 'Realizada';
+  estado: 'Programada' | 'Realizada' | 'Cancelada';
+  duracionMinutos: number;
+  horarioFin: string;
   resumen: string;
 }
 
-export type EdicionSesion = Omit<Sesion, 'id' | 'pendienteCentavos'>;
+export type EdicionSesion = Omit<Sesion, 'id' | 'pendienteCentavos' | 'horarioFin'> & { postIt?: string };
+
+export interface SesionAgendada extends Sesion {
+  esProxima: boolean;
+  postIt: string | null;
+}
 
 export interface HistorialSemanal {
   desde: string;
@@ -47,4 +54,21 @@ export interface ReservaSesion {
   horario: string;
   modalidad: Paciente['modalidad'];
   importeCentavos: number;
+  duracionMinutos: number;
+  postIt?: string;
+}
+
+export interface DiaCalendario {
+  fecha: string;
+  nombre: string;
+  habilitado: boolean;
+  libres: { desde: string; hasta: string }[];
+  ocupadas: (Pick<Sesion, 'id' | 'codigoPaciente' | 'horario' | 'horarioFin' | 'duracionMinutos' | 'estado'> & { esProxima: boolean })[];
+}
+
+export interface CalendarioAgenda {
+  desde: string;
+  hasta: string;
+  ahora: string;
+  dias: DiaCalendario[];
 }

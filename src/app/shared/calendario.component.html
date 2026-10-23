@@ -1,0 +1,41 @@
+<section class="calendario" aria-label="Calendario semanal">
+  <nav class="navegador-semana" aria-label="Navegar semanas">
+    <button type="button" (click)="moverSemana(-7)" [disabled]="cargando">← Anterior</button>
+    <div class="periodo"><strong>{{ lunes | date: 'dd/MM/yyyy' }} – {{ domingo | date: 'dd/MM/yyyy' }}</strong><button type="button" (click)="cambiarSemana.emit(calendario.desde)" [disabled]="cargando">Esta semana</button></div>
+    <button type="button" (click)="moverSemana(7)" [disabled]="cargando || !permiteSiguiente">Siguiente →</button>
+  </nav>
+  @if (cargando) { <p role="status">Consultando semana...</p> }
+  @else if (error) { <p role="alert">{{ error }}</p><button type="button" (click)="cambiarSemana.emit(lunes)">Reintentar</button> }
+  @else {
+    <div class="grilla">
+      @for (dia of dias; track dia.fecha) {
+        <article class="dia-calendario" [class.inhabilitado]="!dia.habilitado" [class.hoy]="dia.fecha === calendario.desde" [attr.aria-label]="dia.nombre + ' ' + dia.fecha">
+          <div class="fecha"><span>{{ dia.nombre }}</span><time [attr.datetime]="dia.fecha">{{ dia.fecha | date: 'dd/MM' }}</time></div>
+          @for (bloque of bloquesDelDia(dia); track bloque.clave) {
+            @if (bloque.tipo === 'sesion') {
+              @let sesion = bloque.sesion;
+              <div class="ocupado"><a [routerLink]="['/sesiones', sesion.id]" routerDirection="forward"><strong>{{ sesion.horario }}–{{ sesion.horarioFin }}</strong><span>{{ sesion.codigoPaciente }}</span></a>
+                @if (sesion.esProxima) { <button class="boton-nota" type="button" [attr.aria-label]="'Nota de próxima sesión de ' + sesion.codigoPaciente" (click)="abrirNota(dia, sesion)">Nota</button> }
+              </div>
+            } @else {
+              <p class="libre"><span>Libre</span>{{ bloque.libre.desde }}–{{ bloque.libre.hasta }}</p>
+            }
+          }
+          @if (dia.habilitado) {
+            @if (dia.libres.length) { <button type="button" (click)="elegirDia.emit(dia.fecha)">Agendar sesión<span class="solo-lectores"> para {{ dia.fecha }}</span></button> }
+            @else { <p class="sin-espacio">Sin intervalos libres de 30 min.</p> }
+          } @else { <p class="sin-espacio">{{ dia.nombre === 'Domingo' ? 'Domingo no habilitado' : dia.fecha < calendario.desde ? 'Fecha pasada' : 'Fuera del plazo de reserva' }}</p> }
+        </article>
+      }
+    </div>
+  }
+</section>
+<ion-modal [isOpen]="!!notaSesion" (didDismiss)="alCerrarNota()" aria-labelledby="titulo-nota-calendario">
+  <ng-template><div class="modal-nota">
+    <header><div><p>Nota de próxima sesión</p><h2 id="titulo-nota-calendario">{{ notaSesion?.codigo }}</h2><p>{{ notaSesion?.fecha | date: 'dd/MM/yyyy' }} · {{ notaSesion?.horario }} hs</p></div><button type="button" aria-label="Cerrar nota" (click)="cerrarNota()">✕</button></header>
+    @if (cargandoNota) { <p role="status">Consultando Nota...</p> }
+    @else if (errorNota) { <p role="alert">{{ errorNota }}</p> }
+    @else { <p class="post-it">{{ nota || 'Sin nota registrada. Podés agregarla desde la ficha del paciente.' }}</p> }
+    <button type="button" (click)="abrirFicha()">Abrir ficha del paciente</button>
+  </div></ng-template>
+</ion-modal>

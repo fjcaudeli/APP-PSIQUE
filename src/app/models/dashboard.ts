@@ -3,5 +3,5 @@ export interface ResumenDashboard {
   pacientesActivos: number;
   sesionesSemana: number;
   pendientesCobro: number;
-  horariosDisponibles: number;
+  pendientesAgendar: number;
 }

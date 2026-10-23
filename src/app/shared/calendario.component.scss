@@ -1,0 +1,34 @@
+.calendario { margin: 24px 0; }
+.navegador-semana { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; margin-bottom: 20px; }
+.navegador-semana button { margin: 0; width: auto; padding-inline: 14px; font-size: 14px; }
+.periodo { display: grid; justify-items: center; gap: 8px; text-align: center; }
+.periodo strong { font-size: 18px; }
+.navegador-semana .periodo button { min-height: 32px; padding: 4px 12px; }
+button:disabled { opacity: .5; cursor: default; }
+h2 { margin: 0 0 18px; font-size: 24px; text-transform: capitalize; }
+.grilla { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.dia-semana { padding: 8px 4px; font-size: 13px; font-weight: 600; text-align: center; }
+.dia-calendario { min-width: 0; min-height: 165px; padding: 12px 8px; border: 1px solid #d8dfd2; border-radius: 14px; background: #fdfdf8; }
+.hoy { border: 2px solid #355b4e; }
+.inhabilitado { min-height: 90px; background: #eeeee8; color: #72766d; }
+.fecha { display: flex; justify-content: space-between; align-items: center; gap: 4px; margin-bottom: 12px; }
+.fecha span { font-size: 10px; overflow: hidden; text-overflow: ellipsis; }
+time { font-size: 21px; font-weight: 600; }
+.ocupado { display: grid; gap: 5px; margin: 7px 0; padding: 8px 5px; border-radius: 8px; background: #e7ede1; color: #284b41; font-size: 11px; text-decoration: none; overflow-wrap: anywhere; }
+.ocupado a { display: grid; gap: 5px; color: inherit; text-decoration: none; }
+.ocupado span { font-size: 12px; }
+.ocupado .boton-nota { justify-self: end; width: auto; min-height: 32px; padding: 4px 12px; margin: 0; background: #fdfdf8; font-size: 12px; }
+.libre { padding: 6px 0; margin: 5px 0; color: #446a4d; font-size: 11px; line-height: 1.5; }
+.libre span { display: block; }
+.sin-espacio { font-size: 11px; line-height: 1.5; }
+button { width: 100%; min-height: 44px; margin-top: 8px; padding: 8px 4px; border: 1px solid #355b4e; border-radius: 9px; color: #284b41; background: transparent; font: inherit; font-size: 11px; cursor: pointer; }
+button:hover { background: #e7ede1; }
+button:focus-visible, a:focus-visible { outline: 3px solid #945f46; outline-offset: 2px; }
+.solo-lectores { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+ion-modal { --width: min(500px, calc(100% - 28px)); --height: auto; --border-radius: 20px; --background: #f7f6f0; --color: #284b41; }
+.modal-nota { padding: 24px; max-height: 80dvh; overflow-y: auto; color: #284b41; }
+.modal-nota header { display: flex; justify-content: space-between; gap: 12px; }
+.modal-nota header p { margin: 0 0 8px; font-size: 14px; }
+.modal-nota header button { align-self: start; width: 40px; margin: 0; flex-shrink: 0; }
+.post-it { padding: 20px; background: #f1eddf; border-radius: 12px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; }
+@media (max-width: 700px) { .grilla { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } .dia-calendario { padding: 14px; } .fecha span, .ocupado, .libre, button, .sin-espacio { font-size: 13px; } .navegador-semana { gap: 8px; } .navegador-semana button { padding: 8px; font-size: 12px; } .periodo strong { font-size: 13px; } time { font-size: 18px; } }

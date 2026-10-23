@@ -1,34 +1,47 @@
 <ion-content>
-  <div class="pagina">
+  <div class="pagina pagina-calendario">
     <header class="encabezado"><div class="marca"><span class="marca-simbolo" aria-hidden="true">Ψ</span><div><p class="marca-nombre">PSIQUE</p><p class="marca-descripcion">Seguimiento psicoterapéutico</p></div></div></header>
     <main>
-      <nav class="navegacion" aria-label="Volver a Agenda"><ion-back-button defaultHref="/agenda" text="Volver" [icon]="iconoVolver"></ion-back-button></nav>
-      <section class="presentacion"><p class="etiqueta">Organizá tu consultorio</p><h1>Agendar sesión</h1><p class="introduccion">Asigná este horario a un paciente.</p></section>
-      @if (cargando) { <p role="status">Cargando horario y pacientes...</p> }
-      @else if (errorCarga) {
-        <div class="tarjeta"><p role="alert" class="error">{{ errorCarga }}</p><div class="acciones"><button class="boton" (click)="cargar()">Reintentar</button><button class="boton boton-secundario" (click)="volver()">Ver Agenda</button></div></div>
-      } @else if (turno) {
-        <section class="tarjeta tarjeta-destacada" aria-label="Horario elegido"><p class="etiqueta">Horario elegido</p><h2>{{ fecha | date:'dd/MM/yyyy' }} · {{ horario }} hs</h2><p class="ayuda">El horario queda reservado al confirmar el agendamiento.</p></section>
-        <form (ngSubmit)="guardar()" [formGroup]="formulario" aria-label="Agendar sesión">
-          <fieldset [disabled]="guardando">
-            <section class="tarjeta"><h2>Datos de la sesión</h2>
-              <div class="campos">
-                <div class="campo campo-completo"><label for="codigoPaciente">Paciente</label>
-                  <select id="codigoPaciente" formControlName="codigoPaciente" (change)="seleccionarPaciente()" [attr.aria-invalid]="formulario.controls.codigoPaciente.invalid && formulario.controls.codigoPaciente.touched"><option value="">Seleccioná un paciente</option>@for (paciente of pacientes; track paciente.codigo) { <option [value]="paciente.codigo">{{ paciente.codigo }} · {{ paciente.estado }}</option> }</select>
-                  @if (formulario.controls.codigoPaciente.invalid && formulario.controls.codigoPaciente.touched) { <p class="error">Seleccioná un paciente para continuar.</p> }
-                  @if (!pacientes.length) { <p class="ayuda">Todavía no hay pacientes. Podés crear el primero desde el botón de abajo.</p> }
+      <nav class="navegacion"><button type="button" class="boton boton-secundario" (click)="volver()">← Volver</button></nav>
+      <section class="presentacion"><p class="etiqueta">Organizá tu consultorio</p><h1>{{ esSelector ? 'Elegir horario de sesión' : 'Agendar próxima sesión' }}</h1><p class="introduccion">De lunes a sábado, entre las 08:00 y las 22:00. Elegí una fecha hasta el último día del mes siguiente.</p></section>
+      @if (cargando) { <p role="status">Cargando calendario...</p> }
+      @else if (errorCarga) { <p class="error" role="alert">{{ errorCarga }}</p><button class="boton" type="button" (click)="cargar()">Reintentar</button> }
+      @else if (calendario) {
+        <form id="datos-reserva" class="tarjeta" [formGroup]="formulario" (ngSubmit)="guardar()" aria-label="Agendar sesión">
+          <h2>{{ formulario.controls.fecha.value | date: 'EEEE dd/MM/yyyy' }}</h2>
+          <fieldset [disabled]="guardando || cargandoPaciente">
+            <div class="campos">
+              @if (!esSelector) {
+                <div class="campo campo-completo buscador-paciente"><label for="paciente-reserva">Paciente activo</label>
+                  <input id="paciente-reserva" type="text" role="combobox" autocomplete="off" [value]="busquedaPaciente" [disabled]="pacienteFijo" [attr.aria-expanded]="resultadosAbiertos" aria-controls="resultados-paciente" aria-autocomplete="list" [attr.aria-activedescendant]="resultadosAbiertos && coincidencias.length ? 'resultado-paciente-' + opcionActiva : null" (input)="buscarPaciente($any($event.target).value)" (focus)="resultadosAbiertos = !pacienteFijo" (keydown)="teclaPaciente($event)" placeholder="Escribí el código del paciente" />
+                  @if (pacienteFijo) { <p class="ayuda">Paciente elegido desde pendientes. Para elegir otro, volvé al listado.</p> }
+                  @else if (resultadosAbiertos) { <ul id="resultados-paciente" class="resultados-paciente" role="listbox" aria-label="Pacientes coincidentes">@for (p of coincidencias; track p.codigo; let i = $index) { <li role="presentation"><button type="button" role="option" [id]="'resultado-paciente-' + i" [attr.aria-selected]="i === opcionActiva" (click)="elegirPaciente(p)">{{ p.codigo }}</button></li> } @empty { <li role="presentation" class="sin-resultados">No hay pacientes activos que coincidan.</li> }</ul> }
                 </div>
-                <div class="campo"><label for="modalidad">Modalidad</label><select id="modalidad" formControlName="modalidad"><option value="Presencial">Presencial</option><option value="Virtual">Virtual</option></select></div>
-                <div class="campo"><label for="importe">Honorarios de la sesión (ARS)</label><input id="importe" formControlName="importe" inputmode="decimal" maxlength="10" [attr.aria-invalid]="formulario.controls.importe.invalid && formulario.controls.importe.touched" aria-describedby="ayuda-importe" /><p id="ayuda-importe" class="ayuda">Importe en pesos, con hasta dos decimales. Podés ajustarlo luego en la sesión.</p>
-                  @if (formulario.controls.importe.invalid && formulario.controls.importe.touched) { <p class="error">Ingresá un importe entre 0 y 9.999.999,99.</p> }
+              } @else if (codigoOriginal) { <p class="campo-completo">Paciente: <strong>{{ codigoOriginal }}</strong></p> }
+              <div class="campo"><label for="hora-reserva">Hora de inicio</label><select id="hora-reserva" formControlName="horario"><option value="">Elegí un horario</option>@if (formulario.controls.horario.value && !opcionesInicio.includes(formulario.controls.horario.value)) { <option [value]="formulario.controls.horario.value">{{ formulario.controls.horario.value }} · revisar disponibilidad</option> }@for (hora of opcionesInicio; track hora) { <option [value]="hora">{{ hora }}</option> }</select></div>
+              <div class="campo"><label for="duracion-reserva">Duración</label><select id="duracion-reserva" formControlName="duracionMinutos"><option [ngValue]="0">Elegí la duración</option><option [ngValue]="30">30 minutos</option><option [ngValue]="40">40 minutos</option><option [ngValue]="50">50 minutos</option><option [ngValue]="60">60 minutos</option></select><p class="ayuda">Se propone la duración de la última sesión; podés cambiarla.</p></div>
+              @if (formulario.controls.horario.value && formulario.controls.duracionMinutos.value) { <p class="campo-completo">Intervalo elegido: <strong>{{ formulario.controls.horario.value }}–{{ horarioFin }}</strong></p> }
+              @if (modo !== 'paciente' && modo !== 'sesion') {
+                <div class="campo"><label for="modalidad-reserva">Modalidad</label><select id="modalidad-reserva" formControlName="modalidad"><option value="Presencial">Presencial</option><option value="Virtual">Virtual</option></select></div>
+                <div class="campo"><label for="importe-reserva">Honorarios de la sesión (ARS)</label><input id="importe-reserva" formControlName="importe" inputmode="decimal" maxlength="10" /><p class="ayuda">Importe en pesos, con hasta dos decimales.</p></div>
+              }
+              @if (!esSelector) {
+                <div class="campo campo-completo"><label for="nota-reserva">Nota para la próxima sesión (opcional)</label>
+                  <textarea id="nota-reserva" formControlName="postIt" rows="3" maxlength="300" [readonly]="!formulario.controls.codigoPaciente.value" aria-describedby="ayuda-nota-reserva" [attr.aria-invalid]="formulario.controls.postIt.invalid && formulario.controls.postIt.touched"></textarea>
+                  <p id="ayuda-nota-reserva" class="ayuda">{{ formulario.controls.postIt.value.length }}/300 caracteres. Evitá nombres reales y datos sensibles. Se comparte con la Nota de la ficha del paciente.</p>
                 </div>
-              </div>
-              <div class="acciones"><button type="button" class="boton boton-secundario" (click)="crearPaciente()">Crear paciente y usar este horario</button></div>
-            </section>
+              }
+            </div>
           </fieldset>
-          @if (errorGuardado) { <p role="alert" class="error">{{ errorGuardado }}</p> }
-          <div class="acciones"><button type="submit" class="boton" [disabled]="guardando || !pacientes.length">{{ guardando ? 'Agendando...' : 'Confirmar sesión' }}</button><button type="button" class="boton boton-secundario" [disabled]="guardando" (click)="volver()">Cancelar</button></div>
+          @if (proximas.length && !esSelector) { <p class="ayuda">Este paciente ya tiene una reserva. Solo podés agregar un segundo bloque consecutivo en esa misma fecha.</p> }
+          @if (errorIntervalo) { <p class="error" role="alert">{{ errorIntervalo }}</p> }
+          @if (errorGuardado) { <p class="error" role="alert">{{ errorGuardado }}</p> }
+          @if (formulario.invalid && formulario.touched) { <p class="error">Completá los datos de la reserva y elegí una duración válida.</p> }
+          <div class="acciones"><button type="submit" class="boton" [disabled]="guardando || cargandoPaciente || formulario.invalid || !!errorIntervalo">{{ guardando ? 'Guardando...' : esSelector ? 'Usar este horario' : 'Confirmar sesión' }}</button>
+          </div>
         </form>
+        <p class="ayuda">Los días pasados y los domingos están deshabilitados. Las franjas libres se calculan con las sesiones ya agendadas.</p>
+        @if (calendarioVisible) { <app-calendario [calendario]="calendarioVisible" [fechaVisible]="semanaVisible" [cargando]="cargandoSemana" [error]="errorSemana" (cambiarSemana)="mostrarSemana($event)" (elegirDia)="elegirDia($event)"></app-calendario> }
       }
     </main>
   </div>

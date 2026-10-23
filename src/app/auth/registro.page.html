@@ -14,6 +14,14 @@
       <p class="introduccion">Un lugar para organizar tus pacientes, tu agenda y tus sesiones.</p>
     </section>
 
+    @if (cuentaCreada) {
+      <section class="tarjeta" aria-label="Confirmar email">
+        <h2>Confirmá tu email</h2>
+        <p class="confirmacion" role="status">Tu cuenta fue creada. Todavía no podés iniciar sesión.</p>
+        <p>{{ correoEnviado ? 'Te enviamos un enlace para confirmar tu dirección. Revisá también la carpeta de spam.' : 'No pudimos enviar el correo de confirmación. Podés solicitar otro envío cuando el servicio esté disponible.' }}</p>
+        <a class="boton boton-acceso" routerLink="/reenviar-confirmacion">Reenviar confirmación</a>
+      </section>
+    } @else {
     <form class="tarjeta" [formGroup]="formulario" (ngSubmit)="registrarse()" novalidate aria-labelledby="titulo-registro">
       <fieldset [disabled]="cargando">
         <div class="campos">
@@ -48,6 +56,7 @@
       @if (error) { <p class="error" role="alert">{{ error }}</p> }
       <button class="boton boton-acceso" type="submit" [disabled]="cargando">{{ cargando ? 'Creando cuenta...' : 'Crear cuenta' }}</button>
     </form>
+    }
     <p class="alternativa">¿Ya tenés una cuenta? <a routerLink="/login">Iniciar sesión</a></p>
   </main>
 </ion-content>

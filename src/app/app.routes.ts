@@ -4,6 +4,14 @@ import { accesoGuard, authGuard } from './auth/auth.guard';
 // Login y Registro son públicos. El contenedor privado mantiene la navegación
 // habitual de Ionic; Angular lo destruye por completo cuando se cierra sesión.
 export const routes: Routes = [
+  { path: 'recuperar-contrasenia', title: 'PSIQUE · Recuperar contraseña', data: { confirmacion: false },
+    loadComponent: () => import('./auth/solicitar-correo.page').then(p => p.SolicitarCorreoPage) },
+  { path: 'reenviar-confirmacion', title: 'PSIQUE · Reenviar confirmación', data: { confirmacion: true },
+    loadComponent: () => import('./auth/solicitar-correo.page').then(p => p.SolicitarCorreoPage) },
+  { path: 'confirmar-email', title: 'PSIQUE · Confirmar email', data: { confirmacion: true },
+    loadComponent: () => import('./auth/enlace-cuenta.page').then(p => p.EnlaceCuentaPage) },
+  { path: 'restablecer-contrasenia', title: 'PSIQUE · Nueva contraseña', data: { confirmacion: false },
+    loadComponent: () => import('./auth/enlace-cuenta.page').then(p => p.EnlaceCuentaPage) },
   {
     path: 'login',
     title: 'PSIQUE · Iniciar sesión',
@@ -33,6 +41,21 @@ export const routes: Routes = [
         loadComponent: () => import('./inicio/inicio.page').then((page) => page.InicioPage),
       },
       {
+        path: 'notas', title: 'PSIQUE · Notas',
+        loadComponent: () => import('./notas/notas.page').then(page => page.NotasPage),
+      },
+      {
+        path: 'pacientes/estado/no-activos',
+        title: 'PSIQUE · Pacientes no activos',
+        data: { noActivos: true },
+        loadComponent: () => import('./pacientes/pacientes.page').then(page => page.PacientesPage),
+      },
+      {
+        path: 'pacientes/:codigo/historico',
+        title: 'PSIQUE · Histórico del paciente',
+        loadComponent: () => import('./paciente-historico/paciente-historico.page').then(page => page.PacienteHistoricoPage),
+      },
+      {
         // :codigo es un parámetro: por ejemplo, toma el valor P-001 en /pacientes/P-001.
         path: 'pacientes/:codigo',
         title: 'PSIQUE · Ficha del paciente',
@@ -49,9 +72,27 @@ export const routes: Routes = [
         loadComponent: () => import('./agendar/agendar.page').then((page) => page.AgendarPage),
       },
       {
+        // Una ruta distinta por recorrido evita que Ionic vuelva a una lista
+        // anterior y quite de su pila el formulario que todavía está en edición.
+        path: 'agenda/horarios-disponibles/:origen',
+        title: 'PSIQUE · Elegir horario disponible',
+        loadComponent: () => import('./agendar/agendar.page').then(page => page.AgendarPage),
+      },
+      {
+        path: 'agenda/horarios-disponibles',
+        title: 'PSIQUE · Horarios disponibles',
+        loadComponent: () => import('./agendar/agendar.page').then(page => page.AgendarPage),
+      },
+      { path: 'proximas-sesiones', title: 'PSIQUE · Pendientes de agendar', loadComponent: () => import('./proximas-sesiones/proximas-sesiones.page').then(p => p.ProximasSesionesPage) },
+      {
         path: 'sesiones',
-        title: 'PSIQUE · Sesiones de la semana',
+        title: 'PSIQUE · Últimas sesiones',
         loadComponent: () => import('./sesiones/sesiones.page').then((page) => page.SesionesPage),
+      },
+      {
+        path: 'sesiones/agendadas',
+        title: 'PSIQUE · Sesiones agendadas',
+        loadComponent: () => import('./sesiones-agendadas/sesiones-agendadas.page').then(page => page.SesionesAgendadasPage),
       },
       {
         path: 'sesiones/:id',

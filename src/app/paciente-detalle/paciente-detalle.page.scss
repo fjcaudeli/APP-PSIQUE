@@ -192,6 +192,7 @@ fieldset {
   border: 0;
 }
 
+.etiqueta-campo { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
 .solo-lectores {
   position: absolute;
   width: 1px;
@@ -292,6 +293,7 @@ textarea:focus-visible,
 .boton ion-icon { font-size: 20px; }
 .boton:disabled { opacity: 0.65; cursor: wait; }
 .boton-secundario { background: transparent; color: var(--verde-oscuro); }
+input:disabled, select:disabled { background: #eceee8; color: #6b7168; border-color: #d1d6cd; opacity: 1; cursor: not-allowed; }
 .confirmacion { margin: 0; font-size: 14px; }
 .fecha-creacion { margin: 22px 0 0; color: var(--texto-secundario); font-size: 13px; }
 

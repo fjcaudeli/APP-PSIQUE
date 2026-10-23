@@ -1,0 +1,17 @@
+@use '../shared/pagina';
+.lista-sesiones { margin: 0; padding: 0; list-style: none; }
+.cantidad { margin: 0 0 18px; color: var(--texto-secundario); font-size: 14px; }
+.reserva-encabezado { display: flex; align-items: start; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 24px; }
+.reserva-encabezado h2 { margin: 0; overflow-wrap: anywhere; }
+.fecha { margin: 0 0 12px; color: var(--texto-secundario); line-height: 1.6; }
+.reserva-contenido { display: grid; gap: 24px; align-items: start; }
+.con-nota { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.post-it { padding: 20px; border-radius: 12px; background: #f1eddf; }
+h3 { margin: 0; font-size: 16px; line-height: 1.5; }
+.post-it p, .resumen p { margin: 10px 0 0; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.resumen { margin-top: 24px; }
+@media (max-width: 640px) {
+  .fecha { font-size: 14px; }
+  .con-nota { grid-template-columns: minmax(0, 1fr); }
+  .post-it { grid-row: 1; }
+}

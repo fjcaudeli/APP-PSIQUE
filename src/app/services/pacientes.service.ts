@@ -40,12 +40,14 @@ export class PacientesService {
     );
   }
 
-  actualizarPaciente(codigoOriginal: string, paciente: Paciente): Observable<Paciente> {
+  actualizarPaciente(codigoOriginal: string, paciente: Omit<Paciente, 'fechaInicioTratamiento'>, turno?: Pick<ReservaSesion, 'fecha' | 'horario' | 'duracionMinutos'>): Observable<Paciente> {
     // La URL identifica la ficha existente; el cuerpo puede incluir un código nuevo.
     // El backend valida y guarda el paciente junto con las referencias de sus turnos.
     return this.http.put<Paciente>(
       `${API_BASE_URL}/pacientes/${encodeURIComponent(codigoOriginal)}`,
-      paciente,
+      turno ? { ...paciente, turno } : paciente,
     );
   }
+  darDeBaja(codigo: string) { return this.http.post<Paciente>(`${API_BASE_URL}/pacientes/${encodeURIComponent(codigo)}/baja`, {}); }
+  suspender(codigo: string) { return this.http.put<Paciente>(`${API_BASE_URL}/pacientes/${encodeURIComponent(codigo)}`, { estado: 'Suspendido' }); }
 }

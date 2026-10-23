@@ -1,0 +1,48 @@
+<ion-content>
+  <div class="pagina">
+    <header class="encabezado"><div class="marca"><span class="marca-simbolo" aria-hidden="true">Ψ</span><div><p class="marca-nombre">PSIQUE</p><p class="marca-descripcion">Seguimiento psicoterapéutico</p></div></div></header>
+    <main>
+      <nav class="navegacion" aria-label="Volver"><ion-back-button [defaultHref]="destinoVolver" [text]="codigoPaciente ? 'Paciente' : 'Inicio'" [icon]="iconoVolver"></ion-back-button></nav>
+      <section class="presentacion" aria-labelledby="titulo-agendadas">
+        <p class="etiqueta">{{ codigoPaciente ? 'Ficha de ' + codigoPaciente : 'Tu espacio profesional' }}</p>
+        <h1 id="titulo-agendadas">Sesiones agendadas</h1>
+        <p class="introduccion">{{ codigoPaciente ? 'Reservas de ' + codigoPaciente + ', ordenadas por fecha y horario.' : 'Tus reservas futuras y en curso, ordenadas por fecha y horario.' }}</p>
+        @if (codigoPaciente) { <div class="acciones"><a class="boton boton-secundario" routerLink="/sesiones/agendadas">Ver todas las sesiones agendadas</a></div> }
+      </section>
+      @if (cargando) { <p role="status">Cargando sesiones agendadas...</p> }
+      @else if (error) {
+        <p class="error" role="alert">{{ error }}</p><button class="boton" type="button" (click)="cargar()">Reintentar</button>
+      } @else if (sesiones.length === 0) {
+        <section class="tarjeta"><h2>No hay sesiones agendadas</h2><p>{{ codigoPaciente ? 'Este paciente no tiene una reserva futura ni una sesión en curso.' : 'No tenés reservas futuras ni sesiones en curso.' }}</p><a class="boton" routerLink="/agenda/agendar" [queryParams]="codigoPaciente ? { codigoPaciente: codigoPaciente, pacienteFijo: '1' } : {}" routerDirection="forward">Agendar sesión</a></section>
+      } @else {
+        <p class="cantidad" role="status">{{ sesiones.length }} {{ sesiones.length === 1 ? 'sesión agendada' : 'sesiones agendadas' }}</p>
+        <ol class="lista-sesiones" aria-label="Sesiones agendadas por fecha">
+          @for (sesion of sesiones; track sesion.id) {
+            <li>
+              <article class="tarjeta" [attr.aria-labelledby]="'paciente-sesion-' + sesion.id">
+                <header class="reserva-encabezado">
+                  <div><p class="fecha"><time [attr.datetime]="sesion.fecha">{{ sesion.fecha | date:'dd/MM/yyyy' }}</time> · {{ sesion.horario }}–{{ sesion.horarioFin }} hs</p><h2 [id]="'paciente-sesion-' + sesion.id"><a [routerLink]="['/pacientes', sesion.codigoPaciente]" routerDirection="forward">{{ sesion.codigoPaciente }}</a></h2></div>
+                  <span class="estado">{{ sesion.estado }}</span>
+                </header>
+                <div class="reserva-contenido" [class.con-nota]="sesion.esProxima">
+                <dl class="datos">
+                  <div><dt>Modalidad</dt><dd>{{ sesion.modalidad }}</dd></div>
+                  <div><dt>Duración</dt><dd>{{ sesion.duracionMinutos }} minutos</dd></div>
+                  <div><dt>Honorarios</dt><dd>{{ sesion.importeCentavos / 100 | currency:'ARS':'symbol-narrow':'1.2-2' }}</dd></div>
+                  <div><dt>Total cobrado</dt><dd>{{ sesion.pagadoCentavos / 100 | currency:'ARS':'symbol-narrow':'1.2-2' }}</dd></div>
+                  <div><dt>Saldo pendiente</dt><dd>{{ sesion.pendienteCentavos / 100 | currency:'ARS':'symbol-narrow':'1.2-2' }}</dd></div>
+                </dl>
+                @if (sesion.esProxima) {
+                  <section class="post-it" [attr.aria-labelledby]="'nota-sesion-' + sesion.id"><h3 [id]="'nota-sesion-' + sesion.id">Nota para la próxima sesión</h3><p>{{ sesion.postIt || 'Sin nota registrada. Podés agregarla desde la ficha del paciente.' }}</p></section>
+                }
+                </div>
+                @if (sesion.resumen) { <section class="resumen"><h3>Resumen de la sesión</h3><p>{{ sesion.resumen }}</p></section> }
+                <div class="acciones"><a class="boton boton-secundario" [routerLink]="['/sesiones', sesion.id]" routerDirection="forward">Ver detalle de sesión</a></div>
+              </article>
+            </li>
+          }
+        </ol>
+      }
+    </main>
+  </div>
+</ion-content>

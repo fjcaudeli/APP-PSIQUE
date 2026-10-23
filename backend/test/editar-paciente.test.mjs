@@ -24,8 +24,9 @@ test('Edición completa de pacientes y conservación de sus turnos', async (t) =
     estado: 'Suspendido',
     proximaSesion: 'VIE 18:45 HS',
     frecuencia: 'Mensual',
-    diaHabitual: 'Viernes',
-    horarioHabitual: '18:45',
+    // La edición general conserva el horario; su reasignación tiene pruebas propias.
+    diaHabitual: original.diaHabitual,
+    horarioHabitual: original.horarioHabitual,
     fechaCreacion: original.fechaCreacion,
     fechaInicioTratamiento: '2026-08-14',
     motivoConsulta: "Texto ficticio de prueba con apóstrofo: 'ejemplo'.",

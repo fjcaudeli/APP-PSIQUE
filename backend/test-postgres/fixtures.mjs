@@ -6,6 +6,20 @@ import { abrirConexion, configuracionPostgres } from '../scripts/postgres-config
 // Solo se conoce esta clave ficticia. Los usuarios de prueba se revierten al terminar.
 const hashFicticio = await hash('Clave exclusivamente ficticia de pruebas', { type: argon2id });
 
+export function buzonPruebas() {
+  const mensajes = [];
+  return {
+    mensajes,
+    correo: { habilitado: true, async enviar(mensaje) { mensajes.push(mensaje); } },
+    token(email, confirmacion = true) {
+      const mensaje = mensajes.findLast(m => m.para === email && m.asunto.startsWith(confirmacion ? 'Confirmá' : 'Restablecé'));
+      assert.ok(mensaje, 'La solicitud debe enviar un correo al destinatario correcto');
+      const enlace = mensaje.texto.split('\n').find(linea => linea.startsWith('http'));
+      return new URLSearchParams(new URL(enlace).hash.slice(1)).get('token');
+    },
+  };
+}
+
 export async function conexionPruebas() {
   return abrirConexion(configuracionPostgres('pruebas'));
 }

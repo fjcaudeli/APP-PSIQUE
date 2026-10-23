@@ -18,3 +18,7 @@ export function desplazarFecha(fecha: string, dias: number): string {
   dia.setUTCDate(dia.getUTCDate() + dias);
   return dia.toISOString().slice(0, 10);
 }
+
+export function nombreDia(fecha: string): string {
+  return ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][new Date(`${fecha}T12:00:00Z`).getUTCDay()];
+}

@@ -1,5 +1,6 @@
+// Referencia de la API anterior al calendario. Sus reglas fueron reemplazadas por el rework.
 import assert from 'node:assert/strict';
-import { ficha, editable, reserva } from './api-fixtures.mjs';
+import { ficha, editable, reserva } from '../api-fixtures.mjs';
 
 // El mismo recorrido HTTP se ejecuta en ambos motores. No accede a SQL ni conoce
 // los IDs iniciales: comprueba contratos, reglas y separación desde la API real.
@@ -256,9 +257,9 @@ export async function comprobarContrato(t, e) {
     assert.deepEqual(creada, { ...maxima, fechaCreacion: '2027-01-04' });
     assert.equal((await pedir('dashboard')).pacientesActivos, inicial.pacientesActivos + 1);
     const editada = await pedir('pacientes/A12345678901', 'PUT', { ...creada, fechaInicioTratamiento: '9999-12-31',
-      frecuencia: 'Personalizada', diaHabitual: null, horarioHabitual: null, proximaSesion: null, motivoConsulta: '', postIt: '' });
+      frecuencia: 'Personalizada', proximaSesion: null, motivoConsulta: '', postIt: '' });
     assert.equal(editada.fechaInicioTratamiento, '9999-12-31');
-    assert.equal(editada.horarioHabitual, null);
+    assert.equal(editada.horarioHabitual, creada.horarioHabitual);
     assert.equal(editada.frecuencia, 'Personalizada');
     assert.deepEqual(await pedir('pacientes/A12345678901'), editada);
   });

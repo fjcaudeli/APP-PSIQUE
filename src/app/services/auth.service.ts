@@ -45,8 +45,21 @@ export class AuthService {
     this.borrarSesion();
   }
 
-  registrarse(datos: { email: string; password: string; repetirPassword: string }): Observable<{ usuario: Usuario }> {
-    return this.http.post<{ usuario: Usuario }>(`${API_BASE_URL}/auth/registro`, datos);
+  registrarse(datos: { email: string; password: string; repetirPassword: string }): Observable<{ usuario: Usuario; correoEnviado: boolean }> {
+    return this.http.post<{ usuario: Usuario; correoEnviado: boolean }>(`${API_BASE_URL}/auth/registro`, datos);
+  }
+
+  solicitarRecuperacion(email: string): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(`${API_BASE_URL}/auth/recuperar`, { email });
+  }
+  reenviarConfirmacion(email: string): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(`${API_BASE_URL}/auth/reenviar-confirmacion`, { email });
+  }
+  confirmarEmail(token: string): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(`${API_BASE_URL}/auth/confirmar-email`, { token });
+  }
+  restablecerPassword(token: string, password: string, repetirPassword: string): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(`${API_BASE_URL}/auth/restablecer`, { token, password, repetirPassword });
   }
 
   iniciarSesion(datos: { email: string; password: string }): Observable<RespuestaLogin> {

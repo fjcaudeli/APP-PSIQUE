@@ -1,1 +1,12 @@
 @use '../shared/pagina';
+.pagina-calendario { width: min(100%, 1400px); }
+#datos-reserva { scroll-margin-top: 20px; }
+.resultados-paciente { margin: 6px 0 0; padding: 4px; max-height: 210px; overflow-y: auto; list-style: none; border: 1px solid #b8c8b5; border-radius: 10px; background: #fffef9; }
+.resultados-paciente button { width: 100%; padding: 12px; border: 0; border-radius: 7px; text-align: left; font: inherit; color: #284b41; background: transparent; cursor: pointer; }
+.resultados-paciente button:hover, .resultados-paciente button[aria-selected='true'] { background: #e9eee4; }
+.resultados-paciente button:focus-visible { outline: 2px solid #945f46; }
+.sin-resultados { padding: 12px; }
+input:disabled { background: #eeeee8; color: #626b62; opacity: 1; }
+textarea { width: 100%; min-height: 100px; padding: 12px; border: 1px solid #b8c8b5; border-radius: 10px; background: #fff9de; color: #284b41; font: inherit; resize: vertical; }
+textarea:focus-visible { outline: 3px solid #945f46; outline-offset: 3px; }
+textarea[readonly] { background: #eeeee8; }

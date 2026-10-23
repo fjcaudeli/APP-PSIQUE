@@ -10,6 +10,111 @@ autenticación y negocio; SQLite, su código y sus respaldos se conservan.
 
 No hay fallback, doble escritura ni migración automática de datos o esquema.
 
+## Últimas sesiones por paciente — 23/10/2026
+
+`GET /sesiones/ultimas` devuelve una sola sesión **Realizada** por paciente, elegida por fecha y hora descendentes mediante `DISTINCT ON`. Primero filtra por el `usuarioId` del JWT y después elige y ordena los resultados, sin aceptar filtros adicionales del cliente. Incluye pacientes no activos con sesiones realizadas y fechas anteriores a dos meses; no incluye reservas sin asistencia confirmada ni canceladas. Conserva los formatos JSON y el saldo calculado en centavos.
+
+La pantalla `/sesiones` y la tarjeta de Inicio se llaman **Últimas sesiones**. Su contador corresponde a la cantidad de pacientes representados; la navegación semanal fue retirada. El histórico completo desde la ficha del paciente se conserva, al igual que el endpoint semanal anterior para compatibilidad. No hay migraciones, tablas nuevas ni cambios en datos existentes.
+
+Verificación: **107 resultados PostgreSQL**, **87 del backend histórico y reglas puras** y **36 de configuración/formularios Angular**, con ambas compilaciones correctas. Las pruebas en `psique_test` comprueban selección por fecha y hora, asistencia manual, aislamiento, cobros, pacientes no activos, persistencia y errores 500/503. Se comprobó por HTTP que Angular sirve los módulos actualizados; esta verificación no sustituye una revisión visual en navegador.
+
+## Nota opcional al reservar y acceso desde Inicio — 23/10/2026
+
+`POST /sesiones` admite `postIt` opcional, texto de hasta 300 caracteres. Se valida antes de escribir y se actualiza la Nota vigente de la ficha en la misma transacción que la reserva, siempre con el `usuarioId` del JWT. Si se omite conserva el valor actual; una cadena vacía lo retira. Un conflicto o error SQL revierte la reserva, la ocupación y la Nota conjuntamente.
+
+`PUT /sesiones/:id` también admite la Nota opcional para la próxima sesión Programada, conservando paciente y estado Programada. Comprueba que sea el primer bloque pendiente antes y, si se reprograma, después de actualizar. Rechaza notas desde sesiones terminadas, realizadas, canceladas, ajenas o bloques posteriores. El guardado de sesión y Nota es atómico; no agrega campos al JSON histórico ni modifica el esquema. Desde una tarjeta vacía de `/notas`, `editar=1&nota=1` abre el editor y al confirmar se regresa al listado.
+
+La pantalla privada `/notas`, accesible desde Inicio, reutiliza `GET /sesiones/agendadas` y muestra solo `esProxima`, incluyendo notas vacías. Conserva el orden por fecha/hora y el texto completo; la previsualización se limita con CSS. No agrega endpoints, permisos ni migraciones. Las pantallas usan el término Nota, conservando `postIt` como campo interno y sin modificar registros existentes.
+
+Verificación de esta etapa: **104 resultados PostgreSQL**, **87 del backend histórico y reglas puras** y **30 de configuración/formularios Angular**, con compilaciones correctas. Incluye guardado y borrado de la Nota, límite de longitud, omisión que conserva el valor, conflicto sin cambios, fallo SQL posterior al INSERT con rollback completo, separación de cuentas, persistencia tras reinicio y refresco del listado. La revisión visual queda pendiente: no hay un navegador conectado a la herramienta en esta sesión.
+
+## Confirmación para cuentas nuevas y recuperación por correo
+
+La migración **007** agrega a `usuarios` confirmación obligatoria, versión de credenciales y dos pares hash/vencimiento. Conserva las tablas y los permisos actuales: no hay tabla nueva, permisos de borrado ni cambios clínicos. Las migraciones **007 y 008 están aplicadas tanto en `psique_test` como en `psique`**. Se respaldó desarrollo antes de aplicarlas. El backend habitual ya arranca con ese esquema y el rol `psique_app`.
+
+El usuario eligió exigir confirmación solo a las cuentas nuevas. La migración **008** habilita mediante `emailConfirmado=true` las cuentas cuya fecha de creación es anterior a la aplicación de la 007, tomada del historial. Es una excepción de compatibilidad autorizada, no una afirmación de que se verificó su dirección mediante correo. El DEFAULT continúa en `false`: las altas posteriores no heredan esa excepción. No hay variable de entorno ni parámetro HTTP para saltarse la confirmación.
+
+`cuenta-correo.ts` implementa confirmación, reenvío, recuperación y restablecimiento. Tokens criptográficos de 32 bytes, SHA-256 en la base, confirmación por 24 horas, recuperación por 30 minutos, un minuto mínimo entre envíos y límites HTTP. Los UPDATE condicionados consumen enlaces de forma atómica e impiden dos cambios simultáneos con el mismo token. Al restablecer se guarda Argon2id, se limpia el token y se incrementa `versionCredenciales` en una sola sentencia. El middleware comprueba email confirmado y versión del JWT; no acepta tokens antiguos sin ese claim. El ID sigue viniendo exclusivamente del JWT.
+
+`correo.ts` define el envío desacoplado y un adaptador HTTPS para Resend mediante `fetch`, sin SDK ni dependencias nuevas. La configuración privada usa `CORREO_PROVEEDOR=resend`, `CORREO_REMITENTE` y `RESEND_API_KEY`. Sin proveedor, registro y solicitudes de correo devuelven 503, sin crear cuentas ni simular envíos. Una falla de envío posterior al alta conserva la cuenta pendiente y devuelve `correoEnviado: false`, para que Angular ofrezca reenviar. No se registran direcciones, claves ni enlaces. El proveedor ya está configurado privadamente y aceptó el primer mensaje general de prueba.
+
+Las solicitudes de recuperación/reenvío conservan estado y cuerpo genéricos independientemente de la existencia o estado de la cuenta. La recuperación no confirma automáticamente el email. El origen de los enlaces es la configuración de Angular; el token va en el fragmento y no se consume al abrir una página. Las pantallas públicas y el interceptor no requieren ni envían JWT en estos endpoints. El logout habitual permanece local; el restablecimiento revoca las sesiones de todos los dispositivos al invalidar su versión.
+
+Recuperación y reenvío confirman el token mediante UPDATE y responden sin aguardar al proveedor: no se revela la existencia de la cuenta por la latencia del correo. Se mantienen los envíos en curso en un conjunto privado y el cierre ordenado los espera antes de cerrar el pool. El alta espera el resultado para informar si pudo enviarse. No hay cola persistente; ante una caída abrupta se puede pedir otro enlace. El envío fallido retira su propio token si todavía coincide, sin borrar uno más reciente.
+
+Pasaron **98 resultados PostgreSQL** y **87 de backend histórico/reglas/correo**; se conserva la verificación anterior de **22 de Angular** y ambas compilaciones. Además de los casos anteriores se comprobó que la excepción no habilita cuentas posteriores, no cambia el DEFAULT y no se extiende al repetir el SQL. El adaptador de prueba solo envía al destinatario configurado y nunca redirige enlaces de otra cuenta. Se probaron bloqueo antes de confirmar, enlaces usados/vencidos/cruzados, hashes, errores de proveedor, cooldown concurrente, límites HTTP, respuesta independiente de la demora del proveedor, conservación de credenciales ante fallo SQL, revocación, aislamiento y persistencia tras reiniciar. Los tests inyectan un buzón de memoria, sin credenciales reales. Chrome verificó registro pendiente, login 403 explicado, confirmación explícita, solicitud de recuperación y formulario de nueva contraseña en ancho móvil. La escritura de una contraseña nueva se comprobó por API y pruebas de formularios; no se hizo una entrega real por email.
+
+Se creó el respaldo privado `antes-confirmacion-correo-20261022-222228.dump`, cuya lista pudo leerse con `pg_restore`. Las huellas antes/después de los campos originales de usuarios y de todas las columnas de pacientes, turnos y sesiones coinciden. Se conservaron identificadores, hashes de contraseñas, fechas y datos clínicos/económicos. La única cuenta anterior quedó habilitada y no se agregaron datos ficticios a desarrollo. Se verificaron nuevamente restricciones y permisos sin escrituras, conservando la separación entre bases.
+
+La cuenta de Resend y su API key quedaron configuradas de forma privada. Para la prueba sin dominio el remitente es `PSIQUE <onboarding@resend.dev>` y `CORREO_DESTINATARIO_PRUEBA` limita el envío al email de esa cuenta. El configurador privado `Configurar-Correo.ps1` solicita la clave con `Read-Host -AsSecureString`, la protege con DPAPI y la guarda fuera del proyecto. El lanzador privado la suministra por entorno solo a `dev`/`iniciar`; el secreto JWT no cambia. Frontend, Express y PostgreSQL continúan locales.
+
+El **23/10/2026** se reinició Express mediante el lanzador habitual con la configuración de correo. Una llamada real del adaptador a Resend obtuvo **HTTP 200** y una respuesta válida con identificador de envío para un mensaje general de prueba, sin datos clínicos ni tokens de acceso. El destinatario confirmó la recepción efectiva del correo, completando la comprobación de envío y recepción. No se imprimieron API key ni cadenas de conexión. Una solicitud al endpoint habitual de recuperación para una dirección inexistente respondió 200, demostrando que dejó de estar deshabilitado por falta de proveedor, sin enviar un segundo mensaje ni modificar registros. Frontend y `/health/ready` también respondieron 200. Esta comprobación no restableció la contraseña real del usuario; los flujos de cuenta se verificaron mediante las pruebas aisladas documentadas.
+
+## Inicio del tratamiento automático — 22/10/2026
+
+`006_inicio_tratamiento_automatico.sql` permite `NULL` en `pacientes.fechaInicioTratamiento` y actualiza ese campo con `MIN(fecha)` de las sesiones **Realizada** del mismo `(usuarioId, codigoPaciente)`. Una ficha sin sesiones realizadas queda sin inicio. No modifica sesiones, cobros ni otras columnas del paciente. Las migraciones 001–005 permanecen intactas y se respalda desarrollo antes de aplicar la nueva versión.
+
+El alta guarda inicio nulo; un valor enviado por un cliente anterior no se utiliza para elegir la fecha. La edición de ficha rechaza cambiarla y no incluye esa columna en su UPDATE. Al confirmar asistencia o editar fecha, paciente o estado de una sesión, `actualizarInicioTratamiento` recalcula los pacientes afectados en el mismo cliente y transacción. Un fallo revierte tanto la sesión como la fecha derivada. No se depende de consultas con efecto de escritura ni del reloj para marcar asistencia automáticamente.
+
+Angular muestra la fecha como información o **Sin sesiones realizadas**, sin input en alta ni edición. La ficha deja de ofrecer reasignar horarios; la operación se realiza desde Agenda o el detalle de la sesión. Los adaptadores SQLite históricos mantienen su validación previa; el validador compartido solo permite inicio nulo cuando se solicita expresamente para PostgreSQL.
+
+Se aprobaron 86 resultados PostgreSQL, 82 del backend histórico/reglas y 15 de Angular, y ambas compilaciones. La migración se aplicó con los roles correspondientes a desarrollo y pruebas. En desarrollo no quedaron discrepancias respecto de MIN(fecha) de las realizadas y las huellas de todas las demás columnas de negocio coincidieron. Chrome confirmó la fecha de lectura y el estado vacío con datos ficticios aislados.
+
+## Duraciones de a diez minutos — 22/10/2026
+
+Las duraciones vigentes son **30, 40, 50 y 60 minutos**, con las mismas opciones al reservar, seleccionar horario para un paciente y editar una sesión. `005_duracion_diez_minutos.sql` reemplaza el CHECK de duración, sin ejecutar UPDATE ni cambiar fechas o importes. Las migraciones 001–004 permanecen intactas como historial.
+
+Antes de aplicar el cambio se comprobó desarrollo: las cuatro sesiones existentes tenían 60 minutos. Se generó un respaldo privado fuera del proyecto. El valor predeterminado continúa en 60; la validación de cruces utiliza los minutos reales del intervalo, incluidos los nuevos finales como 10:40 o 11:35. Los comienzos siguen usando los cuartos de hora establecidos; el paso de diez corresponde a la duración.
+
+La migración 005 se aplicó primero en `psique_test` y después en `psique`, con los roles correspondientes. Pasaron 85 resultados PostgreSQL, 82 del backend y 15 de Angular, junto con ambas compilaciones. Se verificaron las cuatro duraciones admitidas, rechazo de 45 en SQL/API, edición, cálculo del final, conflictos y persistencia tras reinicio. Las huellas de todas las columnas de las cuatro tablas de negocio coincidieron antes y después; no se modificaron registros ni las migraciones anteriores.
+
+## Navegación semanal y Post-it vigente — 22/10/2026
+
+`GET /calendario` admite `fecha=YYYY-MM-DD`: consulta lunes a domingo de esa semana, incluso si cruza un mes, y permite revisar fechas anteriores. Sin fecha mantiene la ventana completa utilizada para validar el formulario. Consultar otra semana no amplía las fechas de reserva: siguen limitadas a hoy–fin del mes siguiente. Los días fuera de ese plazo no ofrecen intervalos libres.
+
+Cada sesión visible incorpora `esProxima`. Se determina con la primera sesión Programada no terminada por paciente de la cuenta autenticada, sobre toda la agenda y no solamente la semana visible. El Post-it no viaja en este listado: el modal consulta la ficha privada existente. Sigue siendo un único Post-it vigente por paciente, sin historización ni columnas nuevas de sesión.
+
+Marcar como no pendiente usa la edición existente del paciente con `{ estado: 'Suspendido' }`, después de una confirmación en pantalla. El filtro de activos del backend ya excluye ese estado del Dashboard, las nuevas reservas y la cola; no se agrega un segundo indicador persistente de pendientes. Reactivar desde la ficha vuelve a aplicar las reglas habituales. La base y las migraciones no cambian.
+
+Pruebas vigentes: **83 resultados PostgreSQL**, **82 del backend histórico y reglas puras** y **15 de configuración/formularios Angular**. Cubren fechas semanales inválidas, cruce de meses, próximas sesiones, ausencia del Post-it en JSON del calendario, aislamiento, selección y suspensión. Los resultados de etapas anteriores se conservan debajo como antecedentes.
+
+## Calendario y próximas sesiones — 21/10/2026
+
+La disponibilidad manual fue reemplazada por intervalos calculados desde las sesiones no canceladas. El calendario comprende el mes actual y el siguiente, de lunes a sábado entre 08:00 y 22:00. Hoy excluye horas transcurridas. Cada reserva empieza en un cuarto de hora y dura 30, 45 o 60 minutos, sin superar las 22:00. Se confirma manualmente cada próxima fecha. Por paciente se permite una fecha futura, excepcionalmente con dos bloques consecutivos, nunca una tercera sesión ni dos fechas distintas.
+
+### Esquema y conservación de registros
+
+- `003_calendario_sesiones.sql` agrega `duracionMinutos`, su valor predeterminado 60 y un CHECK limitado a 30/45/60; permite el estado `Cancelada` y reemplaza la unicidad de sesión por un índice único parcial `(usuarioId, fecha, horario) WHERE estado <> 'Cancelada'`. Así puede conservarse una cancelación y reservarse nuevamente ese inicio.
+- `004_completar_duracion.sql` asigna **60 minutos a todas las sesiones anteriores sin duración** y establece NOT NULL. Es un valor inicial confirmado por el usuario, no una medición de la atención histórica. No cambia fechas, estados, honorarios, cobros ni resúmenes. La duración puede editarse con las comprobaciones de cruces correspondientes.
+- Las migraciones 001 y 002 permanecen intactas. Se aplicaron 003 y 004 mediante el migrador, por separado en desarrollo y pruebas; el arranque Express solamente verifica el esquema.
+- Antes de migrar se guardó un respaldo `pg_dump` de desarrollo fuera del proyecto, en el directorio privado de respaldos de PSIQUE. Se compararon cantidades y huellas de todas las columnas anteriores de usuarios, pacientes, turnos y sesiones: coincidieron antes y después. No se abrieron ni modificaron bases SQLite archivadas.
+
+Los horarios antiguos fuera de las nuevas reglas no se desplazan ni cancelan automáticamente. Las comprobaciones se aplican al reservar o modificar el intervalo, y no impiden corregir únicamente importes o notas de un registro conservado.
+
+`turnos` conserva sus FK y su función de referencia de cada inicio reservado. Ya no es una oferta manual de disponibilidad: las filas antiguas libres no restringen el calendario. `frecuencia` se conserva por compatibilidad histórica, sin recurrencias. La próxima sesión visible se deriva al leer las sesiones, para que la etiqueta no quede vencida al terminar un bloque.
+
+### Reglas, transacciones y API
+
+`src/agenda-calendario.ts` concentra duración, límite de fechas, franjas libres, intersección de intervalos y la excepción de dos bloques. `consultorio-postgres.ts` ejecuta las consultas y escrituras usando las transacciones existentes. El bloqueo `SELECT ... FOR UPDATE` del profesional serializa sus cambios: comprobar disponibilidad y guardar usan el mismo cliente entre BEGIN y COMMIT. Un cruce devuelve 409; errores revierten con ROLLBACK y liberan el cliente. No se responde éxito antes de COMMIT.
+
+Las nuevas rutas privadas son `GET /calendario`, `GET /pacientes/pendientes-agendar`, `GET /pacientes/:codigo/proximas`, `POST /pacientes/:codigo/baja` y `POST /sesiones/:id/cancelar`. Todas reciben la identidad del JWT; la exclusión de una sesión al reprogramar exige que pertenezca al profesional. Los filtros y las FK compuestas conservan el aislamiento.
+
+`GET /sesiones/agendadas` lista las reservas Programada futuras y en curso, con filtro opcional `codigoPaciente`. El filtro comprueba que la ficha pertenezca a la cuenta del JWT; no admite `usuarioId` del cliente. La respuesta conserva los datos de la sesión y agrega `esProxima` y `postIt`: solo la primera reserva pendiente de cada paciente recibe su nota vigente, las siguientes reciben `null`. No se guarda una copia en sesiones ni se modifica el esquema. La pantalla es accesible desde Agenda y desde cada ficha de paciente.
+
+`GET /pacientes/:codigo/sesiones` devuelve todas las sesiones Realizada de esa ficha, ordenadas por fecha, horario e ID descendentes, sin recorte semanal. Comprueba la existencia del paciente dentro de la cuenta del JWT y filtra las sesiones por `usuarioId` y código. Conserva el contrato JSON de sesión y no incluye Post-it. Es una consulta de las filas existentes, también disponible para pacientes no activos; no requiere migraciones ni permisos nuevos. La pantalla **Histórico de sesiones** se abre desde la ficha y permite acceder al detalle existente.
+
+Cancelar una sesión futura conserva su fila e importes y libera su intervalo. La baja lógica deja al paciente `De baja` y cancela sus reservas que todavía no comenzaron; conserva el histórico y cobros. Suspendido o De vacaciones excluyen nuevas reservas y la cola, sin cancelar automáticamente lo ya agendado. Pasar la hora de finalización devuelve un paciente activo a pendientes, pero no marca asistencia. Las sesiones Realizada con saldo siguen siendo el origen de pendientes de cobro.
+
+Los endpoints antiguos de creación/listado de horarios libres responden 410 con indicación de consultar el calendario. Las respuestas de sesiones incorporan `duracionMinutos` y `horarioFin`. Dashboard reemplaza `horariosDisponibles` por `pendientesAgendar`, que cuenta pacientes activos sin sesiones futuras o en curso. No se modificó autenticación, configuración de conexión ni permisos.
+
+### Verificación vigente
+
+Se aprobaron **82 resultados PostgreSQL**, **81 resultados del backend histórico y reglas puras de calendario** y **10 resultados de configuración/formularios Angular**, junto con ambas compilaciones. Se comprobaron reservas, límites, cruces, doble bloque, cancelación, baja, renombrado de paciente, aislamiento, concurrencia, errores SQL/COMMIT, rollback, liberación de conexiones, persistencia tras reinicio y vencimiento de etiquetas sin escrituras durante lecturas.
+
+Las pruebas PostgreSQL mantienen la protección de `psique_test` y datos identificados por ejecución; no utilizan desarrollo. Los contratos anteriores de horarios manuales y múltiples fechas futuras se conservan en `test-postgres/historico/`, fuera del glob de la suite actual porque representan reglas reemplazadas. Las pruebas históricas SQLite siguen ejecutándose con bases temporales; no se adaptó su motor para convertirlo en una segunda implementación del calendario.
+
+Para una instalación con las migraciones anteriores aplicadas, ejecutar `db:migrate` con el rol migrador y `db:migrate:test` con el rol de pruebas antes de iniciar la versión nueva. En esta computadora ya fueron aplicadas. La aplicación continúa usando solo `psique_app`/`psique`; pruebas e integración usan `psique_test`/`psique_test`.
+
 ## Resumen opcional de sesión — 21/10/2026
 
 `migrations/002_resumen_sesion.sql` agrega `sesiones.resumen`, un `TEXT NOT NULL`
@@ -330,7 +435,7 @@ identificadores escritos sin comillas.
 | `usuarios` | `id` autogenerado, email, hash y creación de cuenta. PK `id`; índice único `lower(email)`. |
 | `pacientes` | `usuarioId`, código, modalidad, estado, próxima sesión, frecuencia, día y horario habituales, fechas de creación e inicio, motivo y Post-it. PK `(usuarioId, codigo)` y FK al usuario. |
 | `turnos` | Profesional, fecha, hora, paciente opcional, modalidad opcional y estado. PK `(usuarioId, fecha, horario)`; FK al usuario y FK `(usuarioId, codigoPaciente)` al paciente. |
-| `sesiones` | ID autogenerado, profesional, fecha, hora, paciente, modalidad, estado y dos importes. PK `id`; horario único por profesional; FK al usuario, al paciente y al turno con claves compuestas. |
+| `sesiones` | ID autogenerado, profesional, fecha, hora, duración, paciente, modalidad, estado, resumen y dos importes. PK `id`; inicio único por profesional entre no canceladas; FK al usuario, al paciente y al turno con claves compuestas. |
 | `migraciones` | Tabla técnica: versión, nombre de archivo, checksum y momento de aplicación. No representa una nueva función clínica. |
 
 `codigo` admite los mismos caracteres ASCII y entre 1 y 12 posiciones; `nuevo`
@@ -339,13 +444,15 @@ por mayúsculas dentro de una cuenta. La PK exacta se conserva para las relacion
 La colación `C` de los códigos mantiene una comparación y orden binarios.
 
 Se mantienen modalidades `Presencial` y `Virtual`; turnos `Disponible`,
-`Programado` o `Liberado`; sesiones `Programada` o `Realizada`. Un turno programado
+`Programado` o `Liberado`; sesiones `Programada`, `Realizada` o `Cancelada`. Un turno programado
 requiere paciente y modalidad; uno disponible o liberado requiere ambos en `NULL`.
 
-Estado de tratamiento y frecuencia siguen admitiendo texto personalizado de
-hasta 40 caracteres. También se conservan los límites de próxima sesión (30),
-motivo (3000), Post-it (300) y los siete días habituales. Los tres campos opcionales
-del paciente son próxima sesión, día y horario habituales. Motivo y Post-it son
+El esquema conserva estado de tratamiento y frecuencia como texto de hasta 40
+caracteres. La API actual fija Activo en el alta y limita los cambios de estado a
+Activo, Suspendido y De vacaciones; un estado anterior sin cambios se conserva.
+La baja utiliza su operación explícita. También se conservan los límites de próxima sesión (30),
+motivo (3000), Post-it (300) y los siete días habituales. Los campos nulos
+del paciente son próxima sesión, día y horario habituales e inicio del tratamiento (hasta confirmar una sesión). Motivo y Post-it son
 obligatorios pero pueden contener una cadena vacía.
 
 Las claves foráneas incluyen `usuarioId`. Por ejemplo, `(A, P-001)` y `(B, P-001)`

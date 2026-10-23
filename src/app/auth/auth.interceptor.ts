@@ -9,7 +9,8 @@ export const authInterceptor: HttpInterceptorFn = (solicitud, siguiente) => {
   const api = new URL(API_BASE_URL);
   const rutaBase = api.pathname.replace(/\/$/, '');
   const esApi = destino.origin === api.origin && destino.pathname.startsWith(`${rutaBase}/`);
-  const esAcceso = [`${rutaBase}/auth/login`, `${rutaBase}/auth/registro`].includes(destino.pathname);
+  const esAcceso = [`${rutaBase}/auth/login`, `${rutaBase}/auth/registro`, `${rutaBase}/auth/recuperar`,
+    `${rutaBase}/auth/reenviar-confirmacion`, `${rutaBase}/auth/confirmar-email`, `${rutaBase}/auth/restablecer`].includes(destino.pathname);
 
   // El token no se envía a otros servidores ni a Login/Registro.
   if (!esApi || esAcceso) return siguiente(solicitud);

@@ -15,7 +15,7 @@
     </section>
 
     @if (registroCompleto) {
-      <p class="confirmacion" role="status">Tu cuenta fue creada. Ya podés iniciar sesión.</p>
+      <p class="confirmacion" role="status">Tu cuenta fue creada. Confirmá tu email antes de iniciar sesión.</p>
     }
     @if (auth.aviso()) {
       <p class="confirmacion" role="status">{{ auth.aviso() }}</p>
@@ -43,6 +43,8 @@
       @if (error) { <p class="error" role="alert">{{ error }}</p> }
       <button class="boton boton-acceso" type="submit" [disabled]="cargando">{{ cargando ? 'Ingresando...' : 'Iniciar sesión' }}</button>
     </form>
+    <p class="alternativa"><a routerLink="/recuperar-contrasenia">¿Olvidaste tu contraseña?</a></p>
+    <p class="alternativa"><a routerLink="/reenviar-confirmacion">Reenviar email de confirmación</a></p>
     <p class="alternativa">¿Todavía no tenés una cuenta? <a routerLink="/registro">Crear cuenta</a></p>
   </main>
 </ion-content>

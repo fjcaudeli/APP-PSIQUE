@@ -16,39 +16,32 @@
       </nav>
 
       <section class="presentacion" aria-labelledby="titulo-sesiones">
-        <p class="etiqueta">Histórico de sesiones</p>
-        <h1 id="titulo-sesiones">Sesiones de la semana</h1>
-        <p class="introduccion">Consultá las sesiones que marcaste como realizadas, semana por semana.</p>
+        <p class="etiqueta">Seguimiento reciente</p>
+        <h1 id="titulo-sesiones">Últimas sesiones</h1>
+        <p class="introduccion">La última sesión marcada como realizada de cada paciente, de la más reciente a la más antigua.</p>
       </section>
 
-      <nav class="selector-semana" aria-label="Consultar otra semana">
-        <button class="boton boton-secundario" type="button" (click)="cambiarSemana(-7)">Anterior</button>
-        <button class="boton boton-secundario" type="button" (click)="semanaActual()" [attr.aria-current]="esSemanaActual ? 'date' : null">Esta semana</button>
-        <button class="boton boton-secundario" type="button" (click)="cambiarSemana(7)" [disabled]="!puedeAvanzar">Siguiente</button>
-      </nav>
-
-      @let historial = historial$ | async;
       @if (cargando) {
         <p class="mensaje" role="status">Cargando sesiones...</p>
       } @else if (errorCarga) {
-        <p class="mensaje" role="alert">No se pudieron cargar las sesiones de la semana.</p>
+        <p class="mensaje" role="alert">No se pudieron cargar las últimas sesiones.</p>
         <button class="boton" type="button" (click)="cargar()">Volver a intentar</button>
-      } @else if (historial) {
-        <section aria-labelledby="titulo-periodo">
-          <div class="resumen-semana">
-            <h2 id="titulo-periodo">Del {{ historial.desde | date:'dd/MM/yyyy' }} al {{ historial.hasta | date:'dd/MM/yyyy' }}</h2>
-            <span class="cantidad">{{ historial.sesiones.length }} {{ historial.sesiones.length === 1 ? 'sesión realizada' : 'sesiones realizadas' }}</span>
+      } @else {
+        <section aria-labelledby="titulo-listado">
+          <div class="resumen-listado">
+            <h2 id="titulo-listado">Una sesión por paciente</h2>
+            <span class="cantidad">{{ sesiones.length }} {{ sesiones.length === 1 ? 'sesión realizada' : 'sesiones realizadas' }}</span>
           </div>
 
-          @if (historial.sesiones.length === 0) {
+          @if (sesiones.length === 0) {
             <div class="vacio">
-              <h3>No hay sesiones realizadas en esta semana</h3>
+              <h3>Todavía no hay sesiones realizadas</h3>
               <p>Cuando finalice una sesión, abrí su detalle desde la agenda y marcala como realizada.</p>
               <a class="boton" routerLink="/agenda">Ir a Agenda</a>
             </div>
           } @else {
-            <ul class="lista-sesiones" aria-label="Sesiones realizadas en la semana seleccionada">
-              @for (sesion of historial.sesiones; track sesion.id) {
+            <ul class="lista-sesiones" aria-label="Última sesión realizada de cada paciente">
+              @for (sesion of sesionesPagina; track sesion.id) {
                 <li>
                   <a class="sesion" [routerLink]="['/sesiones', sesion.id]" [attr.aria-label]="'Ver sesión de ' + sesion.codigoPaciente + ' del ' + (sesion.fecha | date:'dd/MM/yyyy') + ' a las ' + sesion.horario">
                     <div class="sesion-fecha">
@@ -61,10 +54,21 @@
                     </div>
                     <span class="estado">Realizada</span>
                     <ion-icon [icon]="iconoDetalle" aria-hidden="true"></ion-icon>
+                    <div class="sesion-cobro" [class.saldada]="sesion.pendienteCentavos === 0">
+                      <span>Pendiente de cobro</span>
+                      <p><strong>{{ sesion.pendienteCentavos / 100 | currency:'ARS':'symbol-narrow':'1.2-2' }}</strong> de {{ sesion.importeCentavos / 100 | currency:'ARS':'symbol-narrow':'1.2-2' }}</p>
+                    </div>
                   </a>
                 </li>
               }
             </ul>
+            @if (totalPaginas > 1) {
+              <nav class="paginacion" aria-label="Páginas de últimas sesiones">
+                <button class="boton" type="button" [disabled]="paginaActual === 1" (click)="cambiarPagina(paginaActual - 1)">Anterior</button>
+                <span role="status">Página {{ paginaActual }} de {{ totalPaginas }}</span>
+                <button class="boton" type="button" [disabled]="paginaActual === totalPaginas" (click)="cambiarPagina(paginaActual + 1)">Siguiente</button>
+              </nav>
+            }
           }
         </section>
       }

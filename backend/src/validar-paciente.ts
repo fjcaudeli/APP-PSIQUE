@@ -15,7 +15,7 @@ function esTexto(valor: unknown, maximo: number, obligatorio = false): valor is 
   return typeof valor === 'string' && valor.length <= maximo && (!obligatorio || valor.length > 0);
 }
 
-export function validarPaciente(cuerpo: unknown): ResultadoValidacion {
+export function validarPaciente(cuerpo: unknown, permitirInicioNulo = false): ResultadoValidacion {
   if (typeof cuerpo !== 'object' || cuerpo === null || Array.isArray(cuerpo)) {
     return { valido: false, mensaje: 'La ficha debe enviarse como un objeto JSON completo.' };
   }
@@ -68,14 +68,16 @@ export function validarPaciente(cuerpo: unknown): ResultadoValidacion {
     && (typeof horarioHabitual !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(horarioHabitual))) {
     return { valido: false, mensaje: 'El horario habitual debe tener el formato HH:mm válido o ser null.' };
   }
-  if (!esFechaISO(fechaCreacion) || !esFechaISO(fechaInicioTratamiento)) {
+  // PostgreSQL deja el inicio vacío hasta la primera sesión realizada. El
+  // adaptador SQLite histórico conserva su validación anterior por defecto.
+  if (!esFechaISO(fechaCreacion) || !(esFechaISO(fechaInicioTratamiento) || (permitirInicioNulo && fechaInicioTratamiento === null))) {
     return { valido: false, mensaje: 'Las fechas deben existir en el calendario y usar el formato YYYY-MM-DD.' };
   }
   if (!esTexto(motivoConsulta, 3000)) {
     return { valido: false, mensaje: 'El motivo de consulta debe ser texto de hasta 3000 caracteres; puede estar vacío.' };
   }
   if (!esTexto(postIt, 300)) {
-    return { valido: false, mensaje: 'El Post-it debe ser texto de hasta 300 caracteres; puede estar vacío.' };
+    return { valido: false, mensaje: 'La Nota debe ser texto de hasta 300 caracteres; puede estar vacía.' };
   }
 
   return {

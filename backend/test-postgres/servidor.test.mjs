@@ -10,7 +10,7 @@ import { resolve, join } from 'node:path';
 import { Pool } from 'pg';
 import { iniciarServidorPostgres } from '../dist/server.js';
 import { ErrorConfiguracionPostgres } from '../dist/db/postgres.js';
-import { conexionPruebas } from './fixtures.mjs';
+import { conexionPruebas, buzonPruebas } from './fixtures.mjs';
 import { ficha } from './api-fixtures.mjs';
 
 const secreto = randomBytes(48).toString('hex');
@@ -104,6 +104,7 @@ test('el cierre ordenado es idempotente y deja HTTP/pool cerrados', async () => 
 });
 
 test('el arranque real conserva cuenta, paciente, horario y sesión tras reiniciar Express', async t => {
+  const buzon = buzonPruebas();
   const email = 'psique-servidor-' + randomUUID() + '@example.test';
   const password = 'Clave ficticia de persistencia 2026';
   const env = { ...entorno(), PORT: String(await puertoLibre()) };
@@ -130,22 +131,26 @@ test('el arranque real conserva cuenta, paciente, horario y sesión tras reinici
       finally { await c.end(); }
     }
   });
-  instancia = await iniciarServidorPostgres({ pruebas: true, entorno: env });
+  instancia = await iniciarServidorPostgres({ pruebas: true, entorno: env, correo: buzon.correo });
   const cuenta = await pedir('auth/registro', 'POST', { email, password, repetirPassword: password });
   assert.equal(cuenta.status, 201);
+  assert.equal((await pedir('auth/login', 'POST', { email, password })).status, 403);
+  assert.equal((await pedir('auth/confirmar-email', 'POST', { token: buzon.token(email) })).status, 200);
   const acceso = await pedir('auth/login', 'POST', { email, password });
   assert.equal(acceso.status, 200);
   const token = acceso.body.token;
   assert.equal((await pedir('pacientes', 'POST', { paciente: ficha('Persistente') }, token)).status, 201);
-  const fecha = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
+  const diaFuturo = new Date(Date.now() + 2 * 86400000);
+  if (diaFuturo.getUTCDay() === 0) diaFuturo.setUTCDate(diaFuturo.getUTCDate() + 1);
+  const fecha = diaFuturo.toISOString().slice(0, 10);
   const horario = '15:00';
-  assert.equal((await pedir('horarios', 'POST', { fecha, horario }, token)).status, 201);
-  const sesion = await pedir('sesiones', 'POST', { fecha, horario, codigoPaciente: 'Persistente', modalidad: 'Virtual', importeCentavos: 123456 }, token);
+  // Los espacios libres se calculan; la reserva crea su ocupación directamente.
+  const sesion = await pedir('sesiones', 'POST', { fecha, horario, codigoPaciente: 'Persistente', modalidad: 'Virtual', importeCentavos: 123456, duracionMinutos: 60 }, token);
   assert.equal(sesion.status, 201);
   const antes = {};
   for (const ruta of ['pacientes/Persistente', `horarios/${fecha}/${horario}`, `sesiones/${sesion.body.id}`, 'dashboard']) antes[ruta] = await pedir(ruta, 'GET', undefined, token);
   await instancia.detener();
-  instancia = await iniciarServidorPostgres({ pruebas: true, entorno: env });
+  instancia = await iniciarServidorPostgres({ pruebas: true, entorno: env, correo: buzon.correo });
   for (const [ruta, respuesta] of Object.entries(antes)) assert.deepEqual(await pedir(ruta, 'GET', undefined, token), respuesta);
   assert.equal((await pedir('auth/login', 'POST', { email, password })).status, 200);
   // Otra conexión, creada después del reinicio, comprueba las relaciones reales.

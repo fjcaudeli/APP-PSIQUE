@@ -3,11 +3,12 @@ import { configurarAutenticacion } from './auth.ts';
 import { crearApi } from './api.ts';
 import type { HorarioDisponible, Paciente, Sesion, Turno } from './models.ts';
 import {
-  ErrorApi, objeto, campos, validarReserva, validarSesion, futuros, idSesion,
-  etiquetaProxima, datosAltaPaciente, validarFicha, datosEdicionPaciente, comprobarRealizacion,
+  ErrorApi, validarReserva, validarSesion, futuros, idSesion,
+  etiquetaProxima, datosAltaPaciente, validarFicha, datosEdicionConHorario, comprobarRealizacion,
+  validarNuevoHorario, asignarHabitual,
 } from './reglas-api.ts';
 import type { Reserva } from './reglas-api.ts';
-import { esFechaISO, esHorario, instanteLocal, nombreDia, semanaDe, sumarDias } from './calendario.ts';
+import { instanteLocal, nombreDia, semanaDe, sumarDias } from './calendario.ts';
 
 export function crearApp(db: Database.Database, origenFrontend: string, reloj: () => Date = () => new Date(), secretoJwt = process.env['JWT_SECRET'] ?? '') {
   // El propietario siempre proviene del JWT verificado. Se pasa explícitamente
@@ -58,6 +59,11 @@ export function crearApp(db: Database.Database, origenFrontend: string, reloj: (
     return { desde, hasta, sesiones };
   }
 
+  function disponiblesTodos(usuarioId: number, ahora: string) {
+    return db.prepare<[number, string], HorarioDisponible>(`SELECT fecha, horario, estado FROM turnos
+      WHERE usuarioId = ? AND estado IN ('Disponible', 'Liberado') AND fecha || ' ' || horario > ? ORDER BY fecha, horario`).all(usuarioId, ahora);
+  }
+
   function pendientes(usuarioId: number): Sesion[] {
     return db.prepare<[number], Sesion>(`SELECT ${columnasSesion} FROM sesiones
       WHERE usuarioId = ? AND estado = 'Realizada' AND pagadoCentavos < importeCentavos ORDER BY fecha, horario, id`).all(usuarioId);
@@ -76,7 +82,9 @@ export function crearApp(db: Database.Database, origenFrontend: string, reloj: (
   // y revierte también el paciente cuando ambos se crean en la misma operación.
   function reservar(usuarioId: number, datos: Reserva, codigoPaciente: string, ahora: string): Sesion {
     futuros(datos.fecha, datos.horario, ahora);
-    if (!buscarPaciente.get(usuarioId, codigoPaciente)) throw new ErrorApi(404, 'Paciente no encontrado');
+    const paciente = buscarPaciente.get(usuarioId, codigoPaciente);
+    if (!paciente) throw new ErrorApi(404, 'Paciente no encontrado');
+    if (paciente.estado.toLowerCase() !== 'activo') throw new ErrorApi(409, 'Solo se pueden agendar sesiones para pacientes activos.');
     const turno = db.prepare('SELECT estado FROM turnos WHERE usuarioId = ? AND fecha = ? AND horario = ?').get(usuarioId, datos.fecha, datos.horario) as { estado: string } | undefined;
     if (!turno) throw new ErrorApi(404, 'Horario no encontrado');
     if (turno.estado === 'Programado') throw new ErrorApi(409, 'Ese horario ya está ocupado. Elegí otro.');
@@ -100,6 +108,7 @@ export function crearApp(db: Database.Database, origenFrontend: string, reloj: (
       throw new ErrorApi(409, 'Ya existe un paciente con ese código.');
     }
     const turno = Object.hasOwn(datos, 'turno') ? validarReserva(datos['turno'], false) : null;
+    if (turno) asignarHabitual(paciente, turno);
     insertarPaciente.run({ ...paciente, usuarioId });
     const sesion = turno ? reservar(usuarioId, turno, paciente.codigo, ahora.instante) : null;
     return { paciente: buscarPaciente.get(usuarioId, paciente.codigo)!, sesion };
@@ -108,7 +117,8 @@ export function crearApp(db: Database.Database, origenFrontend: string, reloj: (
   const actualizarPaciente = db.transaction((usuarioId: number, codigoOriginal: string, cuerpo: unknown) => {
     const existente = buscarPaciente.get(usuarioId, codigoOriginal);
     if (!existente) throw new ErrorApi(404, 'Paciente no encontrado');
-    const paciente = datosEdicionPaciente(cuerpo, existente);
+    const { paciente, turno } = datosEdicionConHorario(cuerpo, existente);
+    const ahora = instanteLocal(reloj()).instante;
     if (db.prepare('SELECT 1 FROM pacientes WHERE usuarioId = ? AND codigo = ? COLLATE NOCASE AND codigo <> ?').get(usuarioId, paciente.codigo, codigoOriginal)) {
       throw new ErrorApi(409, 'Ya existe un paciente con ese código.');
     }
@@ -122,7 +132,26 @@ export function crearApp(db: Database.Database, origenFrontend: string, reloj: (
       db.prepare('UPDATE turnos SET codigoPaciente = ? WHERE usuarioId = ? AND codigoPaciente = ?').run(paciente.codigo, usuarioId, codigoOriginal);
       db.prepare('UPDATE sesiones SET codigoPaciente = ? WHERE usuarioId = ? AND codigoPaciente = ?').run(paciente.codigo, usuarioId, codigoOriginal);
     }
-    return paciente;
+    if (turno) {
+      futuros(turno.fecha, turno.horario, ahora);
+      if (paciente.estado.toLowerCase() !== 'activo') throw new ErrorApi(409, 'Solo se pueden agendar sesiones para pacientes activos.');
+      const proxima = db.prepare<[number, string, string], Sesion>(`SELECT ${columnasSesion} FROM sesiones
+        WHERE usuarioId = ? AND codigoPaciente = ? AND estado = 'Programada'
+        AND fecha || ' ' || horario > ? ORDER BY fecha, horario LIMIT 1`).get(usuarioId, paciente.codigo, ahora);
+      if (proxima) {
+        const destino = db.prepare(`UPDATE turnos SET codigoPaciente = ?, modalidad = ?, estado = 'Programado'
+          WHERE usuarioId = ? AND fecha = ? AND horario = ? AND estado IN ('Disponible', 'Liberado') AND codigoPaciente IS NULL`)
+          .run(paciente.codigo, proxima.modalidad, usuarioId, turno.fecha, turno.horario);
+        if (destino.changes !== 1) throw new ErrorApi(409, 'Ese horario ya no está disponible. Elegí otro.');
+        db.prepare('UPDATE sesiones SET fecha = ?, horario = ? WHERE usuarioId = ? AND id = ?').run(turno.fecha, turno.horario, usuarioId, proxima.id);
+        db.prepare("UPDATE turnos SET codigoPaciente = NULL, modalidad = NULL, estado = 'Liberado' WHERE usuarioId = ? AND fecha = ? AND horario = ?")
+          .run(usuarioId, proxima.fecha, proxima.horario);
+        actualizarProximaSesion(usuarioId, paciente.codigo, ahora);
+      } else {
+        reservar(usuarioId, { ...turno, modalidad: paciente.modalidad, importeCentavos: 0 }, paciente.codigo, ahora);
+      }
+    }
+    return buscarPaciente.get(usuarioId, paciente.codigo)!;
   });
 
   const crearSesion = db.transaction((usuarioId: number, cuerpo: unknown) => {
@@ -177,13 +206,7 @@ export function crearApp(db: Database.Database, origenFrontend: string, reloj: (
   });
 
   const crearHorario = db.transaction((usuarioId: number, cuerpo: unknown) => {
-    const datos = objeto(cuerpo);
-    campos(datos, ['fecha', 'horario']);
-    if (!esFechaISO(datos['fecha']) || !esHorario(datos['horario'])) {
-      throw new ErrorApi(400, 'La fecha y el horario deben existir y usar YYYY-MM-DD y HH:mm.');
-    }
-    const fecha = datos['fecha'];
-    const horario = datos['horario'];
+    const { fecha, horario } = validarNuevoHorario(cuerpo);
     futuros(fecha, horario, instanteLocal(reloj()).instante);
     if (db.prepare('SELECT 1 FROM turnos WHERE usuarioId = ? AND fecha = ? AND horario = ?').get(usuarioId, fecha, horario)) {
       throw new ErrorApi(409, 'Ya existe un turno para esa fecha y horario.');
@@ -220,7 +243,7 @@ export function crearApp(db: Database.Database, origenFrontend: string, reloj: (
   return crearApi({
     listarPacientes: usuarioId => db.prepare<[number], Paciente>(`SELECT ${columnasPaciente} FROM pacientes WHERE usuarioId = ? ORDER BY codigo`).all(usuarioId),
     buscarPaciente: (usuarioId, codigo) => buscarPaciente.get(usuarioId, codigo),
-    siguienteCodigo, sesionesSemana, pendientes, sesionPorId, disponibles, consultarHorario, agenda, dashboard,
+    siguienteCodigo, sesionesSemana, pendientes, sesionPorId, disponibles, disponiblesTodos, consultarHorario, agenda, dashboard,
     crearPaciente: (usuarioId, cuerpo) => crearPaciente.immediate(usuarioId, cuerpo),
     actualizarPaciente: (usuarioId, codigo, cuerpo) => actualizarPaciente.immediate(usuarioId, codigo, cuerpo),
     crearSesion: (usuarioId, cuerpo) => crearSesion.immediate(usuarioId, cuerpo),

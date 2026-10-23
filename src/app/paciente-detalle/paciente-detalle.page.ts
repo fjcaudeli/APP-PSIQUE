@@ -3,8 +3,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
-import { IonBackButton, IonContent, IonIcon, NavController } from '@ionic/angular';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { IonBackButton, IonContent, IonIcon, IonRouterLinkWithHref, NavController } from '@ionic/angular';
 import { arrowBackOutline, createOutline, documentTextOutline } from 'ionicons/icons';
 import { catchError, EMPTY, finalize, map, merge, Subject, switchMap } from 'rxjs';
 import { Paciente } from '../models/paciente';
@@ -13,7 +13,7 @@ import { PacientesService } from '../services/pacientes.service';
 @Component({
   selector: 'app-paciente-detalle',
   standalone: true,
-  imports: [AsyncPipe, DatePipe, IonBackButton, IonContent, IonIcon, ReactiveFormsModule],
+  imports: [AsyncPipe, DatePipe, IonBackButton, IonContent, IonIcon, IonRouterLinkWithHref, RouterLink, ReactiveFormsModule],
   templateUrl: './paciente-detalle.page.html',
   styleUrl: './paciente-detalle.page.scss',
 })
@@ -28,6 +28,7 @@ export class PacienteDetallePage {
   private codigoOriginal = '';
   private fechaCreacionOriginal = '';
   private visible = false;
+  confirmandoBaja = false;
 
   cargando = true;
   errorCarga = false;
@@ -49,7 +50,6 @@ export class PacienteDetallePage {
     frecuencia: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(40)]],
     diaHabitual: [''],
     horarioHabitual: [''],
-    fechaInicioTratamiento: ['', Validators.required],
     motivoConsulta: ['', Validators.maxLength(3000)],
     postIt: ['', Validators.maxLength(300)],
   });
@@ -77,7 +77,7 @@ export class PacienteDetallePage {
   );
 
   // AsyncPipe recibe tanto la consulta inicial como el resultado confirmado del PUT.
-  // Así mostramos lo que guardó SQLite sin sustituirlo por el borrador del formulario.
+  // Así mostramos lo confirmado por la API sin sustituirlo por el borrador.
   readonly paciente$ = merge(this.pacienteConsultado$, this.pacienteGuardado);
 
   ionViewWillEnter(): void {
@@ -91,6 +91,7 @@ export class PacienteDetallePage {
 
   ionViewWillLeave(): void {
     this.visible = false;
+    this.confirmandoBaja = false;
     this.editando = false;
     this.errorGuardado = '';
     this.mensajeGuardado = '';
@@ -105,6 +106,8 @@ export class PacienteDetallePage {
       diaHabitual: paciente.diaHabitual ?? '',
       horarioHabitual: paciente.horarioHabitual ?? '',
     });
+    this.formulario.controls.diaHabitual.disable({ emitEvent: false });
+    this.formulario.controls.horarioHabitual.disable({ emitEvent: false });
     this.errorGuardado = '';
     this.mensajeGuardado = '';
     this.editando = true;
@@ -131,7 +134,7 @@ export class PacienteDetallePage {
     }
 
     const borrador = this.formulario.getRawValue();
-    const paciente: Paciente = {
+    const paciente: Omit<Paciente, 'fechaInicioTratamiento'> = {
       ...borrador,
       fechaCreacion: this.fechaCreacionOriginal,
       codigo: borrador.codigo.trim(),
@@ -168,6 +171,16 @@ export class PacienteDetallePage {
           ? error.error.mensaje
           : 'No se pudieron guardar los cambios. Revisá la conexión y volvé a intentar.';
       },
+    });
+  }
+
+  darDeBaja(): void {
+    if (this.guardando) return;
+    this.guardando = true; this.errorGuardado = '';
+    const codigo = this.route.snapshot.paramMap.get('codigo') ?? '';
+    this.pacientesService.darDeBaja(codigo).pipe(takeUntilDestroyed(this.destroyRef), finalize(() => { this.guardando = false; })).subscribe({
+      next: paciente => { this.confirmandoBaja = false; this.pacienteGuardado.next(paciente); this.mensajeGuardado = 'Paciente dado de baja. Sus reservas futuras quedaron liberadas.'; },
+      error: (error: HttpErrorResponse) => { this.errorGuardado = error.error?.mensaje ?? 'No se pudo dar de baja al paciente.'; },
     });
   }
 

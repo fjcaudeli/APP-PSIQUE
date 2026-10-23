@@ -5,15 +5,18 @@ import { IonContent, IonIcon, IonModal, NavController } from '@ionic/angular';
 import {
   calendarOutline,
   cardOutline,
+  documentTextOutline,
   peopleOutline,
   timeOutline,
 } from 'ionicons/icons';
-import { catchError, defer, EMPTY, finalize, Observable } from 'rxjs';
+import { catchError, defer, EMPTY, finalize, forkJoin, map, Observable } from 'rxjs';
 import { ResumenDashboard } from '../models/dashboard';
-import { DisponibilidadSemanal, HorarioDisponible, Sesion } from '../models/sesion';
+import { Sesion } from '../models/sesion';
 import { DashboardService } from '../services/dashboard.service';
 import { SesionesService } from '../services/sesiones.service';
 import { AuthService } from '../services/auth.service';
+
+type ResumenInicio = ResumenDashboard & { notas: number; sesionesAgendadas: number; ultimasSesiones: number };
 
 @Component({
   selector: 'app-inicio',
@@ -32,12 +35,11 @@ export class InicioPage implements OnDestroy {
 
   cargando = true;
   errorCarga = false;
-  resumen$?: Observable<ResumenDashboard>;
-  modalAbierto: 'cobros' | 'horarios' | null = null;
+  resumen$?: Observable<ResumenInicio>;
+  modalAbierto: 'cobros' | null = null;
   cargandoModal = false;
   errorModal = false;
   cobros$?: Observable<Sesion[]>;
-  horarios$?: Observable<DisponibilidadSemanal>;
 
   ionViewWillEnter(): void { this.cargarResumen(); }
 
@@ -52,14 +54,18 @@ export class InicioPage implements OnDestroy {
     this.resumen$ = defer(() => {
       this.cargando = true;
       this.errorCarga = false;
-      return this.dashboard.obtenerResumen().pipe(
+      return forkJoin({ resumen: this.dashboard.obtenerResumen(), agendadas: this.sesiones.agendadas(), ultimas: this.sesiones.ultimas() }).pipe(
+        // Se reutilizan las reservas privadas: una Nota con texto por próxima
+        // sesión, mientras el otro contador incluye también el segundo bloque.
+        map(({ resumen, agendadas, ultimas }) => ({ ...resumen, sesionesAgendadas: agendadas.length, ultimasSesiones: ultimas.length,
+          notas: agendadas.filter(sesion => sesion.esProxima && !!sesion.postIt?.trim()).length })),
         catchError(() => { this.errorCarga = true; return EMPTY; }),
         finalize(() => { this.cargando = false; }),
       );
     });
   }
 
-  abrirModal(tipo: 'cobros' | 'horarios'): void {
+  abrirModal(tipo: 'cobros'): void {
     this.modalAbierto = tipo;
     this.cargarModal();
   }
@@ -74,15 +80,7 @@ export class InicioPage implements OnDestroy {
           finalize(() => { this.cargandoModal = false; }),
         );
       });
-    } else if (this.modalAbierto === 'horarios') {
-      this.horarios$ = defer(() => {
-        this.cargandoModal = true;
-        this.errorModal = false;
-        return this.sesiones.disponibles().pipe(
-          catchError(() => { this.errorModal = true; return EMPTY; }),
-          finalize(() => { this.cargandoModal = false; }),
-        );
-      });
+
     }
   }
 
@@ -91,7 +89,6 @@ export class InicioPage implements OnDestroy {
   alCerrarModal(): void {
     this.modalAbierto = null;
     this.cobros$ = undefined;
-    this.horarios$ = undefined;
   }
 
   async abrirSesion(sesion: Sesion): Promise<void> {
@@ -99,21 +96,10 @@ export class InicioPage implements OnDestroy {
     await this.navegacion.navigateForward(['/sesiones', sesion.id]);
   }
 
-  async agendar(horario: HorarioDisponible): Promise<void> {
-    await this.cerrarModal();
-    await this.navegacion.navigateForward('/agenda/agendar', {
-      queryParams: { fecha: horario.fecha, horario: horario.horario },
-    });
-  }
-
-  async cargarHorario(): Promise<void> {
-    await this.cerrarModal();
-    await this.navegacion.navigateForward('/agenda', { queryParams: { crearHorario: '1' } });
-  }
-
   // Importamos solo los iconos que utiliza esta pantalla.
   readonly iconoPacientes = peopleOutline;
   readonly iconoSesiones = calendarOutline;
   readonly iconoCobros = cardOutline;
   readonly iconoHorarios = timeOutline;
+  readonly iconoNotas = documentTextOutline;
 }

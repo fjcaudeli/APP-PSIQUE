@@ -5,26 +5,30 @@ import { crearAppPostgres } from './app-postgres.ts';
 import { validarSecretoJwt } from './auth.ts';
 import { abrirPoolPostgres, ErrorConfiguracionPostgres, ErrorPostgresNoDisponible } from './db/postgres.ts';
 import { configuracionServidor } from './configuracion.ts';
+import type { Correo } from './correo.ts';
+import { configurarCorreo } from './correo.ts';
 
 interface OpcionesServidor {
   entorno?: NodeJS.ProcessEnv;
   // Solo las pruebas importan esta función con pruebas:true. La entrada normal
   // no lee ninguna variable ni argumento que permita seleccionar psique_test.
   pruebas?: boolean;
+  correo?: Correo;
 }
 
-export async function iniciarServidorPostgres({ entorno = process.env, pruebas = false }: OpcionesServidor = {}) {
+export async function iniciarServidorPostgres({ entorno = process.env, pruebas = false, correo }: OpcionesServidor = {}) {
   let secretoJwt: string;
   try { secretoJwt = validarSecretoJwt(entorno['JWT_SECRET']); }
   catch { throw new ErrorConfiguracionPostgres('Configurá JWT_SECRET con un secreto aleatorio de al menos 32 bytes antes de iniciar la API.'); }
   const configuracion = configuracionServidor(entorno);
+  const envioCorreo = correo ?? configurarCorreo(entorno);
 
   // El pool comprueba destino, rol y las cuatro tablas antes de montar Express.
   // No hay apertura de SQLite, migraciones automáticas ni cuentas precargadas.
   const pool = await abrirPoolPostgres({ entorno, pruebas });
   try {
     let cerrando = false;
-    const app = crearAppPostgres(pool, configuracion.origen, () => new Date(), secretoJwt, { ...configuracion, cerrando: () => cerrando });
+    const app = crearAppPostgres(pool, configuracion.origen, () => new Date(), secretoJwt, { ...configuracion, correo: envioCorreo, cerrando: () => cerrando });
     const servidor = app.listen(configuracion.puerto, configuracion.host);
     await once(servidor, 'listening');
     let cierre: Promise<void> | undefined;
@@ -36,6 +40,9 @@ export async function iniciarServidorPostgres({ entorno = process.env, pruebas =
         limite.unref();
         try {
           await new Promise<void>((resolver, rechazar) => servidor.close(error => error ? rechazar(error) : resolver()));
+          // Los correos solicitados ya confirmaron su token en SQL. Dejamos
+          // terminar esos envíos acotados antes de cerrar el pool que necesitan.
+          await app.locals['esperarCorreos']();
         } finally { clearTimeout(limite); await pool.end(); }
       })();
       return cierre;

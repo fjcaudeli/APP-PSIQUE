@@ -1,7 +1,7 @@
 import { Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { IonContent } from '@ionic/angular';
 import { finalize } from 'rxjs';
 import { AuthService } from '../services/auth.service';
@@ -16,11 +16,12 @@ import { mensajeErrorAcceso } from './error-acceso';
 })
 export class RegistroPage {
   private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly formularios = inject(FormBuilder).nonNullable;
   cargando = false;
   error = '';
+  cuentaCreada = false;
+  correoEnviado = false;
 
   readonly formulario = this.formularios.group({
     email: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
@@ -33,7 +34,7 @@ export class RegistroPage {
   });
 
   registrarse(): void {
-    if (this.cargando) return;
+    if (this.cargando || this.cuentaCreada) return;
     this.error = '';
     this.formulario.markAllAsTouched();
     if (this.formulario.invalid) return;
@@ -43,8 +44,11 @@ export class RegistroPage {
       takeUntilDestroyed(this.destroyRef),
       finalize(() => { this.cargando = false; }),
     ).subscribe({
-      // Registrar una cuenta no inicia sesión: el acceso ocurre en Login.
-      next: () => { void this.router.navigateByUrl('/login', { replaceUrl: true, state: { registroCompleto: true } }); },
+      // El registro queda pendiente hasta que se confirme el enlace del correo.
+      next: respuesta => {
+        this.cuentaCreada = true; this.correoEnviado = respuesta.correoEnviado;
+        this.formulario.controls.password.reset(); this.formulario.controls.repetirPassword.reset();
+      },
       error: (error: unknown) => { this.error = mensajeErrorAcceso(error, 'No se pudo crear la cuenta. Volvé a intentar.'); },
     });
   }

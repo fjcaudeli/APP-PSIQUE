@@ -85,12 +85,13 @@ export async function abrirPoolPostgres(opciones: OpcionesPool = {}): Promise<Po
     }
     // LIMIT 0 valida acceso y todas las columnas esperadas, sin leer datos ni
     // crear/modificar tablas. El historial de migraciones sigue siendo privado.
-    await pool.query('SELECT id, email, "passwordHash", "fechaCreacion" FROM public.usuarios LIMIT 0');
+    await pool.query(`SELECT id, email, "passwordHash", "fechaCreacion", "emailConfirmado", "versionCredenciales",
+      "confirmacionHash", "confirmacionVence", "recuperacionHash", "recuperacionVence" FROM public.usuarios LIMIT 0`);
     await pool.query(`SELECT "usuarioId", codigo, modalidad, estado, "proximaSesion", frecuencia, "diaHabitual",
       "horarioHabitual", "fechaCreacion", "fechaInicioTratamiento", "motivoConsulta", "postIt" FROM public.pacientes LIMIT 0`);
     await pool.query('SELECT "usuarioId", fecha, horario, "codigoPaciente", modalidad, estado FROM public.turnos LIMIT 0');
     await pool.query(`SELECT id, "usuarioId", fecha, horario, "codigoPaciente", modalidad, estado,
-      "importeCentavos", "pagadoCentavos", resumen FROM public.sesiones LIMIT 0`);
+      "importeCentavos", "pagadoCentavos", resumen, "duracionMinutos" FROM public.sesiones LIMIT 0`);
     return pool;
   } catch (error) {
     // Un inicio fallido tampoco deja sockets ni temporizadores abiertos.

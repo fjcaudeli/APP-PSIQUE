@@ -16,9 +16,7 @@
 
     <main>
       <section class="bienvenida" aria-labelledby="titulo-inicio">
-        <p class="etiqueta">Tu espacio profesional</p>
         <h1 id="titulo-inicio">Inicio</h1>
-        <p class="introduccion">Tu consultorio, de un vistazo.</p>
       </section>
 
       @let resumen = resumen$ | async;
@@ -29,6 +27,7 @@
         <button class="boton" type="button" (click)="cargarResumen()">Volver a intentar</button>
       } @else if (resumen) {
         <section class="indicadores" aria-label="Resumen del consultorio">
+          <a class="indicador indicador-horarios" routerLink="/proximas-sesiones" aria-labelledby="titulo-agendar"><div class="indicador-encabezado"><h2 id="titulo-agendar">Pendientes de agendar</h2><span class="indicador-icono"><ion-icon [icon]="iconoHorarios" aria-hidden="true"></ion-icon></span></div><p class="indicador-valor">{{ resumen.pendientesAgendar }}</p></a>
           <a class="indicador indicador-pacientes" routerLink="/pacientes" aria-labelledby="titulo-pacientes">
             <div class="indicador-encabezado">
               <h2 id="titulo-pacientes">Pacientes activos</h2>
@@ -37,18 +36,16 @@
               </span>
             </div>
             <p class="indicador-valor">{{ resumen.pacientesActivos }}</p>
-            <p class="indicador-descripcion">Tratamientos en curso</p>
           </a>
 
           <a class="indicador indicador-sesiones" routerLink="/sesiones" aria-labelledby="titulo-sesiones">
             <div class="indicador-encabezado">
-              <h2 id="titulo-sesiones">Sesiones de la semana</h2>
+              <h2 id="titulo-sesiones">Últimas sesiones</h2>
               <span class="indicador-icono">
                 <ion-icon [icon]="iconoSesiones" aria-hidden="true"></ion-icon>
               </span>
             </div>
-            <p class="indicador-valor">{{ resumen.sesionesSemana }}</p>
-            <p class="indicador-descripcion">Marcadas como realizadas esta semana</p>
+            <p class="indicador-valor">{{ resumen.ultimasSesiones }}</p>
           </a>
 
           <button class="indicador indicador-cobros" type="button" aria-labelledby="titulo-cobros" aria-haspopup="dialog" (click)="abrirModal('cobros')">
@@ -59,19 +56,17 @@
               </span>
             </span>
             <span class="indicador-valor">{{ resumen.pendientesCobro }}</span>
-            <span class="indicador-descripcion">Sesiones pendientes de pago</span>
           </button>
 
-          <button class="indicador indicador-horarios" type="button" aria-labelledby="titulo-horarios" aria-haspopup="dialog" (click)="abrirModal('horarios')">
-            <span class="indicador-encabezado">
-              <span id="titulo-horarios" class="indicador-titulo">Horarios disponibles</span>
-              <span class="indicador-icono">
-                <ion-icon [icon]="iconoHorarios" aria-hidden="true"></ion-icon>
-              </span>
-            </span>
-            <span class="indicador-valor">{{ resumen.horariosDisponibles }}</span>
-            <span class="indicador-descripcion">Disponibles esta semana</span>
-          </button>
+
+          <a class="indicador indicador-notas" routerLink="/notas" aria-labelledby="titulo-notas">
+            <div class="indicador-encabezado"><h2 id="titulo-notas">Notas</h2><span class="indicador-icono"><ion-icon [icon]="iconoNotas" aria-hidden="true"></ion-icon></span></div>
+            <p class="indicador-valor">{{ resumen.notas }}</p>
+          </a>
+          <a class="indicador indicador-agendadas" routerLink="/sesiones/agendadas" aria-labelledby="titulo-agendadas">
+            <div class="indicador-encabezado"><h2 id="titulo-agendadas">Sesiones agendadas</h2><span class="indicador-icono"><ion-icon [icon]="iconoSesiones" aria-hidden="true"></ion-icon></span></div>
+            <p class="indicador-valor">{{ resumen.sesionesAgendadas }}</p>
+          </a>
         </section>
       }
     </main>
@@ -84,7 +79,7 @@
       <header class="modal-encabezado">
         <div>
           <p class="etiqueta">Tu consultorio</p>
-          <h2 id="titulo-modal">{{ modalAbierto === 'cobros' ? 'Pendientes de cobro' : 'Horarios disponibles' }}</h2>
+          <h2 id="titulo-modal">Pendientes de cobro</h2>
         </div>
         <button type="button" class="cerrar-modal" aria-label="Cerrar listado" (click)="cerrarModal()">✕</button>
       </header>
@@ -120,42 +115,11 @@
               </ul>
             }
           }
-        } @else if (modalAbierto === 'horarios') {
-          @let disponibilidad = horarios$ | async;
-          @if (cargandoModal) {
-            <p class="mensaje" role="status">Cargando horarios disponibles...</p>
-          } @else if (errorModal) {
-            <p class="mensaje" role="alert">No se pudieron cargar los horarios disponibles.</p>
-            <button class="boton" type="button" (click)="cargarModal()">Volver a intentar</button>
-          } @else if (disponibilidad) {
-            <p class="mensaje">Semana del {{ disponibilidad.desde | date:'dd/MM/yyyy' }} al {{ disponibilidad.hasta | date:'dd/MM/yyyy' }}.</p>
-            @if (disponibilidad.horarios.length === 0) {
-              <p class="mensaje">No hay horarios disponibles para lo que queda de esta semana. Podés cargar uno desde la agenda.</p>
-            } @else {
-              <p class="mensaje">Elegí un horario para asignarlo a un paciente.</p>
-              <ul class="listado-modal">
-                @for (horario of disponibilidad.horarios; track horario.fecha + horario.horario) {
-                  <li>
-                    <button type="button" class="fila-modal" (click)="agendar(horario)">
-                      <span class="fila-datos">
-                        <strong>{{ horario.fecha | date:'EEEE dd/MM' }}</strong>
-                        <span>{{ horario.horario }} hs</span>
-                      </span>
-                      <span class="fila-estado">{{ horario.estado }}</span>
-                    </button>
-                  </li>
-                }
-              </ul>
-            }
-          }
+
         }
       </div>
 
-      @if (modalAbierto === 'horarios') {
-        <footer class="modal-pie">
-          <button class="boton" type="button" (click)="cargarHorario()">Cargar horario</button>
-        </footer>
-      }
+
     </div>
   </ng-template>
 </ion-modal>

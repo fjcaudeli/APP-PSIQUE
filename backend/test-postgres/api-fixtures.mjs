@@ -6,14 +6,14 @@ import { crearAppPostgres } from '../dist/app-postgres.js';
 import { crearApp } from '../dist/app.js';
 import { abrirBaseDeDatos } from '../dist/db/database.js';
 import { SignJWT } from 'jose';
-import { conexionPruebas } from './fixtures.mjs';
+import { conexionPruebas, buzonPruebas } from './fixtures.mjs';
 
 export const ficha = codigo => ({
   ...(codigo === undefined ? {} : { codigo }), modalidad: 'Virtual', estado: 'Activo',
   proximaSesion: null, frecuencia: 'Quincenal', diaHabitual: null, horarioHabitual: null,
   fechaInicioTratamiento: '2026-10-05', motivoConsulta: '', postIt: '',
 });
-export const editable = ({ id: _id, pendienteCentavos: _saldo, ...datos }) => datos;
+export const editable = ({ id: _id, pendienteCentavos: _saldo, horarioFin: _fin, ...datos }) => datos;
 export const reserva = (codigoPaciente = 'P-001', horario = '10:00', fecha = '2026-10-05') =>
   ({ fecha, horario, codigoPaciente, modalidad: 'Virtual', importeCentavos: 123456 });
 
@@ -21,6 +21,7 @@ export async function entornoApi(t, motor = 'postgres', opciones = {}) {
   const prefijo = 'psique-api-' + randomUUID() + '-';
   const secreto = randomBytes(48).toString('hex');
   const password = 'Clave ficticia para la API 2026';
+  const buzon = buzonPruebas();
   let ahora = new Date('2026-10-05T12:00:00Z');
   const reloj = () => new Date(ahora);
   let pool = motor === 'postgres' ? await abrirPoolPostgres({ pruebas: true, ...opciones }) : undefined;
@@ -28,7 +29,7 @@ export async function entornoApi(t, motor = 'postgres', opciones = {}) {
   let servidor;
   const ids = [];
   async function iniciar() {
-    const app = pool ? crearAppPostgres(pool, 'http://127.0.0.1:4200', reloj, secreto)
+    const app = pool ? crearAppPostgres(pool, 'http://127.0.0.1:4200', reloj, secreto, { correo: buzon.correo })
       : crearApp(db, 'http://127.0.0.1:4200', reloj, secreto);
     servidor = app.listen(0, '127.0.0.1');
     await once(servidor, 'listening');
@@ -58,7 +59,7 @@ export async function entornoApi(t, motor = 'postgres', opciones = {}) {
   });
   async function token(cuenta = 0, cambios = {}) {
     const iat = Math.floor(reloj().getTime() / 1000);
-    return new SignJWT({ sub: String(ids[cuenta]), iss: 'psique', aud: 'psique-app', iat, exp: iat + 3600, ...cambios })
+    return new SignJWT({ sub: String(ids[cuenta]), iss: 'psique', aud: 'psique-app', iat, exp: iat + 3600, ...(pool ? { versionCredenciales: 0 } : {}), ...cambios })
       .setProtectedHeader({ alg: 'HS256', typ: 'JWT' }).sign(new TextEncoder().encode(secreto));
   }
   async function raw(ruta, { metodo = 'GET', datos, bearer, texto } = {}) {
@@ -92,6 +93,9 @@ export async function entornoApi(t, motor = 'postgres', opciones = {}) {
     const registro = await raw('auth/registro', { metodo: 'POST', datos: { email, password, repetirPassword: password } });
     assert.equal(registro.status, 201);
     ids.push(registro.body.usuario.id);
+    if (pool) {
+      assert.equal((await raw('auth/confirmar-email', { metodo: 'POST', datos: { token: buzon.token(email) } })).status, 200);
+    }
     const login = await raw('auth/login', { metodo: 'POST', datos: { email, password } });
     assert.equal(login.status, 200);
     assert.deepEqual(login.body.usuario, registro.body.usuario);
@@ -109,7 +113,7 @@ export async function entornoApi(t, motor = 'postgres', opciones = {}) {
     }
     return Object.fromEntries(['pacientes', 'turnos', 'sesiones'].map(tabla => [tabla, db.prepare(`SELECT * FROM ${tabla} ORDER BY rowid`).all()]));
   }
-  return { get pool() { return pool; }, db, ids, cuentas, raw, token, pedir, transcript, snapshot,
+  return { get pool() { return pool; }, db, ids, cuentas, raw, token, pedir, transcript, snapshot, buzon,
     avanzar: valor => { ahora = new Date(valor); },
     async reabrir() {
       assert.ok(pool, 'Solo se reabre el pool PostgreSQL');

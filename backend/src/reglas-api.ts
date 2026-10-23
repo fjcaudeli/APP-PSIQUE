@@ -35,6 +35,42 @@ export interface Reserva {
   importeCentavos: number;
 }
 
+export type SeleccionHorario = Pick<Reserva, 'fecha' | 'horario'>;
+
+export function validarSeleccionHorario(valor: unknown): SeleccionHorario {
+  const datos = objeto(valor);
+  campos(datos, ['fecha', 'horario']);
+  if (!esFechaISO(datos['fecha']) || !esHorario(datos['horario'])) {
+    throw new ErrorApi(400, 'La fecha y el horario deben existir y usar YYYY-MM-DD y HH:mm.');
+  }
+  return { fecha: datos['fecha'], horario: datos['horario'] };
+}
+
+export function validarNuevoHorario(valor: unknown): SeleccionHorario {
+  const datos = validarSeleccionHorario(valor);
+  if (!['00', '15', '30', '45'].includes(datos.horario.slice(3))) {
+    throw new ErrorApi(400, 'Los minutos deben ser 00, 15, 30 o 45.');
+  }
+  return datos;
+}
+
+// El día y la hora se derivan de un turno, nunca de dos selecciones independientes.
+export function asignarHabitual(paciente: Paciente, turno: SeleccionHorario): void {
+  paciente.diaHabitual = nombreDia(turno.fecha);
+  paciente.horarioHabitual = turno.horario;
+}
+
+export function datosEdicionConHorario(cuerpo: unknown, existente: Paciente, permitirInicioNulo = false) {
+  const { turno: valor, ...ficha } = objeto(cuerpo);
+  const paciente = datosEdicionPaciente(ficha, existente, permitirInicioNulo);
+  const turno = valor === undefined ? null : validarSeleccionHorario(valor);
+  if (turno) asignarHabitual(paciente, turno);
+  else if (paciente.diaHabitual !== existente.diaHabitual || paciente.horarioHabitual !== existente.horarioHabitual) {
+    throw new ErrorApi(400, 'Para cambiar el día y horario habitual, elegí un horario disponible.');
+  }
+  return { paciente, turno };
+}
+
 export function validarReserva(valor: unknown, incluyePaciente: boolean): Reserva & { codigoPaciente?: string } {
   const datos = objeto(valor);
   campos(datos, ['fecha', 'horario', 'modalidad', 'importeCentavos', ...(incluyePaciente ? ['codigoPaciente'] : [])]);
@@ -115,20 +151,20 @@ export function datosAltaPaciente(cuerpo: unknown) {
   return { datos, ficha };
 }
 
-export function validarFicha(datos: unknown): Paciente {
-  const resultado = validarPaciente(datos);
+export function validarFicha(datos: unknown, permitirInicioNulo = false): Paciente {
+  const resultado = validarPaciente(datos, permitirInicioNulo);
   if (!resultado.valido) throw new ErrorApi(400, resultado.mensaje);
   return resultado.paciente;
 }
 
-export function datosEdicionPaciente(cuerpo: unknown, existente: Paciente): Paciente {
+export function datosEdicionPaciente(cuerpo: unknown, existente: Paciente, permitirInicioNulo = false): Paciente {
   const datos = objeto(cuerpo);
   // Clientes anteriores pueden reenviar la misma fecha; nunca modificarla.
   if (Object.hasOwn(datos, 'fechaCreacion') && (typeof datos['fechaCreacion'] !== 'string'
       || datos['fechaCreacion'].trim() !== existente.fechaCreacion)) {
     throw new ErrorApi(400, 'La fecha de creación del paciente no se puede modificar.');
   }
-  return validarFicha({ ...datos, fechaCreacion: existente.fechaCreacion });
+  return validarFicha({ ...datos, fechaCreacion: existente.fechaCreacion }, permitirInicioNulo);
 }
 
 export function comprobarRealizacion(estado: Sesion['estado'], fecha: string, horario: string, ahora: string): void {

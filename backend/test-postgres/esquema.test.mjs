@@ -36,7 +36,8 @@ test('existen las cuatro tablas, sus claves primarias y los tipos previstos', as
       ['sesiones', 'importeCentavos', 'integer'], ['sesiones', 'pagadoCentavos', 'integer'], ['sesiones', 'resumen', 'text'],
     ]) assert.equal(columnas.find(r => r.table_name === tabla && r.column_name === campo).data_type, tipo);
     const opcionales = columnas.filter(r => r.is_nullable === 'YES').map(r => r.table_name + '.' + r.column_name).sort();
-    assert.deepEqual(opcionales, ['pacientes.diaHabitual', 'pacientes.horarioHabitual', 'pacientes.proximaSesion', 'turnos.codigoPaciente', 'turnos.modalidad']);
+    assert.deepEqual(opcionales, ['pacientes.diaHabitual', 'pacientes.fechaInicioTratamiento', 'pacientes.horarioHabitual', 'pacientes.proximaSesion', 'turnos.codigoPaciente', 'turnos.modalidad',
+      'usuarios.confirmacionHash', 'usuarios.confirmacionVence', 'usuarios.recuperacionHash', 'usuarios.recuperacionVence']);
   });
 });
 
@@ -49,6 +50,17 @@ test('el resumen es opcional y PostgreSQL limita su longitud sin cambiar los imp
     await rechazaSql(c, 'UPDATE public.sesiones SET resumen=NULL WHERE id=$1', [sesionId], '23502');
     assert.deepEqual((await c.query('SELECT resumen,"importeCentavos","pagadoCentavos" FROM public.sesiones WHERE id=$1', [sesionId])).rows[0],
       { resumen: 'x'.repeat(100), importeCentavos: 2500000, pagadoCentavos: 1000000 });
+  });
+});
+
+test('PostgreSQL admite 30, 40, 50 y 60 minutos y rechaza duraciones fuera de la lista', async () => {
+  await conTransaccion(async c => {
+    const { sesionId } = await casoDosProfesionales(c);
+    for (const duracion of [30, 40, 50, 60]) {
+      const r = await c.query('UPDATE public.sesiones SET "duracionMinutos"=$1 WHERE id=$2 RETURNING "duracionMinutos"', [duracion, sesionId]);
+      assert.equal(r.rows[0].duracionMinutos, duracion);
+    }
+    for (const duracion of [20, 45, 70]) await rechazaSql(c, 'UPDATE public.sesiones SET "duracionMinutos"=$1 WHERE id=$2', [duracion, sesionId], '23514');
   });
 });
 

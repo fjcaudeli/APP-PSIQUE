@@ -46,6 +46,9 @@
                 <ion-icon [icon]="iconoEditar" aria-hidden="true"></ion-icon>
                 Editar ficha
               </button>
+              @if (paciente.estado !== 'De baja') { <button type="button" class="boton boton-secundario" [disabled]="guardando" (click)="confirmandoBaja = true">Dar de baja</button> }
+              <a class="boton boton-secundario" routerLink="/sesiones/agendadas" [queryParams]="{ codigoPaciente: paciente.codigo }" routerDirection="forward">Sesiones agendadas</a>
+              <a class="boton boton-secundario" [routerLink]="['/pacientes', paciente.codigo, 'historico']" routerDirection="forward">Ver histórico de sesiones</a>
               @if (mensajeGuardado) {
                 <p class="confirmacion" role="status">{{ mensajeGuardado }}</p>
               }
@@ -53,6 +56,10 @@
           }
         </section>
 
+        @if (confirmandoBaja) {
+          <section class="datos-tratamiento" aria-label="Confirmar baja"><h2>Dar de baja a {{ paciente.codigo }}</h2><p>Se conservarán su ficha, sesiones anteriores y cobros. Sus sesiones futuras se cancelarán y sus horarios quedarán libres.</p><div class="acciones-edicion"><button type="button" class="boton" [disabled]="guardando" (click)="darDeBaja()">Confirmar baja</button><button type="button" class="boton boton-secundario" [disabled]="guardando" (click)="confirmandoBaja = false">Volver</button></div></section>
+        }
+        @if (errorGuardado && !editando) { <p class="error-guardado" role="alert">{{ errorGuardado }}</p> }
         @if (editando) {
           <!-- Los controles editan una copia; únicamente Guardar envía el PUT a la API. -->
           <form [formGroup]="formulario" (ngSubmit)="guardar()" aria-label="Editar datos del paciente">
@@ -72,9 +79,7 @@
                   </div>
                   <div class="campo">
                     <label for="estado">Estado del tratamiento</label>
-                    <input id="estado" formControlName="estado" maxlength="40" list="estados" autocomplete="off"
-                      [attr.aria-invalid]="campoInvalido('estado')" aria-describedby="error-estado" />
-                    <datalist id="estados"><option value="Activo"></option><option value="En pausa"></option><option value="Finalizado"></option></datalist>
+                    <select id="estado" formControlName="estado"><option value="Activo">Activo</option><option value="Suspendido">Suspendido</option><option value="De vacaciones">De vacaciones</option>@if (!['Activo', 'Suspendido', 'De vacaciones'].includes(formulario.controls.estado.value)) { <option [value]="formulario.controls.estado.value">{{ formulario.controls.estado.value }}</option> }</select>
                     @if (campoInvalido('estado')) {
                       <p id="error-estado" class="error-campo">Completá el estado con hasta 40 caracteres.</p>
                     }
@@ -86,21 +91,7 @@
                       <option value="Virtual">Virtual</option>
                     </select>
                   </div>
-                  <div class="campo">
-                    <label for="frecuencia">Frecuencia</label>
-                    <select id="frecuencia" formControlName="frecuencia"
-                      [attr.aria-invalid]="campoInvalido('frecuencia')" aria-describedby="error-frecuencia">
-                      <option value="Semanal">Semanal</option>
-                      <option value="Quincenal">Quincenal</option>
-                      <option value="Mensual">Mensual</option>
-                      @if (formulario.controls.frecuencia.value && !['Semanal', 'Quincenal', 'Mensual'].includes(formulario.controls.frecuencia.value)) {
-                        <option [value]="formulario.controls.frecuencia.value">{{ formulario.controls.frecuencia.value }}</option>
-                      }
-                    </select>
-                    @if (campoInvalido('frecuencia')) {
-                      <p id="error-frecuencia" class="error-campo">Completá la frecuencia con hasta 40 caracteres.</p>
-                    }
-                  </div>
+
                   <div class="campo">
                     <label for="diaHabitual">Día habitual</label>
                     <select id="diaHabitual" formControlName="diaHabitual">
@@ -113,22 +104,12 @@
                   <div class="campo">
                     <label for="horarioHabitual">Horario habitual</label>
                     <input id="horarioHabitual" type="time" formControlName="horarioHabitual" />
-                    <p class="ayuda-campo">Podés dejarlo vacío si todavía no está definido.</p>
+                    <p class="ayuda-campo">Se actualiza al agendar una sesión desde Agenda.</p>
                   </div>
                   <div class="campo">
-                    <label for="proximaSesion">Próxima sesión</label>
-                    <input id="proximaSesion" formControlName="proximaSesion" maxlength="30" placeholder="Ej.: LUN 15 HS"
-                      [attr.aria-invalid]="campoInvalido('proximaSesion')" aria-describedby="ayuda-proxima-sesion" />
-                    <p id="ayuda-proxima-sesion" class="ayuda-campo">Texto de la tarjeta del paciente. Dejalo vacío si no hay una próxima sesión definida. Máximo 30 caracteres.</p>
-                  </div>
-                  <p class="ayuda-campo campo-completo">Estos datos describen la atención habitual. Los turnos ya agendados conservan su fecha, horario y modalidad.</p>
-                  <div class="campo">
-                    <label for="fechaInicioTratamiento">Inicio del tratamiento</label>
-                    <input id="fechaInicioTratamiento" type="date" formControlName="fechaInicioTratamiento" min="0001-01-01" max="9999-12-31"
-                      [attr.aria-invalid]="campoInvalido('fechaInicioTratamiento')" aria-describedby="error-inicio" />
-                    @if (campoInvalido('fechaInicioTratamiento')) {
-                      <p id="error-inicio" class="error-campo">Ingresá una fecha válida de inicio.</p>
-                    }
+                    <p class="etiqueta-campo">Inicio del tratamiento</p>
+                    <p>{{ paciente.fechaInicioTratamiento ? (paciente.fechaInicioTratamiento | date: 'dd/MM/yyyy') : 'Sin sesiones realizadas' }}</p>
+                    <p class="ayuda-campo">Fecha de la primera sesión marcada como realizada. Se registra automáticamente.</p>
                   </div>
                 </div>
               </section>
@@ -139,7 +120,7 @@
                 <p id="ayuda-motivo" class="ayuda-campo">Hasta 3000 caracteres.</p>
               </section>
               <section class="post-it" aria-labelledby="titulo-editar-postit">
-                <h2 id="titulo-editar-postit"><label for="postIt">Post-it de próxima sesión</label></h2>
+                <h2 id="titulo-editar-postit"><label for="postIt">Nota de próxima sesión</label></h2>
                 <textarea id="postIt" formControlName="postIt" rows="3" maxlength="300"
                   [attr.aria-invalid]="campoInvalido('postIt')" aria-describedby="ayuda-postit"></textarea>
                 <p id="ayuda-postit" class="ayuda-campo">Una nota breve para retomar en la próxima sesión. Hasta 300 caracteres.</p>
@@ -161,10 +142,7 @@
               <dt>Modalidad</dt>
               <dd>{{ paciente.modalidad }}</dd>
             </div>
-            <div>
-              <dt>Frecuencia</dt>
-              <dd>{{ paciente.frecuencia }}</dd>
-            </div>
+
             <div>
               <dt>Día habitual</dt>
               <dd>{{ paciente.diaHabitual ?? 'Sin definir' }}</dd>
@@ -175,7 +153,7 @@
             </div>
             <div class="fecha-inicio">
               <dt>Inicio del tratamiento</dt>
-              <dd><time [attr.datetime]="paciente.fechaInicioTratamiento">{{ paciente.fechaInicioTratamiento | date: 'dd/MM/yyyy' }}</time></dd>
+              <dd>@if (paciente.fechaInicioTratamiento) { <time [attr.datetime]="paciente.fechaInicioTratamiento">{{ paciente.fechaInicioTratamiento | date: 'dd/MM/yyyy' }}</time> } @else { Sin sesiones realizadas }</dd>
             </div>
           </dl>
         </section>
@@ -185,10 +163,10 @@
           <p>{{ paciente.motivoConsulta }}</p>
         </section>
 
-        <!-- El Post-it se destaca para localizar rápidamente la nota de la próxima sesión. -->
+        <!-- La Nota se destaca para localizar rápidamente la nota de la próxima sesión. -->
         <section class="post-it" aria-labelledby="titulo-post-it">
           <div class="post-it-encabezado">
-            <h2 id="titulo-post-it">Post-it de próxima sesión</h2>
+            <h2 id="titulo-post-it">Nota de próxima sesión</h2>
             <ion-icon [icon]="iconoPostIt" aria-hidden="true"></ion-icon>
           </div>
           <p>{{ paciente.postIt }}</p>

@@ -9,7 +9,7 @@ export interface Paciente {
   diaHabitual: string | null;
   horarioHabitual: string | null;
   fechaCreacion: string;
-  fechaInicioTratamiento: string;
+  fechaInicioTratamiento: string | null;
   motivoConsulta: string;
   postIt: string;
 }
@@ -31,7 +31,10 @@ export interface Sesion {
   importeCentavos: number;
   pagadoCentavos: number;
   pendienteCentavos: number;
-  estado: 'Programada' | 'Realizada';
+  estado: 'Programada' | 'Realizada' | 'Cancelada';
+  // SQLite conserva sus contratos históricos; PostgreSQL exige duración en su esquema.
+  duracionMinutos?: number;
+  horarioFin?: string;
   resumen: string;
 }
 
@@ -39,6 +42,11 @@ export interface HorarioDisponible {
   fecha: string;
   horario: string;
   estado: 'Disponible' | 'Liberado';
+}
+
+export interface SesionAgendada extends Sesion {
+  esProxima: boolean;
+  postIt: string | null;
 }
 
 export interface DiaAgenda {
@@ -56,5 +64,6 @@ export interface ResumenDashboard {
   pacientesActivos: number;
   sesionesSemana: number;
   pendientesCobro: number;
-  horariosDisponibles: number;
+  horariosDisponibles?: number;
+  pendientesAgendar?: number;
 }

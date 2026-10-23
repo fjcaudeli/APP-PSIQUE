@@ -1,9 +1,9 @@
 import { AsyncPipe, DatePipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { IonBackButton, IonContent, IonIcon, IonRouterLinkWithHref } from '@ionic/angular';
 import { addOutline, arrowBackOutline, personOutline } from 'ionicons/icons';
-import { catchError, defer, EMPTY, finalize, Observable } from 'rxjs';
+import { catchError, defer, EMPTY, finalize, map, Observable } from 'rxjs';
 import { Paciente } from '../models/paciente';
 import { PacientesService } from '../services/pacientes.service';
 
@@ -16,6 +16,8 @@ import { PacientesService } from '../services/pacientes.service';
 })
 export class PacientesPage {
   private readonly pacientesService = inject(PacientesService);
+  private readonly route = inject(ActivatedRoute);
+  get noActivos(): boolean { return this.route.snapshot.data['noActivos'] === true; }
 
   cargando = true;
   errorCarga = false;
@@ -29,6 +31,7 @@ export class PacientesPage {
       this.cargando = true;
       this.errorCarga = false;
       return this.pacientesService.obtenerPacientes().pipe(
+        map(pacientes => pacientes.filter(p => (p.estado.toLowerCase() !== 'activo') === this.noActivos)),
         catchError(() => {
           this.errorCarga = true;
           return EMPTY;

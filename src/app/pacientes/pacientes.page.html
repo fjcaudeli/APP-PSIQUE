@@ -24,12 +24,15 @@
 
       <section class="presentacion" aria-labelledby="titulo-pacientes">
         <p class="etiqueta">Tu espacio profesional</p>
-        <h1 id="titulo-pacientes">Pacientes</h1>
-        <p class="introduccion">Tus pacientes, en un solo lugar.</p>
+        <h1 id="titulo-pacientes">{{ noActivos ? 'Pacientes no activos' : 'Pacientes activos' }}</h1>
+        <p class="introduccion">{{ noActivos ? 'Tratamientos suspendidos, de vacaciones o dados de baja.' : 'Tus tratamientos en curso.' }}</p>
+        <a class="cambiar-listado" [routerLink]="noActivos ? '/pacientes' : '/pacientes/estado/no-activos'" routerDirection="forward">{{ noActivos ? 'Ver pacientes activos' : 'Ver pacientes no activos' }}</a>
+        @if (!noActivos) {
         <a class="crear-paciente" routerLink="/pacientes/nuevo" routerDirection="forward">
           <ion-icon [icon]="iconoCrear" aria-hidden="true"></ion-icon>
           Crear paciente
         </a>
+        }
       </section>
 
       @let pacientes = pacientes$ | async;
@@ -39,7 +42,7 @@
         <p class="introduccion" role="alert">No se pudieron cargar los pacientes. Recargá la página para volver a intentar.</p>
       } @else if (pacientes) {
         @if (!pacientes.length) {
-          <p class="introduccion">Todavía no hay pacientes. Creá el primero para comenzar.</p>
+          <p class="introduccion">{{ noActivos ? 'No hay pacientes no activos.' : 'No hay pacientes activos. Podés crear uno o reactivar una ficha desde Pacientes no activos.' }}</p>
         }
         <!-- @for crea una fila por paciente; track usa su código para identificarla. -->
         <ul class="lista-pacientes" aria-label="Listado de pacientes">
@@ -59,14 +62,16 @@
                   <h2>{{ paciente.codigo }}</h2>
                 </div>
 
-                <!-- El horario es independiente del estado del tratamiento.
-                     Si no está definido, no mostramos ninguna etiqueta en ese lugar. -->
-                @if (paciente.proximaSesion) {
-                  <p class="proxima-sesion">
+                <!-- La API calcula la próxima reserva desde las sesiones,
+                     sin usar el antiguo día y horario habitual de la ficha. -->
+                <p class="proxima-sesion" [class.sin-sesion]="!paciente.proximaSesion">
+                  @if (paciente.proximaSesion) {
                     <span class="texto-accesible">Próxima sesión: </span>
                     {{ paciente.proximaSesion }}
-                  </p>
-                }
+                  } @else {
+                    Sin sesión agendada
+                  }
+                </p>
 
                 <dl class="datos-paciente">
                   <div>
