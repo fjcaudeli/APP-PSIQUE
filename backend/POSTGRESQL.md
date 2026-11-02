@@ -246,7 +246,10 @@ sin datos de usuarios o infraestructura. Readiness ejecuta SELECT 1, cachea 5 s 
 comparte una consulta en vuelo. Responde en aproximadamente 1,5 s aunque SQL no
 conteste; no inicia otra consulta hasta que termine la anterior. SQL mantiene los
 límites del pool. Un resultado positivo puede permanecer hasta 5 s tras una caída;
-no es una garantía por cada operación. El futuro health check será /health/ready.
+no es una garantía por cada operación. La decisión posterior de H1 (02/11/2026)
+es usar /health/live como control automático de Render Free y reservar
+/health/ready para comprobaciones explícitas, evitando consultas SQL periódicas
+que mantengan Neon activo. No se modificó el comportamiento de estos endpoints.
 
 ### Pruebas ejecutadas y alcance
 

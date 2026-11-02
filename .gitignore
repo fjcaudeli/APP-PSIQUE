@@ -18,3 +18,13 @@
 .DS_Store
 Thumbs.db
 /entrega_academica/
+# Credenciales y respaldos privados, también fuera de las carpetas habituales.
+*.dpapi.json
+*.dump
+*.backup
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+/respaldos/

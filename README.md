@@ -6,6 +6,11 @@ La aplicación permite crear y editar pacientes, agendar sesiones desde un calen
 
 La interfaz puede usarse en el navegador de una PC y se adapta a pantallas pequeñas. Cada profesional se registra e inicia sesión para acceder a sus propios pacientes, horarios, sesiones y estadísticas. La etapa 4B prepara configuración y seguridad para Render. Frontend, backend y PostgreSQL continúan ejecutándose localmente; el envío de correo utiliza el servicio externo Resend.
 
+**Hosting gratuito — H1 (02/11/2026):** preparación local para Render Static Free,
+Render Web Free, Neon Free y Resend Free, sin crear servicios ni publicar.
+La revisión de Git, las comprobaciones y la configuración futura están en
+[HOSTING-H1.md](HOSTING-H1.md). El APK local conserva su dependencia de ADB y la PC.
+
 **Confirmación para cuentas nuevas y recuperación de contraseña.** Las migraciones 007 y 008 están aplicadas en `psique` y `psique_test`. Las cuentas anteriores conservan el acceso por la excepción autorizada; las nuevas requieren confirmar su email. El backend habitual funciona con PostgreSQL y ya carga la configuración privada de Resend. El proveedor aceptó el primer correo de prueba con HTTP 200 y el destinatario confirmó su recepción. Si falta configurar el proveedor en otra instalación, las altas nuevas y solicitudes de correo responden 503, sin simular envíos.
 
 ## PostgreSQL: base activa
@@ -220,7 +225,9 @@ No se modifican las transacciones ni las respuestas clínicas.
 - `/health/live` responde sin SQL. `/health/ready` hace SELECT 1 y devuelve 200 o
   503 con un estado genérico, sin información personal o de infraestructura.
   Comparte el resultado 5 s y una sola consulta en vuelo; responde en aproximadamente
-  1,5 s aun si PostgreSQL sigue esperando. El futuro health check será `/health/ready`.
+  1,5 s aun si PostgreSQL sigue esperando. Para el futuro despliegue gratuito se
+  seleccionó `/health/live` como control automático, sin despertar Neon mediante
+  consultas periódicas; `/health/ready` queda para verificaciones explícitas.
 
 Los contadores están en memoria: reiniciar Node los borra, no se comparten entre
 réplicas y usuarios detrás de una misma IP comparten cupo. No resuelven ataques
