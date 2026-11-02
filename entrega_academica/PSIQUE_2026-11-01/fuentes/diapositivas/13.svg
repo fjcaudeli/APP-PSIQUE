@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+<defs><marker id="flecha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#284f45"/></marker></defs>
+<rect x="0" y="0" width="1280" height="720" rx="0" fill="#faf9f5" stroke="#faf9f5"/>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="42" font-weight="700" fill="#284f45">
+<tspan x="55" y="72.0">Modelo de datos e integridad</tspan>
+</text>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="23" font-weight="400" fill="#647168">
+<tspan x="58" y="114.0">Propietario incluido en claves y relaciones de consultorio</tspan>
+</text>
+<rect x="527.0175438596491" y="158.0701754385965" width="225.96491228070175" height="108.94736842105263" rx="9.68421052631579" fill="#dcece8" stroke="#cdd9cf"/>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="23.403508771929822" font-weight="700" fill="#284f45">
+<tspan x="543.1578947368421" y="192.77192982456143">usuarios</tspan>
+</text>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="20.982456140350877" font-weight="400" fill="#293b34">
+<tspan x="543.1578947368421" y="225.859649122807">PK id</tspan>
+<tspan x="543.1578947368421" y="253.55649122807017">Cuenta profesional</tspan>
+</text>
+<rect x="196.140350877193" y="392.1052631578947" width="242.1052631578947" height="125.0877192982456" rx="9.68421052631579" fill="#e8eee3" stroke="#cdd9cf"/>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="23.403508771929822" font-weight="700" fill="#284f45">
+<tspan x="212.28070175438597" y="426.8070175438596">pacientes</tspan>
+</text>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="20.175438596491226" font-weight="400" fill="#293b34">
+<tspan x="212.28070175438597" y="459.0877192982456">PK usuarioId + codigo</tspan>
+</text>
+<rect x="518.9473684210526" y="392.1052631578947" width="242.1052631578947" height="125.0877192982456" rx="9.68421052631579" fill="#e8eee3" stroke="#cdd9cf"/>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="23.403508771929822" font-weight="700" fill="#284f45">
+<tspan x="535.0877192982456" y="426.8070175438596">turnos</tspan>
+</text>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="20.175438596491226" font-weight="400" fill="#293b34">
+<tspan x="535.0877192982456" y="459.0877192982456">PK usuarioId + fecha</tspan>
+<tspan x="535.0877192982456" y="485.719298245614">+ horario</tspan>
+</text>
+<rect x="841.7543859649122" y="392.1052631578947" width="242.1052631578947" height="125.0877192982456" rx="9.68421052631579" fill="#e8eee3" stroke="#cdd9cf"/>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="23.403508771929822" font-weight="700" fill="#284f45">
+<tspan x="857.8947368421052" y="426.8070175438596">sesiones</tspan>
+</text>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="20.175438596491226" font-weight="400" fill="#293b34">
+<tspan x="857.8947368421052" y="459.0877192982456">PK id</tspan>
+<tspan x="857.8947368421052" y="485.719298245614">FK con propietario</tspan>
+</text>
+<polyline points="640.0,267.0175438596491 640.0,327.5438596491228 317.1929824561404,327.5438596491228 317.1929824561404,392.1052631578947" fill="none" stroke="#284f45" stroke-width="1.6140350877192982" marker-end="url(#flecha)"/>
+<polyline points="640.0,267.0175438596491 640.0,392.1052631578947" fill="none" stroke="#284f45" stroke-width="1.6140350877192982" marker-end="url(#flecha)"/>
+<polyline points="640.0,327.5438596491228 962.8070175438596,327.5438596491228 962.8070175438596,392.1052631578947" fill="none" stroke="#284f45" stroke-width="1.6140350877192982" marker-end="url(#flecha)"/>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="18.561403508771928" font-weight="400" fill="#293b34">
+<tspan x="329.29824561403507" y="368.70175438596493">1 : N</tspan>
+</text>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="18.561403508771928" font-weight="400" fill="#293b34">
+<tspan x="652.1052631578947" y="368.70175438596493">1 : N</tspan>
+</text>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="18.561403508771928" font-weight="400" fill="#293b34">
+<tspan x="974.9122807017543" y="368.70175438596493">1 : N</tspan>
+</text>
+<polyline points="438.2456140350877,456.66666666666663 518.9473684210526,456.66666666666663" fill="none" stroke="#284f45" stroke-width="1.6140350877192982" marker-end="url(#flecha)"/>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="15.333333333333332" font-weight="400" fill="#293b34">
+<tspan x="440.66666666666663" y="442.9473684210526">0..1 : N</tspan>
+</text>
+<polyline points="761.0526315789473,456.66666666666663 841.7543859649122,456.66666666666663" fill="none" stroke="#284f45" stroke-width="1.6140350877192982" marker-end="url(#flecha)"/>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="16.140350877192983" font-weight="400" fill="#293b34">
+<tspan x="777.1929824561403" y="443.7543859649123">1 : N</tspan>
+</text>
+<polyline points="317.1929824561404,517.1929824561403 317.1929824561404,571.2631578947369 962.8070175438596,571.2631578947369 962.8070175438596,517.1929824561403" fill="none" stroke="#284f45" stroke-width="1.6140350877192982" marker-end="url(#flecha)"/>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="18.561403508771928" font-weight="400" fill="#284f45">
+<tspan x="365.6140350877193" y="596.280701754386">Paciente 1 : N sesiones. Relaciones compuestas con usuarioId.</tspan>
+</text>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="400" fill="#647168">
+<tspan x="58" y="647.0">Las transacciones confirman el conjunto. Los filtros por usuarioId autorizan cada operación.</tspan>
+</text>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#647168">
+<tspan x="59" y="696.0">PSIQUE</tspan>
+</text>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#647168">
+<tspan x="1140" y="696.0">13 / 15</tspan>
+</text>
+</svg>

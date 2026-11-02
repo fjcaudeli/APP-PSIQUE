@@ -1,0 +1,263 @@
+[
+  {
+    "archivo": "Documentacion_Funcional_PSIQUE.pdf",
+    "paginas": 21,
+    "secciones": [
+      {
+        "pagina": 3,
+        "titulo": "1. Introducción, problema y objetivos",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 4,
+        "titulo": "2. Usuarios destinatarios y alcance",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 5,
+        "titulo": "3. Cuenta profesional y acceso",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 6,
+        "titulo": "4. Guía de primera utilización",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 7,
+        "titulo": "5. Inicio y sus seis accesos",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 8,
+        "titulo": "6. Alta y listado de pacientes",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 9,
+        "titulo": "7. Ficha, edición y estado del tratamiento",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 10,
+        "titulo": "8. Agenda semanal y disponibilidad",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 11,
+        "titulo": "9. Agendar una próxima sesión",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 12,
+        "titulo": "10. Pendientes y sesiones agendadas",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 13,
+        "titulo": "11. Registro, edición y cancelación de sesiones",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 14,
+        "titulo": "12. Últimas sesiones e histórico individual",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 15,
+        "titulo": "13. Nota vigente y resumen histórico",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 16,
+        "titulo": "14. Honorarios, cobros y saldo",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 17,
+        "titulo": "15. Reglas de negocio principales",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 18,
+        "titulo": "16. Casos de uso representativos",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 19,
+        "titulo": "17. Casos alternativos y recuperación",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 20,
+        "titulo": "18. Limitaciones y funcionalidades pendientes",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 21,
+        "titulo": "19. Glosario y fuentes de verificación",
+        "altoMaximoImagen": 300
+      }
+    ],
+    "sha256": "ae209134151ae529948ba2caea261af2cb2cd9bb63b4dde3484d697a5e38e314"
+  },
+  {
+    "archivo": "Documentacion_Tecnica_PSIQUE.pdf",
+    "paginas": 30,
+    "secciones": [
+      {
+        "pagina": 3,
+        "titulo": "1. Descripción técnica y estado verificado",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 4,
+        "titulo": "2. Arquitectura de tres capas",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 5,
+        "titulo": "3. Tecnologías y versiones utilizadas",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 6,
+        "titulo": "4. Organización del repositorio",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 7,
+        "titulo": "5. Frontend Ionic y Angular",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 8,
+        "titulo": "6. Flujo de autenticación y navegación",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 9,
+        "titulo": "7. Backend y ciclo de vida del servidor",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 10,
+        "titulo": "8. API pública y autenticación",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 11,
+        "titulo": "9. API privada de consultorio",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 12,
+        "titulo": "10. Contratos JSON, fechas y errores HTTP",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 13,
+        "titulo": "11. Modelo entidad-relación",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 14,
+        "titulo": "12. Diccionario de datos: usuarios",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 15,
+        "titulo": "13. Diccionario de datos: pacientes",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 16,
+        "titulo": "14. Diccionario de datos: turnos",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 17,
+        "titulo": "15. Diccionario de datos: sesiones",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 18,
+        "titulo": "16. Integridad, tipos e índices",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 19,
+        "titulo": "17. Migraciones y administración del esquema",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 20,
+        "titulo": "18. Transacciones y control de concurrencia",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 21,
+        "titulo": "19. Autorización, JWT y seguridad HTTP",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 22,
+        "titulo": "20. Integración de Resend y enlaces de cuenta",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 23,
+        "titulo": "21. Android con Capacitor y conectividad",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 24,
+        "titulo": "22. Variables de entorno y secretos",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 25,
+        "titulo": "23. Instalación nueva en Windows y PostgreSQL",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 26,
+        "titulo": "24. Ejecutar web, API y pruebas localmente",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 27,
+        "titulo": "25. Compilar, instalar y ejecutar Android",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 28,
+        "titulo": "26. Pruebas ejecutadas y evidencia",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 29,
+        "titulo": "27. Despliegue previsto y resguardos pendientes",
+        "altoMaximoImagen": 300
+      },
+      {
+        "pagina": 30,
+        "titulo": "28. Operación, trazabilidad y referencias",
+        "altoMaximoImagen": 300
+      }
+    ],
+    "sha256": "0db394ab8d03b2e1afe20ac2fb96ce138eab7165f295014903c8968df33bc92a"
+  },
+  {
+    "archivo": "Presentacion_PSIQUE.pdf",
+    "paginas": 15,
+    "formato": "16:9",
+    "fuentes": [
+      "presentacion.json",
+      "Presentacion_PSIQUE.html",
+      "diapositivas/",
+      "Guion_Presentacion_PSIQUE.md"
+    ],
+    "sha256": "9ac47ea81141402873ce05c8b1057ecae99053a13480ae47ff1d2a222b284bc4"
+  }
+]

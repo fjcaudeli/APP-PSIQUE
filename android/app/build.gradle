@@ -1,0 +1,72 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace = "com.francocaudeli.psique"
+    compileSdk = rootProject.ext.compileSdkVersion
+    buildFeatures { buildConfig = true }
+    defaultConfig {
+        applicationId "com.francocaudeli.psique"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+// Un bundle local o web suelto nunca debe terminar en una distribución release.
+// La preparación Android genera esta marca pública junto con los archivos web.
+tasks.register('verificarApiRelease') {
+    doLast {
+        def marca = file('src/main/assets/public/psique-build.json')
+        if (!marca.exists()) throw new GradleException('Ejecutá npm run android:sync con PSIQUE_API_URL HTTPS antes de compilar release.')
+        def datos = new groovy.json.JsonSlurper().parse(marca)
+        def url = new URI(datos.apiBaseUrl ?: '')
+        if (datos.plataforma != 'android' || datos.local != false || url.scheme != 'https' || !url.host ||
+            url.host == 'localhost' || url.host.endsWith('.localhost') || url.host.startsWith('127.') ||
+            url.host in ['0.0.0.0', '::1', '[::1]'] || url.userInfo || url.query || url.fragment || url.path != '/api') {
+            throw new GradleException('Release requiere una API HTTPS remota; no admite el bundle local de pruebas.')
+        }
+    }
+}
+tasks.matching { it.name == 'preReleaseBuild' }.configureEach { dependsOn('verificarApiRelease') }
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

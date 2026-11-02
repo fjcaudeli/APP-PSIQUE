@@ -120,6 +120,7 @@ No compartas ni subas ese valor. Los comandos de inicio cargan `.env` mediante `
 | `HOST` | `127.0.0.1` local; `0.0.0.0` producción | La escucha pública se rechaza fuera de producción. |
 | `DATABASE_URL` | Sin valor predeterminado; obligatoria | Conexión de `psique_app` a `psique`, suministrada de forma privada. |
 | `FRONTEND_ORIGIN` | `http://127.0.0.1:4200` local | Origen CORS exacto; obligatorio y HTTPS en producción. |
+| `CAPACITOR_ANDROID_ORIGIN` | Sin definir | Opcional: solo acepta `https://localhost` para permitir también el cliente Android; conserva el origen web y de los correos. |
 | `JWT_SECRET` | Sin valor predeterminado; obligatorio | Secreto para firmar y verificar JWT. Generar al menos 32 bytes aleatorios. |
 | `CORREO_PROVEEDOR` | Vacío hasta configurar el correo | Adaptador preparado: `resend` mediante HTTPS. Sin configuración, nuevas altas y solicitudes de correo responden 503; no se simulan envíos. |
 | `CORREO_REMITENTE` | Sin valor predeterminado | Remitente autorizado por el proveedor. Se configura solo en el entorno privado. |
@@ -132,6 +133,37 @@ No compartas ni subas ese valor. Los comandos de inicio cargan `.env` mediante `
 La API local se limita a `127.0.0.1`. `src/app/api.config.ts` obtiene el destino de `src/environments/environment.ts`; producción reemplaza ese entorno mediante Angular. `localhost` y `127.0.0.1` son orígenes distintos: en desarrollo usá las direcciones indicadas arriba. `PSIQUE_API_URL` es una variable pública de compilación del frontend, nunca una credencial; las demás variables de la tabla pertenecen al backend.
 
 Las credenciales y archivos `.env`, las bases SQLite conservadas, las dependencias y las compilaciones no se versionan. `.env.example` contiene únicamente valores de ejemplo. `DB_PATH` ya no se lee en el servidor habitual. La primera instalación requiere descargar dependencias; luego la aplicación puede ejecutarse localmente con ambos procesos y PostgreSQL iniciado.
+
+## Android con Capacitor
+
+PSIQUE incluye el proyecto nativo `android/` con **Capacitor 8.6.0** y conserva
+el funcionamiento web. Reutiliza las pantallas Ionic/Angular; Express y PostgreSQL
+siguen en el servidor. Capacitor empaqueta `www/browser`, sin incluir el backend
+ni credenciales privadas. El identificador es `com.francocaudeli.psique`.
+
+```powershell
+npm.cmd run android:sync:local  # Compilar Angular y copiarlo al proyecto Android.
+npm.cmd run android:open        # Abrir Android Studio.
+npm.cmd run android:apk:local   # Requiere SDK 36 y Java; genera APK debug.
+```
+
+El APK de depuración se generó, firmó e instaló correctamente en el emulador
+Android 17/API 37 el **01/11/2026**. Está en
+`android/app/build/outputs/apk/debug/app-debug.apk` (4.459.210 bytes).
+El modo local requiere
+`adb reverse tcp:3000 tcp:3000` y activar en Express
+`CAPACITOR_ANDROID_ORIGIN=https://localhost`. La API sigue en loopback; CORS
+conserva el origen web y agrega únicamente ese origen Android cuando se configura.
+HTTP local se limita a 127.0.0.1 en la variante debug; release exige HTTPS.
+
+Se comprobaron registro, login, pacientes, calendario, reservas, Notas, histórico,
+cobros, teclado, cierre de sesión y aislamiento entre cuentas, con una API aislada
+y registros ficticios de `psique_test`, retirados al terminar. También se verificó
+Inicio a 360 × 640. No se probó un teléfono físico ni una API remota.
+
+La instalación, requisitos, comandos ADB, capturas reales y límites de
+verificación están en [ANDROID.md](ANDROID.md). `android:sync` y `android:apk`
+requieren `PSIQUE_API_URL` HTTPS para el futuro backend remoto; no se creó hosting.
 
 ## Preparación local para Render — etapa 4B
 
@@ -712,7 +744,7 @@ CORS permite GET, POST y PUT para el origen configurado; no sustituye la autenti
 
 ## Alcance pendiente
 
-La aplicación utiliza PostgreSQL, autenticación y datos separados por profesional. Confirmación de email para cuentas nuevas y recuperación de contraseña están implementadas, verificadas en pruebas y con su esquema activo en desarrollo. Resend está configurado privadamente; el primer mensaje real de prueba fue aceptado por el proveedor y su recepción fue confirmada por el usuario. Las cuentas anteriores conservan el acceso por la excepción de la migración 008. Quedan para otras etapas el despliegue con HTTPS y la operación periódica de backups. No se incorporaron Google Sign-In, MFA, roles de profesionales, refresh tokens, biometría ni bloqueo por inactividad. No incluye recurrencia automática ni movimientos individuales de pago. La distribución móvil instalable continúa pendiente; SQLite se conserva como referencia histórica.
+La aplicación utiliza PostgreSQL, autenticación y datos separados por profesional. Confirmación de email para cuentas nuevas y recuperación de contraseña están implementadas, verificadas en pruebas y con su esquema activo en desarrollo. Resend está configurado privadamente; el primer mensaje real de prueba fue aceptado por el proveedor y su recepción fue confirmada por el usuario. Las cuentas anteriores conservan el acceso por la excepción de la migración 008. Quedan para otras etapas el despliegue con HTTPS y la operación periódica de backups. No se incorporaron Google Sign-In, MFA, roles de profesionales, refresh tokens, biometría ni bloqueo por inactividad. No incluye recurrencia automática ni movimientos individuales de pago. El APK Android con Capacitor fue generado, instalado y probado en un emulador con la API PostgreSQL aislada; para usar el backend local requiere el túnel ADB documentado en [ANDROID.md](ANDROID.md). No se verificó un teléfono físico ni funcionamiento independiente de esta PC. SQLite se conserva como referencia histórica.
 
 ## Archivos de configuración de la raíz
 
@@ -740,6 +772,16 @@ Identifica el proyecto ante las herramientas de Ionic: su nombre es `PSIQUE` y
 su tipo es `angular-standalone`. Ese tipo corresponde al uso de componentes de
 Angular que declaran sus propias dependencias en `imports`, sin necesitar un
 módulo `NgModule` por pantalla.
+
+### `capacitor.config.ts` y `android/`
+
+Capacitor declara el identificador y nombre Android y copia la salida real de
+Angular desde `www/browser`. No usa un sitio remoto como pantalla de la app.
+`android/` contiene el proyecto Gradle que abre Android Studio: manifiesto,
+contenedor WebView y políticas de red separadas para debug y release. Las
+pantallas y reglas siguen en Angular y Express, respectivamente.
+`scripts/preparar-android.mjs` automatiza compilación, sincronización y APK debug;
+ver [ANDROID.md](ANDROID.md).
 
 ### `package.json`
 

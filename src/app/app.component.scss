@@ -1,1 +1,9 @@
 ﻿ion-app { background: #f7f6f0; }
+
+// La WebView Android ocupa también la barra de estado. Reservamos su inset
+// nativo para que los encabezados compactos no queden debajo del reloj.
+// La barra inferior ya contempla su propio safe-area-inset-bottom.
+:host-context(.plt-capacitor) ion-app {
+  top: var(--ion-safe-area-top, 0px);
+  height: calc(100% - var(--ion-safe-area-top, 0px));
+}

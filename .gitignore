@@ -3,6 +3,7 @@
 /www/
 /dist/
 /out-tsc/
+/artifacts/android/
 /backend/node_modules/
 /backend/dist/
 /backend/data/

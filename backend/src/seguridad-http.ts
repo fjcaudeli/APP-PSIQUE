@@ -3,9 +3,10 @@ import helmet from 'helmet';
 import { rateLimit, ipKeyGenerator } from 'express-rate-limit';
 import type { Express } from 'express';
 
-export interface SeguridadHttp { produccion?: boolean; proxies?: string[] }
+export interface SeguridadHttp { produccion?: boolean; proxies?: string[]; origenAndroid?: 'https://localhost' }
 
 export function configurarSeguridadHttp(app: Express, origen: string, opciones: SeguridadHttp = {}) {
+  const origenes = [origen, ...(opciones.origenAndroid ? [opciones.origenAndroid] : [])];
   app.disable('x-powered-by');
   app.disable('etag');
   app.set('trust proxy', opciones.proxies?.length ? opciones.proxies : false);
@@ -25,7 +26,7 @@ export function configurarSeguridadHttp(app: Express, origen: string, opciones: 
     const solicitado = req.get('Origin');
     const metodo = req.get('Access-Control-Request-Method');
     const encabezados = req.get('Access-Control-Request-Headers')?.split(',').map(h => h.trim().toLowerCase());
-    if ((solicitado !== undefined && solicitado !== origen)
+    if ((solicitado !== undefined && !origenes.includes(solicitado))
         || (req.method === 'OPTIONS' && ((metodo && !['GET', 'POST', 'PUT'].includes(metodo))
           || encabezados?.some(h => !['authorization', 'content-type'].includes(h))))) {
       res.status(403).json({ mensaje: 'Origen o solicitud CORS no autorizados.' }); return;
@@ -33,7 +34,7 @@ export function configurarSeguridadHttp(app: Express, origen: string, opciones: 
     next();
   });
   // cors refleja únicamente los encabezados solicitados, ya validados arriba.
-  app.use(cors({ origin: origen, methods: ['GET', 'POST', 'PUT'], credentials: false }));
+  app.use(cors({ origin: origenes, methods: ['GET', 'POST', 'PUT'], credentials: false }));
 }
 
 export function limitarAutenticacion(limite: number, ventanaMs: number) {

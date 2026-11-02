@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+<defs><marker id="flecha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#284f45"/></marker></defs>
+<rect x="0" y="0" width="1280" height="720" rx="0" fill="#faf9f5" stroke="#faf9f5"/>
+<rect x="0" y="0" width="23" height="720" rx="0" fill="#284f45" stroke="#284f45"/>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="23" font-weight="700" fill="#284f45">
+<tspan x="65" y="68.0">INSTITUTO JUAN AMÓS COMENIO</tspan>
+</text>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="400" fill="#647168">
+<tspan x="65" y="107.0">Analista de Sistemas · Proyecto Final</tspan>
+</text>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="116" font-weight="700" fill="#284f45">
+<tspan x="60" y="321.0">PSIQUE</tspan>
+</text>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="36" font-weight="400" fill="#284f45">
+<tspan x="66" y="391.0">Seguimiento psicoterapéutico</tspan>
+<tspan x="66" y="438.52">y administración de consultorio</tspan>
+</text>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="400" fill="#293b34">
+<tspan x="67" y="565.0">Franco José Caudeli</tspan>
+<tspan x="67" y="598.0">Docente: Julián Speciale</tspan>
+</text>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="400" fill="#647168">
+<tspan x="900" y="663.0">1 de noviembre de 2026</tspan>
+</text>
+</svg>

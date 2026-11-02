@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="610" viewBox="0 0 1100 610">
+<defs><marker id="flecha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#284f45"/></marker></defs>
+<rect x="20" y="80" width="300" height="245" rx="12" fill="#dcece8" stroke="#cdd9cf"/>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="29" font-weight="700" fill="#284f45">
+<tspan x="40" y="123.0">Android</tspan>
+</text>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="23" font-weight="400" fill="#293b34">
+<tspan x="40" y="161.0">WebView local</tspan>
+<tspan x="40" y="191.36">https://localhost</tspan>
+<tspan x="40" y="221.72">API: 127.0.0.1:3000</tspan>
+<tspan x="40" y="252.08">Loopback del dispositivo</tspan>
+</text>
+<rect x="410" y="80" width="270" height="245" rx="12" fill="#fff5c6" stroke="#cdd9cf"/>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="29" font-weight="700" fill="#284f45">
+<tspan x="430" y="123.0">ADB reverse</tspan>
+</text>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="23" font-weight="400" fill="#293b34">
+<tspan x="430" y="161.0">USB o emulador</tspan>
+<tspan x="430" y="191.36"></tspan>
+<tspan x="430" y="221.72">Dispositivo :3000</tspan>
+<tspan x="430" y="252.08">a PC :3000</tspan>
+</text>
+<rect x="780" y="80" width="300" height="245" rx="12" fill="#e8eee3" stroke="#cdd9cf"/>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="29" font-weight="700" fill="#284f45">
+<tspan x="800" y="123.0">PC / Express</tspan>
+</text>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="23" font-weight="400" fill="#293b34">
+<tspan x="800" y="161.0">127.0.0.1:3000</tspan>
+<tspan x="800" y="191.36"></tspan>
+<tspan x="800" y="221.72">CORS Android exacto</tspan>
+<tspan x="800" y="252.08">JWT y reglas</tspan>
+</text>
+<rect x="780" y="445" width="300" height="145" rx="12" fill="#e8eee3" stroke="#cdd9cf"/>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="29" font-weight="700" fill="#284f45">
+<tspan x="800" y="488.0">PostgreSQL</tspan>
+</text>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="23" font-weight="400" fill="#293b34">
+<tspan x="800" y="526.0">psique / psique_app</tspan>
+<tspan x="800" y="556.36">No está dentro del APK.</tspan>
+</text>
+<polyline points="320,210 410,210" fill="none" stroke="#284f45" stroke-width="2" marker-end="url(#flecha)"/>
+<polyline points="680,210 780,210" fill="none" stroke="#284f45" stroke-width="2" marker-end="url(#flecha)"/>
+<polyline points="930,325 930,445" fill="none" stroke="#284f45" stroke-width="2" marker-end="url(#flecha)"/>
+<text font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="700" fill="#284f45">
+<tspan x="30" y="475.0">APK local: requiere PC, API, PostgreSQL y túnel activos.</tspan>
+<tspan x="30" y="508.0">API remota HTTPS y teléfono físico: pendientes de</tspan>
+<tspan x="30" y="541.0">prueba.</tspan>
+</text>
+</svg>

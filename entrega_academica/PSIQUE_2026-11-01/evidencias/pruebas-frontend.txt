@@ -1,0 +1,51 @@
+﻿
+> psique@0.1.0 test:config
+> node --test test-config/*.test.mjs
+
+▶ formularios de confirmación y recuperación conservan validación, errores y acceso pendiente
+  ✔ registro pendiente limpia contraseñas y no navega al consultorio ni inicia sesión (7.9661ms)
+  ✔ login informa email no confirmado y conserva la pantalla pública (1.3431ms)
+  ✔ recuperación valida email y el reenvío conserva los errores 429 y 503 (1.3649ms)
+  ✔ la confirmación requiere un clic explícito y no consume enlaces incompletos (1.0811ms)
+  ✔ la nueva contraseña respeta 12–128, exige repetición y conserva el borrador si falla (0.7028ms)
+✔ formularios de confirmación y recuperación conservan validación, errores y acceso pendiente (76.0312ms)
+✔ configuración API: local conservada, producción HTTPS obligatoria sin fallback ni credenciales (3.006ms)
+✔ compilación de producción incompleta falla antes de invocar Angular y no imprime el valor inválido (137.6092ms)
+✔ interceptor Angular real (local): JWT limitado a origen y ruta autorizados (162.681ms)
+✔ interceptor Angular real (producción): JWT limitado a origen y ruta autorizados (19.3368ms)
+✔ interceptor Angular real (Android/ADB): JWT limitado a origen y ruta autorizados (16.9134ms)
+▶ formularios Angular: calendario, borradores y conflictos por duración
+  ✔ Agregar Nota abre la sesión en edición, conserva el borrador ante errores y regresa a Notas al guardar (42.1951ms)
+  ✔ un enlace desactualizado no permite escribir Nota sobre otra próxima sesión (3.5253ms)
+  ✔ Inicio cuenta reservas y notas con texto sin duplicar el segundo bloque, y refresca al volver (1.0319ms)
+  ✔ Inicio muestra cero sin reservas y permite reintentar un error sin inventar contadores (1.061ms)
+  ✔ Últimas sesiones pagina de a cinco en orden reciente y conserva la página al refrescar cobros (1.2699ms)
+  ✔ Últimas sesiones diferencia errores de lista vacía y descarta respuestas al salir (0.5321ms)
+  ✔ agendar carga la Nota vigente, solo envía sus cambios y conserva el borrador ante un conflicto (2.0529ms)
+  ✔ Notas incluye vacías, conserva el texto completo y actualiza la próxima sesión al volver (1.1603ms)
+  ✔ Notas permite reintentar errores y descarta respuestas al salir (0.8885ms)
+  ✔ agendamiento propone última duración; aumentarla muestra el conflicto sin mover el inicio ni enviar POST (1.7488ms)
+  ✔ alta con selección fija día, hora y duración y conserva el borrador al volver del calendario (3.467ms)
+  ✔ la ficha conserva el borrador ante conflicto y no envía fecha de inicio ni reasigna sesiones (1.9247ms)
+  ✔ editar una sesión pasada bloquea su paciente y lo incluye al guardar los demás campos (6.9077ms)
+  ✔ sesiones agendadas comparte listado general y filtro, y refresca las notas al volver (0.6885ms)
+  ✔ agendadas permite reintentar y retira notas y respuestas tardías al salir (0.3396ms)
+  ✔ histórico del paciente pagina cinco realizadas, conserva la página al volver y reinicia al cambiar de ficha (0.7949ms)
+  ✔ histórico informa errores, admite un listado vacío y descarta respuestas tardías (0.3561ms)
+  ✔ seleccionar un intervalo desde el calendario devuelve al formulario sin reservar (1.1322ms)
+  ✔ la baja es explícita y solo actualiza la ficha cuando el backend la confirma (1.3904ms)
+  ✔ el buscador filtra códigos sin distinguir mayúsculas y escribir invalida la selección anterior (1.258ms)
+  ✔ un paciente elegido en pendientes queda fijo y conserva su identidad al reservar (1.2508ms)
+  ✔ semana actual por defecto y navegación lunes a domingo a través del cambio de mes (0.7536ms)
+  ✔ cada día intercala disponibilidad y sesiones por hora, incluidos los huecos intermedios (2.5409ms)
+  ✔ Nota consulta solo el Post-it vigente de la próxima sesión y lo retira al cerrar (0.7644ms)
+  ✔ suspender quita el pendiente únicamente al confirmar el guardado y los listados separan estados (2.1587ms)
+✔ formularios Angular: calendario, borradores y conflictos por duración (187.6946ms)
+ℹ tests 37
+ℹ suites 0
+ℹ pass 37
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 951.6915

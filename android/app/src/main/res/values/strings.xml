@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PSIQUE</string>
+    <string name="title_activity_main">PSIQUE</string>
+    <string name="package_name">com.francocaudeli.psique</string>
+    <string name="custom_url_scheme">com.francocaudeli.psique</string>
+</resources>

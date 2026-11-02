@@ -8,7 +8,12 @@
     "start": "ng serve --host 127.0.0.1 --port 4200",
     "build": "ng build",
     "build:production": "node scripts/compilar-produccion.mjs",
-    "test:config": "node --test test-config/*.test.mjs"
+    "test:config": "node --test test-config/*.test.mjs",
+    "android:sync:local": "node scripts/preparar-android.mjs --local",
+    "android:sync": "node scripts/preparar-android.mjs",
+    "android:open": "cap open android",
+    "android:apk:local": "node scripts/preparar-android.mjs --local --apk",
+    "android:apk": "node scripts/preparar-android.mjs --apk"
   },
   "engines": {
     "node": "^24.14.1"
@@ -20,6 +25,9 @@
     "@angular/forms": "^21.2.0",
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
+    "@capacitor/android": "8.6.0",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.6.0",
     "@ionic/angular": "^9.0.2",
     "ionicons": "^8.1.0",
     "rxjs": "~7.8.2",
@@ -30,6 +38,7 @@
     "@angular/build": "^21.2.0",
     "@angular/cli": "^21.2.0",
     "@angular/compiler-cli": "^21.2.0",
+    "@capacitor/cli": "8.6.0",
     "typescript": "~5.9.3"
   }
 }

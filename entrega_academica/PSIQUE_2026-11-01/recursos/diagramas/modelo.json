@@ -1,0 +1,423 @@
+{
+  "ancho": 1120,
+  "alto": 700,
+  "objetos": [
+    {
+      "tipo": "rect",
+      "x": 20,
+      "y": 25,
+      "w": 280,
+      "h": 155,
+      "relleno": "#dcece8",
+      "borde": "#cdd9cf",
+      "radio": 12
+    },
+    {
+      "tipo": "texto",
+      "texto": "usuarios",
+      "lineas": [
+        "usuarios"
+      ],
+      "x": 40,
+      "y": 39,
+      "w": 240,
+      "tamano": 29,
+      "color": "#284f45",
+      "negrita": true,
+      "paso": 38.28
+    },
+    {
+      "tipo": "texto",
+      "texto": "PK id\nemail único\ncredenciales y enlaces",
+      "lineas": [
+        "PK id",
+        "email único",
+        "credenciales y enlaces"
+      ],
+      "x": 40,
+      "y": 83,
+      "w": 240,
+      "tamano": 22,
+      "color": "#293b34",
+      "negrita": false,
+      "paso": 29.040000000000003
+    },
+    {
+      "tipo": "rect",
+      "x": 430,
+      "y": 25,
+      "w": 300,
+      "h": 205,
+      "relleno": "#e8eee3",
+      "borde": "#cdd9cf",
+      "radio": 12
+    },
+    {
+      "tipo": "texto",
+      "texto": "pacientes",
+      "lineas": [
+        "pacientes"
+      ],
+      "x": 450,
+      "y": 39,
+      "w": 260,
+      "tamano": 29,
+      "color": "#284f45",
+      "negrita": true,
+      "paso": 38.28
+    },
+    {
+      "tipo": "texto",
+      "texto": "PK usuarioId + codigo\nFK usuarioId\nmodalidad, estado\nNota y fechas",
+      "lineas": [
+        "PK usuarioId + codigo",
+        "FK usuarioId",
+        "modalidad, estado",
+        "Nota y fechas"
+      ],
+      "x": 450,
+      "y": 83,
+      "w": 260,
+      "tamano": 22,
+      "color": "#293b34",
+      "negrita": false,
+      "paso": 29.040000000000003
+    },
+    {
+      "tipo": "rect",
+      "x": 430,
+      "y": 375,
+      "w": 300,
+      "h": 190,
+      "relleno": "#e8eee3",
+      "borde": "#cdd9cf",
+      "radio": 12
+    },
+    {
+      "tipo": "texto",
+      "texto": "turnos",
+      "lineas": [
+        "turnos"
+      ],
+      "x": 450,
+      "y": 389,
+      "w": 260,
+      "tamano": 29,
+      "color": "#284f45",
+      "negrita": true,
+      "paso": 38.28
+    },
+    {
+      "tipo": "texto",
+      "texto": "PK usuarioId + fecha\n   + horario\nFK paciente compuesto\nestado y asignación",
+      "lineas": [
+        "PK usuarioId + fecha",
+        "+ horario",
+        "FK paciente compuesto",
+        "estado y asignación"
+      ],
+      "x": 450,
+      "y": 433,
+      "w": 260,
+      "tamano": 22,
+      "color": "#293b34",
+      "negrita": false,
+      "paso": 29.040000000000003
+    },
+    {
+      "tipo": "rect",
+      "x": 820,
+      "y": 240,
+      "w": 280,
+      "h": 300,
+      "relleno": "#e8eee3",
+      "borde": "#cdd9cf",
+      "radio": 12
+    },
+    {
+      "tipo": "texto",
+      "texto": "sesiones",
+      "lineas": [
+        "sesiones"
+      ],
+      "x": 840,
+      "y": 254,
+      "w": 240,
+      "tamano": 29,
+      "color": "#284f45",
+      "negrita": true,
+      "paso": 38.28
+    },
+    {
+      "tipo": "texto",
+      "texto": "PK id\nFK usuarioId\nFK paciente compuesto\nFK turno compuesto\nfecha y duración\nestado y resumen\nimportes en centavos",
+      "lineas": [
+        "PK id",
+        "FK usuarioId",
+        "FK paciente compuesto",
+        "FK turno compuesto",
+        "fecha y duración",
+        "estado y resumen",
+        "importes en centavos"
+      ],
+      "x": 840,
+      "y": 298,
+      "w": 240,
+      "tamano": 22,
+      "color": "#293b34",
+      "negrita": false,
+      "paso": 29.040000000000003
+    },
+    {
+      "tipo": "rect",
+      "x": 20,
+      "y": 550,
+      "w": 280,
+      "h": 120,
+      "relleno": "#fff5c6",
+      "borde": "#cdd9cf",
+      "radio": 12
+    },
+    {
+      "tipo": "texto",
+      "texto": "migraciones",
+      "lineas": [
+        "migraciones"
+      ],
+      "x": 40,
+      "y": 564,
+      "w": 240,
+      "tamano": 29,
+      "color": "#284f45",
+      "negrita": true,
+      "paso": 38.28
+    },
+    {
+      "tipo": "texto",
+      "texto": "Historial técnico\nsin relación clínica",
+      "lineas": [
+        "Historial técnico",
+        "sin relación clínica"
+      ],
+      "x": 40,
+      "y": 608,
+      "w": 240,
+      "tamano": 21,
+      "color": "#293b34",
+      "negrita": false,
+      "paso": 27.720000000000002
+    },
+    {
+      "tipo": "linea",
+      "puntos": [
+        [
+          300,
+          100
+        ],
+        [
+          430,
+          100
+        ]
+      ],
+      "color": "#284f45",
+      "grueso": 2,
+      "flecha": true
+    },
+    {
+      "tipo": "texto",
+      "texto": "1 : N",
+      "lineas": [
+        "1 : N"
+      ],
+      "x": 329,
+      "y": 66,
+      "w": 90,
+      "tamano": 21,
+      "color": "#293b34",
+      "negrita": false,
+      "paso": 27.720000000000002
+    },
+    {
+      "tipo": "linea",
+      "puntos": [
+        [
+          160,
+          180
+        ],
+        [
+          160,
+          455
+        ],
+        [
+          430,
+          455
+        ]
+      ],
+      "color": "#284f45",
+      "grueso": 2,
+      "flecha": true
+    },
+    {
+      "tipo": "texto",
+      "texto": "1 : N",
+      "lineas": [
+        "1 : N"
+      ],
+      "x": 185,
+      "y": 421,
+      "w": 90,
+      "tamano": 21,
+      "color": "#293b34",
+      "negrita": false,
+      "paso": 27.720000000000002
+    },
+    {
+      "tipo": "linea",
+      "puntos": [
+        [
+          60,
+          180
+        ],
+        [
+          60,
+          505
+        ],
+        [
+          345,
+          505
+        ],
+        [
+          345,
+          640
+        ],
+        [
+          1105,
+          640
+        ],
+        [
+          1105,
+          400
+        ],
+        [
+          1100,
+          400
+        ]
+      ],
+      "color": "#284f45",
+      "grueso": 2,
+      "flecha": true
+    },
+    {
+      "tipo": "texto",
+      "texto": "usuarios 1 : N sesiones",
+      "lineas": [
+        "usuarios 1 : N sesiones"
+      ],
+      "x": 735,
+      "y": 648,
+      "w": 300,
+      "tamano": 20,
+      "color": "#293b34",
+      "negrita": false,
+      "paso": 26.400000000000002
+    },
+    {
+      "tipo": "linea",
+      "puntos": [
+        [
+          730,
+          130
+        ],
+        [
+          770,
+          130
+        ],
+        [
+          770,
+          305
+        ],
+        [
+          820,
+          305
+        ]
+      ],
+      "color": "#284f45",
+      "grueso": 2,
+      "flecha": true
+    },
+    {
+      "tipo": "texto",
+      "texto": "1 : N",
+      "lineas": [
+        "1 : N"
+      ],
+      "x": 763,
+      "y": 182,
+      "w": 90,
+      "tamano": 21,
+      "color": "#293b34",
+      "negrita": false,
+      "paso": 27.720000000000002
+    },
+    {
+      "tipo": "linea",
+      "puntos": [
+        [
+          580,
+          230
+        ],
+        [
+          580,
+          375
+        ]
+      ],
+      "color": "#284f45",
+      "grueso": 2,
+      "flecha": true
+    },
+    {
+      "tipo": "texto",
+      "texto": "0..1 : N",
+      "lineas": [
+        "0..1 : N"
+      ],
+      "x": 596,
+      "y": 289,
+      "w": 150,
+      "tamano": 21,
+      "color": "#293b34",
+      "negrita": false,
+      "paso": 27.720000000000002
+    },
+    {
+      "tipo": "linea",
+      "puntos": [
+        [
+          730,
+          465
+        ],
+        [
+          820,
+          465
+        ]
+      ],
+      "color": "#284f45",
+      "grueso": 2,
+      "flecha": true
+    },
+    {
+      "tipo": "texto",
+      "texto": "1 : N",
+      "lineas": [
+        "1 : N"
+      ],
+      "x": 735,
+      "y": 425,
+      "w": 90,
+      "tamano": 21,
+      "color": "#293b34",
+      "negrita": false,
+      "paso": 27.720000000000002
+    }
+  ]
+}

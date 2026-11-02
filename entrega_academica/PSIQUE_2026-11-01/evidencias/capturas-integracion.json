@@ -1,0 +1,120 @@
+{
+  "fecha": "2026-11-02T00:29:26.648Z",
+  "base": "psique_test",
+  "api": "127.0.0.1:3001",
+  "datos": "ficticios",
+  "cuentasRetiradas": 1,
+  "cuentasRestantes": 0,
+  "solicitudes": [
+    {
+      "metodo": "POST",
+      "ruta": "auth/registro",
+      "estado": 201
+    },
+    {
+      "metodo": "POST",
+      "ruta": "auth/confirmar-email",
+      "estado": 200
+    },
+    {
+      "metodo": "POST",
+      "ruta": "auth/login",
+      "estado": 200
+    },
+    {
+      "metodo": "POST",
+      "ruta": "pacientes",
+      "estado": 201
+    },
+    {
+      "metodo": "POST",
+      "ruta": "pacientes",
+      "estado": 201
+    },
+    {
+      "metodo": "POST",
+      "ruta": "pacientes",
+      "estado": 201
+    },
+    {
+      "metodo": "POST",
+      "ruta": "sesiones",
+      "estado": 201
+    },
+    {
+      "metodo": "PUT",
+      "ruta": "sesiones/1242",
+      "estado": 200
+    },
+    {
+      "metodo": "POST",
+      "ruta": "sesiones",
+      "estado": 201
+    },
+    {
+      "metodo": "PUT",
+      "ruta": "sesiones/1243",
+      "estado": 200
+    },
+    {
+      "metodo": "POST",
+      "ruta": "sesiones",
+      "estado": 201
+    },
+    {
+      "metodo": "PUT",
+      "ruta": "sesiones/1244",
+      "estado": 200
+    },
+    {
+      "metodo": "POST",
+      "ruta": "sesiones",
+      "estado": 201
+    },
+    {
+      "metodo": "PUT",
+      "ruta": "sesiones/1245",
+      "estado": 200
+    },
+    {
+      "metodo": "POST",
+      "ruta": "sesiones",
+      "estado": 201
+    },
+    {
+      "metodo": "PUT",
+      "ruta": "sesiones/1246",
+      "estado": 200
+    },
+    {
+      "metodo": "POST",
+      "ruta": "sesiones",
+      "estado": 201
+    },
+    {
+      "metodo": "PUT",
+      "ruta": "sesiones/1247",
+      "estado": 200
+    },
+    {
+      "metodo": "POST",
+      "ruta": "sesiones",
+      "estado": 201
+    },
+    {
+      "metodo": "PUT",
+      "ruta": "sesiones/1248",
+      "estado": 200
+    },
+    {
+      "metodo": "POST",
+      "ruta": "sesiones",
+      "estado": 201
+    },
+    {
+      "metodo": "POST",
+      "ruta": "sesiones",
+      "estado": 201
+    }
+  ]
+}

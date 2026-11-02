@@ -1,0 +1,232 @@
+{
+  "ancho": 1100,
+  "alto": 610,
+  "objetos": [
+    {
+      "tipo": "rect",
+      "x": 20,
+      "y": 80,
+      "w": 300,
+      "h": 245,
+      "relleno": "#dcece8",
+      "borde": "#cdd9cf",
+      "radio": 12
+    },
+    {
+      "tipo": "texto",
+      "texto": "Android",
+      "lineas": [
+        "Android"
+      ],
+      "x": 40,
+      "y": 94,
+      "w": 260,
+      "tamano": 29,
+      "color": "#284f45",
+      "negrita": true,
+      "paso": 38.28
+    },
+    {
+      "tipo": "texto",
+      "texto": "WebView local\nhttps://localhost\nAPI: 127.0.0.1:3000\nLoopback del dispositivo",
+      "lineas": [
+        "WebView local",
+        "https://localhost",
+        "API: 127.0.0.1:3000",
+        "Loopback del dispositivo"
+      ],
+      "x": 40,
+      "y": 138,
+      "w": 260,
+      "tamano": 23,
+      "color": "#293b34",
+      "negrita": false,
+      "paso": 30.360000000000003
+    },
+    {
+      "tipo": "rect",
+      "x": 410,
+      "y": 80,
+      "w": 270,
+      "h": 245,
+      "relleno": "#fff5c6",
+      "borde": "#cdd9cf",
+      "radio": 12
+    },
+    {
+      "tipo": "texto",
+      "texto": "ADB reverse",
+      "lineas": [
+        "ADB reverse"
+      ],
+      "x": 430,
+      "y": 94,
+      "w": 230,
+      "tamano": 29,
+      "color": "#284f45",
+      "negrita": true,
+      "paso": 38.28
+    },
+    {
+      "tipo": "texto",
+      "texto": "USB o emulador\n\nDispositivo :3000\na PC :3000",
+      "lineas": [
+        "USB o emulador",
+        "",
+        "Dispositivo :3000",
+        "a PC :3000"
+      ],
+      "x": 430,
+      "y": 138,
+      "w": 230,
+      "tamano": 23,
+      "color": "#293b34",
+      "negrita": false,
+      "paso": 30.360000000000003
+    },
+    {
+      "tipo": "rect",
+      "x": 780,
+      "y": 80,
+      "w": 300,
+      "h": 245,
+      "relleno": "#e8eee3",
+      "borde": "#cdd9cf",
+      "radio": 12
+    },
+    {
+      "tipo": "texto",
+      "texto": "PC / Express",
+      "lineas": [
+        "PC / Express"
+      ],
+      "x": 800,
+      "y": 94,
+      "w": 260,
+      "tamano": 29,
+      "color": "#284f45",
+      "negrita": true,
+      "paso": 38.28
+    },
+    {
+      "tipo": "texto",
+      "texto": "127.0.0.1:3000\n\nCORS Android exacto\nJWT y reglas",
+      "lineas": [
+        "127.0.0.1:3000",
+        "",
+        "CORS Android exacto",
+        "JWT y reglas"
+      ],
+      "x": 800,
+      "y": 138,
+      "w": 260,
+      "tamano": 23,
+      "color": "#293b34",
+      "negrita": false,
+      "paso": 30.360000000000003
+    },
+    {
+      "tipo": "rect",
+      "x": 780,
+      "y": 445,
+      "w": 300,
+      "h": 145,
+      "relleno": "#e8eee3",
+      "borde": "#cdd9cf",
+      "radio": 12
+    },
+    {
+      "tipo": "texto",
+      "texto": "PostgreSQL",
+      "lineas": [
+        "PostgreSQL"
+      ],
+      "x": 800,
+      "y": 459,
+      "w": 260,
+      "tamano": 29,
+      "color": "#284f45",
+      "negrita": true,
+      "paso": 38.28
+    },
+    {
+      "tipo": "texto",
+      "texto": "psique / psique_app\nNo está dentro del APK.",
+      "lineas": [
+        "psique / psique_app",
+        "No está dentro del APK."
+      ],
+      "x": 800,
+      "y": 503,
+      "w": 260,
+      "tamano": 23,
+      "color": "#293b34",
+      "negrita": false,
+      "paso": 30.360000000000003
+    },
+    {
+      "tipo": "linea",
+      "puntos": [
+        [
+          320,
+          210
+        ],
+        [
+          410,
+          210
+        ]
+      ],
+      "color": "#284f45",
+      "grueso": 2,
+      "flecha": true
+    },
+    {
+      "tipo": "linea",
+      "puntos": [
+        [
+          680,
+          210
+        ],
+        [
+          780,
+          210
+        ]
+      ],
+      "color": "#284f45",
+      "grueso": 2,
+      "flecha": true
+    },
+    {
+      "tipo": "linea",
+      "puntos": [
+        [
+          930,
+          325
+        ],
+        [
+          930,
+          445
+        ]
+      ],
+      "color": "#284f45",
+      "grueso": 2,
+      "flecha": true
+    },
+    {
+      "tipo": "texto",
+      "texto": "APK local: requiere PC, API, PostgreSQL y túnel activos.\nAPI remota HTTPS y teléfono físico: pendientes de prueba.",
+      "lineas": [
+        "APK local: requiere PC, API, PostgreSQL y túnel activos.",
+        "API remota HTTPS y teléfono físico: pendientes de",
+        "prueba."
+      ],
+      "x": 30,
+      "y": 450,
+      "w": 670,
+      "tamano": 25,
+      "color": "#284f45",
+      "negrita": true,
+      "paso": 33.0
+    }
+  ]
+}

@@ -1,0 +1,189 @@
+[
+  {
+    "archivo": "recorte-login.png",
+    "origen": "01-login.png",
+    "caja": [
+      40,
+      340,
+      1040,
+      1930
+    ],
+    "operacion": "recorte sin alteracion de contenido"
+  },
+  {
+    "archivo": "recorte-inicio.png",
+    "origen": "02-inicio.png",
+    "caja": [
+      35,
+      315,
+      1045,
+      1500
+    ],
+    "operacion": "recorte sin alteracion de contenido"
+  },
+  {
+    "archivo": "recorte-pacientes.png",
+    "origen": "03-pacientes.png",
+    "caja": [
+      40,
+      1020,
+      1040,
+      1780
+    ],
+    "operacion": "recorte sin alteracion de contenido"
+  },
+  {
+    "archivo": "recorte-pacientes-lista.png",
+    "origen": "03-pacientes.png",
+    "caja": [
+      40,
+      1020,
+      1040,
+      1775
+    ],
+    "operacion": "recorte sin alteracion de contenido"
+  },
+  {
+    "archivo": "recorte-ficha.png",
+    "origen": "04-ficha.png",
+    "caja": [
+      50,
+      500,
+      1030,
+      2050
+    ],
+    "operacion": "recorte sin alteracion de contenido"
+  },
+  {
+    "archivo": "recorte-ficha-nota.png",
+    "origen": "05-ficha-nota.png",
+    "caja": [
+      50,
+      540,
+      1030,
+      2070
+    ],
+    "operacion": "recorte sin alteracion de contenido"
+  },
+  {
+    "archivo": "recorte-agenda.png",
+    "origen": "08-agenda-amplia.png",
+    "caja": [
+      125,
+      410,
+      1475,
+      840
+    ],
+    "operacion": "recorte sin alteracion de contenido"
+  },
+  {
+    "archivo": "recorte-agenda-detalle.png",
+    "origen": "08-agenda-amplia.png",
+    "caja": [
+      135,
+      500,
+      710,
+      830
+    ],
+    "operacion": "recorte sin alteracion de contenido"
+  },
+  {
+    "archivo": "recorte-reserva.png",
+    "origen": "09-reserva.png",
+    "caja": [
+      150,
+      77,
+      1450,
+      850
+    ],
+    "operacion": "recorte sin alteracion de contenido"
+  },
+  {
+    "archivo": "recorte-detalle.png",
+    "origen": "10-detalle.png",
+    "caja": [
+      45,
+      760,
+      1035,
+      1840
+    ],
+    "operacion": "recorte sin alteracion de contenido"
+  },
+  {
+    "archivo": "recorte-honorarios.png",
+    "origen": "11-honorarios-resumen.png",
+    "caja": [
+      40,
+      1525,
+      1040,
+      2050
+    ],
+    "operacion": "recorte sin alteracion de contenido"
+  },
+  {
+    "archivo": "recorte-historico.png",
+    "origen": "13-historico.png",
+    "caja": [
+      55,
+      1020,
+      1025,
+      2130
+    ],
+    "operacion": "recorte sin alteracion de contenido"
+  },
+  {
+    "archivo": "recorte-nota-modal.png",
+    "origen": "15-nota-modal.png",
+    "caja": [
+      60,
+      870,
+      1020,
+      1550
+    ],
+    "operacion": "recorte sin alteracion de contenido"
+  },
+  {
+    "archivo": "recorte-notas.png",
+    "origen": "14-notas.png",
+    "caja": [
+      55,
+      930,
+      1025,
+      1700
+    ],
+    "operacion": "recorte sin alteracion de contenido"
+  },
+  {
+    "archivo": "recorte-cobros.png",
+    "origen": "16-cobros.png",
+    "caja": [
+      28,
+      300,
+      1052,
+      1270
+    ],
+    "operacion": "recorte sin alteracion de contenido"
+  },
+  {
+    "archivo": "recorte-agendadas.png",
+    "origen": "17-sesiones-agendadas.png",
+    "caja": [
+      55,
+      1030,
+      1025,
+      2130
+    ],
+    "operacion": "recorte sin alteracion de contenido"
+  },
+  {
+    "archivo": "recorte-paciente-bloqueado.png",
+    "origen": "12-edicion-bloqueada.png",
+    "caja": [
+      55,
+      110,
+      1025,
+      650
+    ],
+    "operacion": "recorte sin alteracion de contenido"
+  }
+]

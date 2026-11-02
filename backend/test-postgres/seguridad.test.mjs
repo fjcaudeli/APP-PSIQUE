@@ -75,6 +75,29 @@ test('CORS acepta solo el origen exacto, soporta Bearer/preflight y rechaza mét
   assert.equal((await fetch(base + '/api/ejemplo')).status, 200); // CORS no sustituye JWT.
 });
 
+test('Android es un segundo origen CORS explícito, conserva el origen web y no omite JWT', async t => {
+  const configuracion = configuracionServidor({ CAPACITOR_ANDROID_ORIGIN: 'https://localhost' });
+  assert.equal(configuracion.origen, 'http://127.0.0.1:4200', 'Los enlaces de correo conservan el destino web');
+  for (const valor of ['*', '', 'http://localhost', 'https://localhost/', 'https://localhost.ajeno.test', 'null']) {
+    assert.throws(() => configuracionServidor({ CAPACITOR_ANDROID_ORIGIN: valor }), /CAPACITOR_ANDROID_ORIGIN/);
+  }
+  const app = crearAppPostgres({ query: async () => ({ rows: [] }) }, configuracion.origen, () => new Date(), secreto, configuracion);
+  const base = await escuchar(t, app);
+  for (const Origin of [configuracion.origen, 'https://localhost']) {
+    const r = await fetch(base + '/api/pacientes', { headers: { Origin } });
+    assert.equal(r.status, 401); assert.equal(r.headers.get('access-control-allow-origin'), Origin);
+    const preflight = await fetch(base + '/api/pacientes', { method: 'OPTIONS', headers: {
+      Origin, 'Access-Control-Request-Method': 'GET', 'Access-Control-Request-Headers': 'authorization',
+    } });
+    assert.equal(preflight.status, 204);
+  }
+  for (const Origin of ['http://localhost', 'https://localhost.ajeno.test', 'null']) {
+    assert.equal((await fetch(base + '/api/pacientes', { headers: { Origin } })).status, 403);
+  }
+  const sinAndroid = crearAppPostgres({ query: async () => ({ rows: [] }) }, configuracion.origen, () => new Date(), secreto);
+  assert.equal((await fetch((await escuchar(t, sinAndroid)) + '/api/pacientes', { headers: { Origin: 'https://localhost' } })).status, 403);
+});
+
 test('Helmet y no-store protegen respuestas correctas, errores y endpoints públicos sin CSP sobre Angular', async t => {
   const app = crearAppPostgres({ query: async () => ({ rows: [] }) }, remoto, () => new Date(), secreto, { produccion: true });
   const base = await escuchar(t, app);

@@ -1,0 +1,432 @@
+﻿[
+    {
+        "sha256":  "AE209134151AE529948BA2CAEA261AF2CB2CD9BB63B4DDE3484D697A5E38E314",
+        "archivo":  "Documentacion_Funcional_PSIQUE.pdf",
+        "bytes":  681950
+    },
+    {
+        "sha256":  "0DB394AB8D03B2E1AFE20AC2FB96CE138EAB7165F295014903C8968DF33BC92A",
+        "archivo":  "Documentacion_Tecnica_PSIQUE.pdf",
+        "bytes":  127649
+    },
+    {
+        "sha256":  "2C727A72EDB2ACFFC2E5B866EA8CCA3B366510FE678C12C5D69F457E80EC6474",
+        "archivo":  "evidencias/capturas-integracion.json",
+        "bytes":  2066
+    },
+    {
+        "sha256":  "97B1D001255AE4AD04F2DC3B4D6A0B09186C1336694CD6A6D98FB121260F482D",
+        "archivo":  "evidencias/compilacion-web.txt",
+        "bytes":  2468
+    },
+    {
+        "sha256":  "4D04E2E8D235543468D38028C484F69AD53DB0759510D49FF12C937024369E37",
+        "archivo":  "evidencias/estado-entorno.json",
+        "bytes":  205
+    },
+    {
+        "sha256":  "1E787F99A5FC28E243F614B75C5E2FDE33FDD3AB899CB3046234B62C34174012",
+        "archivo":  "evidencias/firma-apk.txt",
+        "bytes":  354
+    },
+    {
+        "sha256":  "E8FD5F2C7EFCB1AEE8D082E79AD3DD2D0ADAEECB1D2258955550CEEE03AA85EB",
+        "archivo":  "evidencias/generacion.json",
+        "bytes":  7042
+    },
+    {
+        "sha256":  "143DF72E9C9A575F85AF04E2A97FFFC43DE350A0884C4EC40BC59793415D1556",
+        "archivo":  "evidencias/integridad-proyecto.json",
+        "bytes":  383
+    },
+    {
+        "sha256":  "920DE68C32C0C9B1558B408E70CB8DADEC301C9BF734835AA0B6CD50EB50F217",
+        "archivo":  "evidencias/matriz-verificacion.md",
+        "bytes":  3287
+    },
+    {
+        "sha256":  "6E2FCF7B6C9534A09823C9ADC87AC79221D8684381D48931D7F0DDE14EE697C6",
+        "archivo":  "evidencias/pruebas-backend-historico.txt",
+        "bytes":  8870
+    },
+    {
+        "sha256":  "64A8F2F904AEA9D3D2FFEB9AD1C793C5D47481023646A2BD1917955F7519467F",
+        "archivo":  "evidencias/pruebas-frontend.txt",
+        "bytes":  4246
+    },
+    {
+        "sha256":  "2B12C0C179B331363E7D3A9357CB0356FE3D10BAC4361C599DA0594383B5011E",
+        "archivo":  "evidencias/pruebas-postgresql.txt",
+        "bytes":  11357
+    },
+    {
+        "sha256":  "4A4DB4FFAA7D58300AAB1FA4D84F96BFA56118FF22EF24626575F6D69C6CA4A1",
+        "archivo":  "evidencias/recortes.json",
+        "bytes":  3655
+    },
+    {
+        "sha256":  "1B201734156B8D74EFEC606EF59FA7E1BD238373EAF95BC7D5801AC42439488A",
+        "archivo":  "evidencias/revision-visual.md",
+        "bytes":  2048
+    },
+    {
+        "sha256":  "C0CF1E885FA1B5E648F5CC6C3835F102B286717DD1675314BA94682830D48951",
+        "archivo":  "evidencias/verificacion-pdf.json",
+        "bytes":  8624
+    },
+    {
+        "sha256":  "BC933BE8D2C294EC60A07B4F7D0F66018883E6D3379E15F0D87A3A92A0DBC519",
+        "archivo":  "fuentes/diapositivas/01.svg",
+        "bytes":  1574
+    },
+    {
+        "sha256":  "384543C5B7655506FD739525EEB48412E01B663A9EB3C406A2F089E809147644",
+        "archivo":  "fuentes/diapositivas/02.svg",
+        "bytes":  2619
+    },
+    {
+        "sha256":  "9872080CCBE4D0807CD3C3F9B09B85B6E273353BC34464871B5DB00EAC1EDBF5",
+        "archivo":  "fuentes/diapositivas/03.svg",
+        "bytes":  4158
+    },
+    {
+        "sha256":  "BD952504FBA8D2061753E74CB2F064DE9001DFD01678BA40854C717618ECC4F2",
+        "archivo":  "fuentes/diapositivas/04.svg",
+        "bytes":  4837
+    },
+    {
+        "sha256":  "80BA8C6EDAF7B96E13A7D915762B10A41B51489FAF6085328F3A637CFC1EC72B",
+        "archivo":  "fuentes/diapositivas/05.svg",
+        "bytes":  3026
+    },
+    {
+        "sha256":  "30B5C60549C2582845804D448FDCDA83CED8D264167CCBCF91B259A825E864B9",
+        "archivo":  "fuentes/diapositivas/06.svg",
+        "bytes":  113272
+    },
+    {
+        "sha256":  "946D10C8D4202F7B41A934DA3BA77EFCF5B4DA78399B6DA7873EBAC019F45CCD",
+        "archivo":  "fuentes/diapositivas/07.svg",
+        "bytes":  105798
+    },
+    {
+        "sha256":  "DF4FD3538BB5240638D27395CDC4C34E64CA9A16298EB967383CF9BF79B25D2E",
+        "archivo":  "fuentes/diapositivas/08.svg",
+        "bytes":  179984
+    },
+    {
+        "sha256":  "B2D647D297BBBE1ED7000F2BAB96DA077D7EE4664CF0C059AF068873A238AAD7",
+        "archivo":  "fuentes/diapositivas/09.svg",
+        "bytes":  56286
+    },
+    {
+        "sha256":  "7DE892649D6BCA11A5C905D6A6BF1CB0C727717903A87455548F23AA8365923B",
+        "archivo":  "fuentes/diapositivas/10.svg",
+        "bytes":  192030
+    },
+    {
+        "sha256":  "DCE86C80B18E9039972D811FC0460580BE76C65D933B2A79EB1D7D4F0B6C3721",
+        "archivo":  "fuentes/diapositivas/11.svg",
+        "bytes":  145103
+    },
+    {
+        "sha256":  "7FFB35BEA57C840B3956824B10BF8D383F5921511D6C1347FE0C2D29477DCAC3",
+        "archivo":  "fuentes/diapositivas/12.svg",
+        "bytes":  272847
+    },
+    {
+        "sha256":  "1B6F5A000223BC1C167C3EA47BC2A742F5CC7515CB18D0ABA68F02667FA14E07",
+        "archivo":  "fuentes/diapositivas/13.svg",
+        "bytes":  6115
+    },
+    {
+        "sha256":  "6B3FACA7A7A8AFF811A9EF56E0D458D80D95C59E708DC95D044AB1D88DBF9EE6",
+        "archivo":  "fuentes/diapositivas/14.svg",
+        "bytes":  3120
+    },
+    {
+        "sha256":  "F8195EE653D3B3DC39ACB6D0963800BBB86FDD71ACB428201D22C9DCB9941619",
+        "archivo":  "fuentes/diapositivas/15.svg",
+        "bytes":  2297
+    },
+    {
+        "sha256":  "0B7CA9D5D40F4EE09AE8A26D3ECA1FF6903AB3826A1B70BBB7EC93872005670C",
+        "archivo":  "fuentes/Documentacion_Funcional_PSIQUE.md",
+        "bytes":  29384
+    },
+    {
+        "sha256":  "2772122CF2FC2CA0D1333808966177431BBA652AFAE116CED69A42832EBF3194",
+        "archivo":  "fuentes/Documentacion_Tecnica_PSIQUE.md",
+        "bytes":  52170
+    },
+    {
+        "sha256":  "B82D08CC9EBD71FB9D577DCC857E48938320186B6BCD6849F26CB5D51839854B",
+        "archivo":  "fuentes/generar_entrega.py",
+        "bytes":  33113
+    },
+    {
+        "sha256":  "4FC184E7181EC50349A35062DB62FEB6F809A1D2C540261880E73E835A515AB4",
+        "archivo":  "fuentes/Guion_Presentacion_PSIQUE.md",
+        "bytes":  6922
+    },
+    {
+        "sha256":  "E48A50E7105E0D7CA28ABF84751718E5452E75918D89215C8318BF8E5B2BF862",
+        "archivo":  "fuentes/presentacion.json",
+        "bytes":  11187
+    },
+    {
+        "sha256":  "9B451EB7B826245A76ED1DE08FBF968F19663E9AE4589E309CC8E1742DABC37C",
+        "archivo":  "fuentes/Presentacion_PSIQUE.html",
+        "bytes":  1094880
+    },
+    {
+        "sha256":  "BBAD9A09D4763EBF8284F2A7F3543D3A3484EE8F8714354BD4F736AA48B3D7CF",
+        "archivo":  "fuentes/requirements.txt",
+        "bytes":  32
+    },
+    {
+        "sha256":  "7588B8A918AF0746013F33CC5DD0550FA70DCACC1950C2DD6702726859829ED9",
+        "archivo":  "fuentes/requirements-verificacion.txt",
+        "bytes":  27
+    },
+    {
+        "sha256":  "84AD6E197351E1286DD32286DB7F547D4E2E34B6807E6D33832A8E4B065A002C",
+        "archivo":  "fuentes/verificar_pdf.py",
+        "bytes":  3931
+    },
+    {
+        "sha256":  "B6988A16F6B4919581D8F1C2496A880BA893F62FA2BEDC534F676C187DCC3A08",
+        "archivo":  "LEEME_ENTREGA.md",
+        "bytes":  5469
+    },
+    {
+        "sha256":  "9AC47EA81141402873CE05C8B1057ECAE99053A13480AE47FF1D2A222B284BC4",
+        "archivo":  "Presentacion_PSIQUE.pdf",
+        "bytes":  807626
+    },
+    {
+        "sha256":  "7F99A133E2A2EAA547D02D29F4FD29C64C04DB93654C5DC840E1217B4E06438A",
+        "archivo":  "recursos/capturas/01-login.png",
+        "bytes":  127695
+    },
+    {
+        "sha256":  "C244F30C3FC13AB169C279FA41BAE7218BAA34B6B2D75CCDB4831812A4C05060",
+        "archivo":  "recursos/capturas/02-inicio.png",
+        "bytes":  146439
+    },
+    {
+        "sha256":  "3CAEBE9AD2E73C7A9CA9AD0BA9EE42023642C255A1291AC471C6538056A1CA17",
+        "archivo":  "recursos/capturas/03-pacientes.png",
+        "bytes":  175365
+    },
+    {
+        "sha256":  "03279857A83E6C9099328E0CA592826075C24D07626FDCD46E26D929AE03CFC7",
+        "archivo":  "recursos/capturas/04-ficha.png",
+        "bytes":  156683
+    },
+    {
+        "sha256":  "7F634A8BAB324C1871000746F0B7CF3B418337DA5770FDD3331A1EA82E275699",
+        "archivo":  "recursos/capturas/05-ficha-nota.png",
+        "bytes":  180374
+    },
+    {
+        "sha256":  "283CDE04B339B07E8ACE5921D2013FD1CBAB7DB5AC13DE8391F5889707AC50B6",
+        "archivo":  "recursos/capturas/06-pendientes.png",
+        "bytes":  168102
+    },
+    {
+        "sha256":  "9508373C21F09F2905ED24EAF152CB097A2A74605616278D1D1508122BBBDF5C",
+        "archivo":  "recursos/capturas/07-agenda-movil.png",
+        "bytes":  184266
+    },
+    {
+        "sha256":  "56D11D228B7BA87261948B6FAF1AFCF35A22A848643CEF32C1CAB43588618E68",
+        "archivo":  "recursos/capturas/08-agenda-amplia.png",
+        "bytes":  88583
+    },
+    {
+        "sha256":  "3559D167244B0C2E77E502B576ED2A6B3442A622A1B01B8F23BC4B8B3DE0DCFF",
+        "archivo":  "recursos/capturas/09-reserva.png",
+        "bytes":  87981
+    },
+    {
+        "sha256":  "CE592FE7D37094CEEF28BFD844BB176DB012444343053AC0EADDF815BF5FA2C8",
+        "archivo":  "recursos/capturas/10-detalle.png",
+        "bytes":  172236
+    },
+    {
+        "sha256":  "D0170179EA943C6ABF25A281C00BB8126403070027D650F5B94F31B5DEB4180C",
+        "archivo":  "recursos/capturas/11-honorarios-resumen.png",
+        "bytes":  164551
+    },
+    {
+        "sha256":  "F48EE013930F40203975A28540FF0A2B562C758A755EFB974073B78477A80087",
+        "archivo":  "recursos/capturas/12-edicion-bloqueada.png",
+        "bytes":  160362
+    },
+    {
+        "sha256":  "A4BD71F74CA4BA12C19440D6FC1EA07C60DACDE527C48F814EA284F09FC38680",
+        "archivo":  "recursos/capturas/13-historico.png",
+        "bytes":  207896
+    },
+    {
+        "sha256":  "30AEE425629A593ABE83C073624A356B53939E9101F797BB70AF20EE2E21416E",
+        "archivo":  "recursos/capturas/14-notas.png",
+        "bytes":  159538
+    },
+    {
+        "sha256":  "68C35C2A2FC2D6C886E30FC543878DEE47F26FB3F040BBD8A24F4855AE04BD8C",
+        "archivo":  "recursos/capturas/15-nota-modal.png",
+        "bytes":  163809
+    },
+    {
+        "sha256":  "5AB4DF1091CD05C259411B295A0CDC084AEAEEEB7226650A2F68101B02140CA8",
+        "archivo":  "recursos/capturas/16-cobros.png",
+        "bytes":  145372
+    },
+    {
+        "sha256":  "665365C3ADC873F0118B25EFA4987F2A11595B099360F03C118105BC9FA122B9",
+        "archivo":  "recursos/capturas/17-sesiones-agendadas.png",
+        "bytes":  202821
+    },
+    {
+        "sha256":  "EDDF6BBC646F35B6CC91ACC0AAD10CB3862CC90A03CE49DC95FD1BB23BC149F4",
+        "archivo":  "recursos/capturas/18-historico-pagina-2.png",
+        "bytes":  202383
+    },
+    {
+        "sha256":  "2ECD9E3004B828A6EE182AE024B671211C48B79DA9494E34C8D7FFE59B4B192B",
+        "archivo":  "recursos/capturas/recorte-agenda.png",
+        "bytes":  40777
+    },
+    {
+        "sha256":  "1108FC99986E40F14EEABC0B50F369E93440A6125A41C7F83D8490273656589A",
+        "archivo":  "recursos/capturas/recorte-agendadas.png",
+        "bytes":  78829
+    },
+    {
+        "sha256":  "8EC974B0AE6C996E9F5634F5948DBF8E6C07FDD1CD1B1816A312D5D192B0AA82",
+        "archivo":  "recursos/capturas/recorte-agenda-detalle.png",
+        "bytes":  20921
+    },
+    {
+        "sha256":  "81364E7AC367E60568F7A36905EEBDAD9CAA1508B21B5457390536EE76B04E21",
+        "archivo":  "recursos/capturas/recorte-cobros.png",
+        "bytes":  75108
+    },
+    {
+        "sha256":  "B776C8E71CD3B1E275C24B9336FBD4B0E4656953B73318B5C91885F5AA4B37BA",
+        "archivo":  "recursos/capturas/recorte-detalle.png",
+        "bytes":  59493
+    },
+    {
+        "sha256":  "E04BBE92D101F998ECA7B95E2E0DB1899C77F0195C440EA08B1BB891B5889B72",
+        "archivo":  "recursos/capturas/recorte-ficha.png",
+        "bytes":  89248
+    },
+    {
+        "sha256":  "58D963DB601AE80D205EC1DC74E3C54BE486317FE118979428213681389453F5",
+        "archivo":  "recursos/capturas/recorte-ficha-nota.png",
+        "bytes":  101488
+    },
+    {
+        "sha256":  "6C156CEA55B40D66D3B16F6CCE13DEF59063311E2D40644A296F1A30E53DCD2E",
+        "archivo":  "recursos/capturas/recorte-historico.png",
+        "bytes":  90357
+    },
+    {
+        "sha256":  "C9CCFF7DABD336180602681CB97F4780363A525876BC43A221C36F14E20DB413",
+        "archivo":  "recursos/capturas/recorte-honorarios.png",
+        "bytes":  32333
+    },
+    {
+        "sha256":  "58FEBFF249D2D00D7A89F68A7CB3DF0C90CE6032DDDB59BDD66E21064A8D3BBE",
+        "archivo":  "recursos/capturas/recorte-inicio.png",
+        "bytes":  77606
+    },
+    {
+        "sha256":  "E9629B21AA0A83D8B4980147E838448742EAF483E68F5285F9C2F93FFA108F3B",
+        "archivo":  "recursos/capturas/recorte-login.png",
+        "bytes":  83117
+    },
+    {
+        "sha256":  "0AD34E8E1A5E56DCE04F47125CC94C7A6C5A081067727C9899CB43BDE5529B72",
+        "archivo":  "recursos/capturas/recorte-nota-modal.png",
+        "bytes":  51987
+    },
+    {
+        "sha256":  "D87E39DEC94C4D248B697CDACF0929C0124F28E786210523B53DD98759298BE1",
+        "archivo":  "recursos/capturas/recorte-notas.png",
+        "bytes":  59235
+    },
+    {
+        "sha256":  "8A9CAFF9D3C29BE307C19090C944C36DA3467D1F063569595ED1E32BA844EAA9",
+        "archivo":  "recursos/capturas/recorte-paciente-bloqueado.png",
+        "bytes":  37316
+    },
+    {
+        "sha256":  "681B7F6A9D495DBE311C57844506D508E72F7EE73EF30E096765E7484A8E7586",
+        "archivo":  "recursos/capturas/recorte-pacientes.png",
+        "bytes":  44372
+    },
+    {
+        "sha256":  "223BA56551F1F001C19C7476D8B5E56B258965590494D0C356EEF7A64B3AF40D",
+        "archivo":  "recursos/capturas/recorte-pacientes-lista.png",
+        "bytes":  44343
+    },
+    {
+        "sha256":  "793A01AABD8BE913789D50A4263513E1B8B768196F2C8F3C4985E77CCDF411E2",
+        "archivo":  "recursos/capturas/recorte-reserva.png",
+        "bytes":  52079
+    },
+    {
+        "sha256":  "FCDAD3D0B2B0B2FE0A75FAB986AE16933D68794DCE7F7E9464C940A0AB45231E",
+        "archivo":  "recursos/diagramas/android.json",
+        "bytes":  4648
+    },
+    {
+        "sha256":  "3626D16A5FF12552021C44D211380437D7FC076ACE1586795A6EC14F155C4767",
+        "archivo":  "recursos/diagramas/android.svg",
+        "bytes":  3031
+    },
+    {
+        "sha256":  "762ACD450CDD8458975B1949E93B743FDC459EB79F24AB5E299D8C0DD4CA1B96",
+        "archivo":  "recursos/diagramas/arquitectura.json",
+        "bytes":  4783
+    },
+    {
+        "sha256":  "D2572C47873521A0876A2370E17B8878856922FE3A4081E7417263999BD155E1",
+        "archivo":  "recursos/diagramas/arquitectura.svg",
+        "bytes":  2870
+    },
+    {
+        "sha256":  "ECDA62A110DEC752EC0F1FC5FD8FE874C9024F3896E5D036BB1B00DDAD955B63",
+        "archivo":  "recursos/diagramas/autenticacion.json",
+        "bytes":  8610
+    },
+    {
+        "sha256":  "582C2524A59F5DE1D3809BB6D0E8B291D921413999B0BBE3507B4C0607225DE4",
+        "archivo":  "recursos/diagramas/autenticacion.svg",
+        "bytes":  4757
+    },
+    {
+        "sha256":  "D955244D6F44CED38C9D3F158A93354778204FBADD8B107DB2F5E9DEB6CA44F6",
+        "archivo":  "recursos/diagramas/modelo.json",
+        "bytes":  7957
+    },
+    {
+        "sha256":  "A6FCB4D9DF3644F5C56CAB7AC60612B3C2FA79EBD3D334ADD44AD1F6A2F75431",
+        "archivo":  "recursos/diagramas/modelo.svg",
+        "bytes":  4687
+    },
+    {
+        "sha256":  "B991E0805B05834CE827E7031E24BCC471A09AFE3B51CC4CC457CFF6E16E0631",
+        "archivo":  "recursos/diagramas/modelo-resumen.json",
+        "bytes":  6487
+    },
+    {
+        "sha256":  "0514E985245421A5D697B9827BA4C60069CBE0F7639E01A9DBC8D99D6AAAA077",
+        "archivo":  "recursos/diagramas/modelo-resumen.svg",
+        "bytes":  3652
+    }
+]

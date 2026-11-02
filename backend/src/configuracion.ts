@@ -17,6 +17,13 @@ export function configuracionServidor(entorno: NodeJS.ProcessEnv = process.env) 
     if (url.origin !== origen || url.username || url.password || (produccion ? url.protocol !== 'https:' : !['http:', 'https:'].includes(url.protocol))) throw new Error();
   } catch { throw new ErrorConfiguracionPostgres('FRONTEND_ORIGIN debe ser un origen exacto, sin ruta; HTTPS es obligatorio en producción.'); }
 
+  // Capacitor sirve los archivos del APK desde este origen. Es una segunda
+  // opción explícita de CORS: no cambia el origen web de los enlaces de correo.
+  const origenAndroid = entorno['CAPACITOR_ANDROID_ORIGIN'];
+  if (origenAndroid !== undefined && origenAndroid !== 'https://localhost') {
+    throw new ErrorConfiguracionPostgres('CAPACITOR_ANDROID_ORIGIN solo admite https://localhost. Omitila si no se usa Android.');
+  }
+
   // Solo redes/IP explícitas del proxy. Nunca true, cantidad de saltos ni toda Internet.
   // Vacío conserva la IP del socket: detrás de un proxy compartiría el cupo.
   const listaProxies = entorno['TRUSTED_PROXY_CIDRS']?.trim();
@@ -26,5 +33,5 @@ export function configuracionServidor(entorno: NodeJS.ProcessEnv = process.env) 
     const version = isIP(ip);
     return !version || extra !== undefined || (prefijo !== undefined && (!/^\d+$/.test(prefijo) || Number(prefijo) < 1 || Number(prefijo) > (version === 4 ? 32 : 128)));
   })) throw new ErrorConfiguracionPostgres('TRUSTED_PROXY_CIDRS debe contener IP o redes CIDR explícitas y acotadas.');
-  return { produccion, puerto, host, origen, proxies };
+  return { produccion, puerto, host, origen, proxies, ...(origenAndroid ? { origenAndroid: 'https://localhost' as const } : {}) };
 }

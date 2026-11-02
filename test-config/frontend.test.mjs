@@ -28,8 +28,12 @@ test('compilación de producción incompleta falla antes de invocar Angular y no
   assert.ok(!resultado.stderr.includes('valor-que-no-debe-imprimirse'));
 });
 
-for (const produccion of [false, true]) {
-  test(`interceptor Angular real (${produccion ? 'producción' : 'local'}): JWT limitado a origen y ruta autorizados`, async () => {
+for (const { produccion, nombre, origen } of [
+  { produccion: false, nombre: 'local', origen: 'http://127.0.0.1:4200' },
+  { produccion: true, nombre: 'producción', origen: 'https://frontend.example.test' },
+  { produccion: false, nombre: 'Android/ADB', origen: 'https://localhost' },
+]) {
+  test(`interceptor Angular real (${nombre}): JWT limitado a origen y ruta autorizados`, async () => {
     // Se compila el interceptor original, sin reescribir su algoritmo ni iniciar navegador.
     // Los paquetes Angular/RxJS quedan externos para compartir sus identidades de inyección.
     const directorioBase = resolve('out-tsc'); await mkdir(directorioBase, { recursive: true });
@@ -46,7 +50,7 @@ for (const produccion of [false, true]) {
       let actual = true; let expiraciones = 0;
       const auth = { obtenerToken: () => 'token-ficticio', esTokenActual: () => actual, expirarSesion: () => { expiraciones++; } };
       const inyector = createEnvironmentInjector([{ provide: AuthService, useValue: auth }]);
-      const anterior = globalThis.window; globalThis.window = { location: { origin: 'https://frontend.example.test' } };
+      const anterior = globalThis.window; globalThis.window = { location: { origin: origen } };
       try {
         for (const [url, esperado] of [[api + '/pacientes', true], [api + '/sesiones/1', true], [api + '/auth/login', false],
           [api + '/auth/registro', false], [api + '/auth/recuperar', false], [api + '/auth/reenviar-confirmacion', false],
