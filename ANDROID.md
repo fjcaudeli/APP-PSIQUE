@@ -184,7 +184,58 @@ Las pruebas automatizadas usan datos ficticios aislados en `psique_test`; nunca
 se crean pacientes de demostración en `psique` para validar Android. No se
 modifican migraciones ni se cambia la fecha de Windows para probar sesiones.
 
-## Estado comprobado el 01/11/2026
+## Estado comprobado el 06/11/2026 — H1.1-C
+
+Se repitió `npm.cmd run android:apk:local` después de `npm ci` en el entorno
+habitual. Angular **21.2.26** se comprobó también en la WebView instalada;
+CLI/build es 21.2.29. Capacitor, App, Java 21, Gradle, AGP y SDK se conservaron.
+
+| Comprobación de esta regresión | Resultado |
+| --- | --- |
+| Build | Angular, sync y Gradle correctos; firma debug v2 verificada. |
+| Instalación | Correcta en Medium_Phone_API_37.0, Android 17/API 37. |
+| Integración | API aislada sobre psique_test, correo ficticio, CORS y ADB reverse. Login, pacientes, ficha, Agenda semanal, sesiones agendadas, últimas sesiones, Notas e histórico. |
+| Formularios | Búsqueda de paciente, duraciones 30/40/50/60 y paciente bloqueado en sesión pasada. No se guardó desde esos formularios. |
+| Histórico/modales | Seis realizadas en páginas de cinco y una; Nota amarilla y pendientes de cobro con saldos. |
+| Teclado/Atrás | Teclado real, formulario redimensionado; Atrás oculta teclado, vuelve desde histórico y cierra modales. |
+| Pantalla pequeña | 411 × 914 y 360 × 640 CSS, seis tarjetas visibles, sin desborde horizontal. Tamaño restaurado. |
+| Error de red | Error visible sin conexión; pacientes vuelve a responder 200 después de restaurar y recargar. |
+| Logout/aislamiento | Almacenamiento local/temporal vacío, guard a Login, API sin JWT 401; cuenta B vacía y ficha de A 404. |
+| Conservación | Dos cuentas ficticias retiradas solo de psique_test; huellas de filas de ambas bases iguales a las iniciales. |
+
+APK nuevo:
+
+```text
+android/app/build/outputs/apk/debug/app-debug.apk
+Tamaño: 4.619.364 bytes
+SHA-256: d7f93fd167c56919ec64945bc921949e57ec78e1ecac0b5f980e8e12c3cd2f60
+```
+
+Antes de compilar se conservó el APK de 4.459.210 bytes, con su SHA-256 original,
+en `%LOCALAPPDATA%\PSIQUE\h11c-verificacion\2026-11-06\apk-anterior-antes-H11C-20261106.apk`.
+La copia sigue coincidiendo con la huella inicial. Las capturas nuevas reales
+están en `artifacts/android/h11c/`, ignoradas por Git:
+
+- [Inicio](artifacts/android/h11c/03-inicio.png).
+- [Modal de Nota](artifacts/android/h11c/05-nota-modal.png).
+- [Inicio a 360 × 640](artifacts/android/h11c/07-inicio-360x640.png).
+- [Teclado](artifacts/android/h11c/02-teclado.png).
+- [Histórico paginado](artifacts/android/h11c/04-historico-paginado.png).
+- [Error de conexión](artifacts/android/h11c/06-error-conexion.png).
+
+Al finalizar quedó el emulador en Login, sin sesión; la API de pruebas y los
+túneles temporales se cerraron. No había backend habitual activo al comenzar
+y no se inició uno al terminar. Para probar con desarrollo, ejecutar el backend
+y repetir `adb reverse` como se explica arriba.
+
+No se probó teléfono físico, API remota o release. Las altas y guardados de
+esta regresión se comprobaron por suites/API, sin repetir cada escritura desde
+Android. El capturador de ventanas Windows falló; se usaron capturas ADB y CDP
+en la WebView debug. Sin cambios funcionales. Auditoría actual: backend y
+producción frontend sin avisos; 16 moderados de herramientas frontend.
+Ver [cierre completo H1.1-C](HOSTING-H1.1-C.md).
+
+## Antecedente: estado comprobado el 01/11/2026
 
 | Comprobación | Resultado |
 | --- | --- |
@@ -215,7 +266,7 @@ modifican migraciones ni se cambia la fecha de Windows para probar sesiones.
 | Limpieza | Retiradas solo las dos cuentas ficticias y sus 2 pacientes, 8 turnos y 7 sesiones de psique_test. Una comprobación posterior encontró cero registros de esas cuentas. |
 | Entorno al finalizar | API aislada detenida; backend habitual iniciado con psique_app/psique y origen Android explícito. Salud consultada desde la WebView: 200; ruta privada sin JWT: 401. APK en Login, sin cuenta de prueba iniciada. |
 
-APK final comprobado:
+APK histórico comprobado el 01/11, conservado en el respaldo de H1.1-C:
 
 ```text
 C:\Users\franc\OneDrive\Desktop\APP-PSIQUE\android\app\build\outputs\apk\debug\app-debug.apk
@@ -240,7 +291,7 @@ fuera de esa configuración. Las pruebas Java de ejemplo de la plantilla no se
 ejecutaron. El correo se comprobó aquí mediante un adaptador ficticio aislado;
 Resend y sus credenciales de desarrollo no se usaron para esas pruebas.
 
-`npm audit` informó 34 avisos: 32 ya presentes al incorporar el runtime y dos
+En esa verificación histórica, `npm audit` informó 34 avisos: 32 ya presentes al incorporar el runtime y dos
 moderados adicionales de herramientas CLI. No se ejecutó `audit fix` ni se
 modificaron versiones ajenas a esta integración.
 

@@ -11,6 +11,14 @@ Render Web Free, Neon Free y Resend Free, sin crear servicios ni publicar.
 La revisión de Git, las comprobaciones y la configuración futura están en
 [HOSTING-H1.md](HOSTING-H1.md). El APK local conserva su dependencia de ADB y la PC.
 
+**Cierre H1.1-C — 06/11/2026:** las dependencias corregidas ya están instaladas
+en el entorno habitual: Angular 21.2.26, CLI/build 21.2.29, body-parser 2.4.0 y
+qs 6.17.1. Pasaron 37 resultados frontend, 88 del backend histórico y 108
+PostgreSQL, además de las compilaciones web y Android. Las auditorías de
+producción no informan avisos; quedan 16 moderados de herramientas frontend.
+El APK nuevo se instaló y recorrió en el emulador con una API aislada conectada
+a `psique_test`. Ver [HOSTING-H1.1-C.md](HOSTING-H1.1-C.md). No se publicaron servicios.
+
 **Confirmación para cuentas nuevas y recuperación de contraseña.** Las migraciones 007 y 008 están aplicadas en `psique` y `psique_test`. Las cuentas anteriores conservan el acceso por la excepción autorizada; las nuevas requieren confirmar su email. El backend habitual funciona con PostgreSQL y ya carga la configuración privada de Resend. El proveedor aceptó el primer correo de prueba con HTTP 200 y el destinatario confirmó su recepción. Si falta configurar el proveedor en otra instalación, las altas nuevas y solicitudes de correo responden 503, sin simular envíos.
 
 ## PostgreSQL: base activa
@@ -152,9 +160,10 @@ npm.cmd run android:open        # Abrir Android Studio.
 npm.cmd run android:apk:local   # Requiere SDK 36 y Java; genera APK debug.
 ```
 
-El APK de depuración se generó, firmó e instaló correctamente en el emulador
-Android 17/API 37 el **01/11/2026**. Está en
-`android/app/build/outputs/apk/debug/app-debug.apk` (4.459.210 bytes).
+El APK de depuración se volvió a generar, firmar e instalar en el emulador
+Android 17/API 37 el **06/11/2026**, con Angular 21.2.26. Está en
+`android/app/build/outputs/apk/debug/app-debug.apk` (4.619.364 bytes).
+El APK anterior de 4.459.210 bytes se respaldó y verificó antes de reemplazarlo.
 El modo local requiere
 `adb reverse tcp:3000 tcp:3000` y activar en Express
 `CAPACITOR_ANDROID_ORIGIN=https://localhost`. La API sigue en loopback; CORS
@@ -165,6 +174,12 @@ Se comprobaron registro, login, pacientes, calendario, reservas, Notas, históri
 cobros, teclado, cierre de sesión y aislamiento entre cuentas, con una API aislada
 y registros ficticios de `psique_test`, retirados al terminar. También se verificó
 Inicio a 360 × 640. No se probó un teléfono físico ni una API remota.
+
+El recorrido inicial completo corresponde al 01/11. La regresión del 06/11
+repitió login, consultas, formularios sin guardar, navegación, histórico paginado,
+modales, teclado, Atrás, pantalla pequeña, logout, aislamiento y error de red;
+las escrituras se verificaron en las suites automatizadas. No se enviaron
+correos reales durante H1.1-C.
 
 La instalación, requisitos, comandos ADB, capturas reales y límites de
 verificación están en [ANDROID.md](ANDROID.md). `android:sync` y `android:apk`

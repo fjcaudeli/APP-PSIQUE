@@ -1,5 +1,10 @@
 # PSIQUE — Hosting gratuito: preparación H1
 
+Este informe conserva el estado histórico de H1. El cierre vigente de
+dependencias, Android y Git del **06/11/2026** está en
+[HOSTING-H1.1-C.md](HOSTING-H1.1-C.md); sus resultados actualizan los pendientes
+de auditoría, el APK y el estado local de la entrega académica descritos aquí.
+
 Revisión local finalizada el **02/11/2026**. Proveedores provisionales: Render
 Static Free, Render Web Free, Neon Free y Resend Free. No se crearon recursos
 remotos, no se publicaron servicios y no se modificaron las reglas de la app.
